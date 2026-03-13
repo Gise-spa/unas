@@ -510,7 +510,8 @@
     <div class="dash-nav-logo">✦ <span>Admin</span></div>
     <div class="dash-nav-right">
       <button class="theme-btn" aria-label="Cambiar tema"></button>
-      <button class="btn btn-secondary btn-sm" onclick="sincronizarDesdeSheet()">↻ Sync Drive</button>
+      <button class="btn btn-secondary btn-sm" onclick="forzarSync()" title="Sincronizar con Google Sheet">↻ Sync</button>
+      <button class="btn btn-ghost btn-sm" onclick="limpiarCache()" title="Limpiar caché local" style="color:var(--text-muted);font-size:.78rem">🗑 Caché</button>
       <a href="index.html" class="btn btn-outline btn-sm" target="_blank">Ver sitio →</a>
       <button class="btn btn-ghost btn-sm" onclick="doLogout()">Salir</button>
     </div>
@@ -796,17 +797,55 @@ async function apiGet(sheet) {
 }
 
 async function sincronizarDesdeSheet() {
-  showToast('↻ Sincronizando con Drive...');
-  const [turnos, inventario] = await Promise.all([
-    apiGet('turnos'),
-    apiGet('inventario'),
-  ]);
-  if (turnos.length)     saveTurnos(turnos);
-  if (inventario.length) saveInventario(inventario);
-  renderTurnos();
-  renderInventario();
-  renderInvTabs();
-  showToast('✓ Sincronizado con tu Google Sheet');
+  showToast('↻ Sincronizando turnos...');
+  try {
+    // Solo sincronizar turnos automáticamente
+    // El inventario se maneja solo localmente para evitar conflictos
+    const turnosRemoto = await apiGet('turnos');
+    if (turnosRemoto && turnosRemoto.length) {
+      saveTurnos(turnosRemoto);
+    }
+    renderTurnos();
+    showToast('✓ Turnos sincronizados');
+  } catch(e) {
+    showToast('Sin conexión — mostrando datos locales');
+  }
+}
+
+// Forzar sincronización completa (botón manual)
+async function forzarSync() {
+  showToast('↻ Sincronizando todo...');
+  try {
+    const [turnosRemoto, invRemoto] = await Promise.all([
+      apiGet('turnos'),
+      apiGet('inventario'),
+    ]);
+    if (turnosRemoto && turnosRemoto.length) saveTurnos(turnosRemoto);
+    if (invRemoto && invRemoto.length) {
+      // Al sincronizar manual, el Sheet tiene prioridad
+      // pero limpiamos las fotos base64 y dejamos solo fotoUrl
+      const limpio = invRemoto.map(p => ({...p, foto: ''}));
+      saveInventario(limpio);
+    }
+    renderTurnos();
+    renderInventario();
+    renderInvTabs();
+    showToast('✓ Todo sincronizado desde Google Sheet');
+  } catch(e) {
+    showToast('Error al sincronizar — revisá tu conexión');
+  }
+}
+
+// Limpiar caché local del inventario
+function limpiarCache() {
+  if (!confirm('¿Limpiar el inventario local y recargar desde Google Sheet?')) return;
+  localStorage.removeItem('inventario');
+  localStorage.removeItem('deleted_ids');
+  forzarSync().then(() => {
+    renderInventario();
+    renderInvTabs();
+    showToast('✓ Caché limpiado');
+  });
 }
 
 
@@ -1172,18 +1211,22 @@ function renderInventario() {
 
 function ajustarStock(id, delta) {
   const arr = getInventario();
-  const idx = arr.findIndex(p => p.id === id);
-  if (idx < 0) return;
-  arr[idx].stock = Math.max(0, (Number(arr[idx].stock) || 0) + delta);
+  const idx = arr.findIndex(p => String(p.id) === String(id));
+  if (idx < 0) { showToast('⚠ Producto no encontrado, recargá la página'); return; }
+  const nuevoStock = Math.max(0, (Number(arr[idx].stock) || 0) + delta);
+  arr[idx].stock = nuevoStock;
   saveInventario(arr);
-  apiPost({ action: 'updateStock', id: id, stock: arr[idx].stock });
-  renderInventario();
+  apiPost({ action: 'updateStock', id: id, stock: nuevoStock });
+  // Actualizar solo el número en pantalla sin rerenderizar todo
+  const qtyEl = document.querySelector(`[data-qty-id="${id}"]`);
+  if (qtyEl) qtyEl.textContent = nuevoStock;
+  else renderInventario();
 }
 
 function toggleVisibilidad(id) {
   const arr = getInventario();
-  const idx = arr.findIndex(p => p.id === id);
-  if (idx < 0) return;
+  const idx = arr.findIndex(p => String(p.id) === String(id));
+  if (idx < 0) { showToast('⚠ Producto no encontrado, recargá la página'); return; }
   arr[idx].visibilidad = arr[idx].visibilidad === 'publico' ? 'privado' : 'publico';
   saveInventario(arr);
   apiPost({ action: 'updateVis', id: id, vis: arr[idx].visibilidad });
@@ -1315,28 +1358,44 @@ function guardarProducto() {
   const arr = getInventario();
   const idx = arr.findIndex(p => p.id === producto.id);
   if (idx >= 0) arr[idx] = producto; else arr.push(producto);
-  saveInventario(arr);
+  // Guardar sin base64 en localStorage (muy pesado, rompe el storage)
+  const productoLocal = {...producto, foto: producto.foto ? '⏳' : ''};
+  if (idx >= 0) arr[idx] = productoLocal; else { arr.pop(); arr.push(productoLocal); }
+  // Reconstruir array correctamente
+  const arrFinal = getInventario();
+  const idxFinal = arrFinal.findIndex(p => p.id === producto.id);
+  const productoSinFoto = {...producto, foto: ''};
+  if (idxFinal >= 0) arrFinal[idxFinal] = productoSinFoto; else arrFinal.push(productoSinFoto);
+  saveInventario(arrFinal);
   cerrarModal();
   renderInventario();
   renderInvTabs();
-  // Sincronizar con Google Sheet
-  apiPost({ action: 'saveInventario', row: producto }).then(r => {
-    // Si había foto nueva, subirla a Drive
-    if (window._fotoB64 && window._fotoB64.startsWith('data:')) {
-      apiPost({ action: 'uploadFoto', id: producto.id, b64: window._fotoB64, nombre: producto.id });
-    }
-  });
-  showToast(idx >= 0 ? '✓ Producto guardado en Drive' : '✓ Producto agregado a Drive');
+  // Subir a Google Sheet
+  apiPost({ action: 'saveInventario', row: {...producto, foto: ''} });
+  // Subir foto a Drive por separado
+  if (window._fotoB64 && window._fotoB64.startsWith('data:')) {
+    showToast('⏳ Subiendo foto a Drive...');
+    apiPost({ action: 'uploadFoto', id: producto.id, b64: window._fotoB64, nombre: producto.id })
+      .then(() => showToast('✓ Foto guardada en Drive'));
+  } else {
+    showToast(idx >= 0 ? '✓ Producto actualizado' : '✓ Producto agregado');
+  }
 }
 
 function eliminarProducto(id) {
   if (!confirm('¿Eliminar este producto?')) return;
-  const arr = getInventario().filter(p => p.id !== id);
+  // Guardar en lista negra
+  const deleted = JSON.parse(localStorage.getItem('deleted_ids') || '[]');
+  if (!deleted.includes(String(id))) deleted.push(String(id));
+  localStorage.setItem('deleted_ids', JSON.stringify(deleted));
+  // Borrar localmente usando String comparison
+  const arr = getInventario().filter(p => String(p.id) !== String(id));
   saveInventario(arr);
+  // Borrar en Google Sheet
   apiPost({ action: 'deleteRow', sheet: 'inventario', id: id });
   renderInventario();
   renderInvTabs();
-  showToast('Producto eliminado');
+  showToast('✓ Producto eliminado');
 }
 
 // ── Exportar ────────────────────────────────────────────────
