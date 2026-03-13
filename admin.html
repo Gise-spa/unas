@@ -738,14 +738,19 @@
       </div>
       <div class="form-group" style="grid-column:1/-1">
         <label>Visibilidad</label>
-        <div style="display:flex;gap:.75rem;margin-top:.25rem">
-          <label style="display:flex;align-items:center;gap:.4rem;cursor:pointer;font-size:.85rem;text-transform:none;letter-spacing:0;color:var(--text)">
-            <input type="radio" name="mVis" value="privado" checked> Privado (solo yo lo veo)
-          </label>
-          <label style="display:flex;align-items:center;gap:.4rem;cursor:pointer;font-size:.85rem;text-transform:none;letter-spacing:0;color:var(--text)">
-            <input type="radio" name="mVis" value="publico"> Público (aparece en catálogo)
-          </label>
+        <div style="display:flex;gap:.6rem;margin-top:.4rem;flex-wrap:wrap">
+          <button type="button" id="visPrivado"
+            onclick="setVisibilidad('privado')"
+            style="flex:1;padding:.65rem 1rem;border-radius:var(--radius-md);border:1.5px solid var(--accent);background:rgba(232,144,144,0.1);color:var(--text);font-family:'DM Sans',sans-serif;font-size:.85rem;cursor:pointer;transition:all .2s;font-weight:500">
+            🔒 Privado — solo yo lo veo
+          </button>
+          <button type="button" id="visPublico"
+            onclick="setVisibilidad('publico')"
+            style="flex:1;padding:.65rem 1rem;border-radius:var(--radius-md);border:1.5px solid var(--border);background:var(--bg);color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:.85rem;cursor:pointer;transition:all .2s">
+            👁 Público — aparece en catálogo
+          </button>
         </div>
+        <input type="hidden" id="mVis" value="privado">
       </div>
     </div>
 
@@ -1212,7 +1217,7 @@ function abrirModalProducto(id) {
     document.getElementById('mColorPicker').value = p.color || '#FBCFE8';
     document.getElementById('mStock').value   = p.stock    ?? 1;
     document.getElementById('mNotas').value   = p.notas    || '';
-    document.querySelector(`input[name="mVis"][value="${p.visibilidad||'privado'}"]`).checked = true;
+    setVisibilidad(p.visibilidad || 'privado');
     if (p.foto) {
       document.getElementById('mFotoPreview').src = p.foto;
       document.getElementById('mFotoPreview').style.display = 'block';
@@ -1226,7 +1231,7 @@ function abrirModalProducto(id) {
     document.getElementById('mColorPicker').value = '#FBCFE8';
     document.getElementById('mStock').value   = 1;
     document.getElementById('mNotas').value   = '';
-    document.querySelector('input[name="mVis"][value="privado"]').checked = true;
+    setVisibilidad('privado');
     document.getElementById('fotoLabel').textContent = '📷 Tocá para subir una foto';
   }
 
@@ -1265,6 +1270,32 @@ function previewFoto(e) {
   reader.readAsDataURL(file);
 }
 
+function setVisibilidad(val) {
+  document.getElementById('mVis').value = val;
+  const btnPriv = document.getElementById('visPrivado');
+  const btnPub  = document.getElementById('visPublico');
+  if (!btnPriv || !btnPub) return;
+  if (val === 'privado') {
+    btnPriv.style.border = '1.5px solid var(--accent)';
+    btnPriv.style.background = 'rgba(232,144,144,0.1)';
+    btnPriv.style.color = 'var(--text)';
+    btnPriv.style.fontWeight = '500';
+    btnPub.style.border = '1.5px solid var(--border)';
+    btnPub.style.background = 'var(--bg)';
+    btnPub.style.color = 'var(--text-muted)';
+    btnPub.style.fontWeight = '400';
+  } else {
+    btnPub.style.border = '1.5px solid var(--accent)';
+    btnPub.style.background = 'rgba(232,144,144,0.1)';
+    btnPub.style.color = 'var(--text)';
+    btnPub.style.fontWeight = '500';
+    btnPriv.style.border = '1.5px solid var(--border)';
+    btnPriv.style.background = 'var(--bg)';
+    btnPriv.style.color = 'var(--text-muted)';
+    btnPriv.style.fontWeight = '400';
+  }
+}
+
 function guardarProducto() {
   const nombre = document.getElementById('mNombre').value.trim();
   if (!nombre) { showToast('⚠ El nombre es obligatorio'); return; }
@@ -1277,7 +1308,7 @@ function guardarProducto() {
     color:       document.getElementById('mColor').value.trim() || document.getElementById('mColorPicker').value,
     stock:       Math.max(0, parseInt(document.getElementById('mStock').value) || 0),
     notas:       document.getElementById('mNotas').value.trim(),
-    visibilidad: document.querySelector('input[name="mVis"]:checked').value,
+    visibilidad: document.getElementById('mVis').value,
     foto:        window._fotoB64 || '',
   };
 
