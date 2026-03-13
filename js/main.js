@@ -63,8 +63,8 @@ function showToast(msg, duration = 3000) {
 
 // ── Auth ───────────────────────────────────────────────────
 // ⚠️ Cambiá estas credenciales antes de publicar
-const ADMIN_USER = 'admin';
-const ADMIN_PASS = 'gise2025';
+const ADMIN_USER = 'Gise';
+const ADMIN_PASS = 'gise.spa';
 const AUTH_KEY   = 'nails_auth';
 
 function isLoggedIn()   { return sessionStorage.getItem(AUTH_KEY) === '1'; }
