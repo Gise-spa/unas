@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Turnos — Nails</title>
+  <meta name="description" content="Reservá tu turno de manicura y pedicura online. Confirmación inmediata." />
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+
+    /* ── Hero ─────────────────────────────────────────── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: calc(var(--nav-h) + 4rem) clamp(1.25rem,5vw,3rem) 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 70% 60% at 80% 40%, rgba(251,207,232,0.55) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 50% at 20% 70%, rgba(253,230,138,0.45) 0%, transparent 55%),
+        var(--bg);
+      z-index: 0;
+    }
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      max-width: 1160px;
+      margin: 0 auto;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+    }
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--bg-yellow);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 0.3rem 0.9rem;
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      color: var(--text-mid);
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 { margin-bottom: 1.1rem; }
+    .hero h1 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+    .hero-desc {
+      color: var(--text-mid);
+      font-size: 1rem;
+      line-height: 1.75;
+      margin-bottom: 2rem;
+      max-width: 400px;
+    }
+    .hero-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .hero-stats {
+      display: flex;
+      gap: 2rem;
+      margin-top: 2.5rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+    }
+    .hero-stat-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.9rem;
+      color: var(--accent);
+      line-height: 1;
+    }
+    .hero-stat-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-top: 0.25rem;
+    }
+    /* Foto placeholder */
+    .hero-visual {
+      display: flex;
+      justify-content: center;
+      position: relative;
+    }
+    .hero-img-frame {
+      width: 100%;
+      max-width: 420px;
+      aspect-ratio: 3/4;
+      border-radius: var(--radius-lg) var(--radius-sm) var(--radius-lg) var(--radius-sm);
+      overflow: hidden;
+      border: 1px solid var(--border-pink);
+      background: linear-gradient(145deg, var(--bg-pink) 0%, var(--bg-yellow) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-lg);
+    }
+    .hero-img-frame img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .hero-img-placeholder {
+      text-align: center;
+      padding: 2rem;
+    }
+    .hero-img-placeholder .ph-icon {
+      font-size: 4rem;
+      opacity: 0.35;
+      display: block;
+      margin-bottom: 0.75rem;
+    }
+    .hero-img-placeholder p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .hero-float {
+      position: absolute;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 0.75rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text);
+      box-shadow: var(--shadow-md);
+      white-space: nowrap;
+    }
+    .hero-float-1 { top: 12%; left: -20px; }
+    .hero-float-2 { bottom: 18%; right: -15px; }
+    .hero-float span { color: var(--accent); margin-right: 0.3rem; }
+
+    /* ── Servicios ────────────────────────────────────── */
+    .servicios-section {
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .servicios-grupos {
+      display: flex;
+      flex-direction: column;
+      gap: 2.5rem;
+    }
+    .servicio-grupo-titulo {
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .servicios-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.75rem;
+    }
+    .servicio-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.1rem;
+      transition: all 0.2s;
+    }
+    .servicio-card:hover {
+      border-color: var(--accent);
+      background: rgba(232,144,144,0.04);
+      transform: translateY(-1px);
+    }
+    .servicio-card-nombre {
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 0.3rem;
+    }
+    .servicio-card-dur {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+    }
+
+    /* ── Sistema de turnos ────────────────────────────── */
+    .turnos-section { background: var(--bg); }
+    .booking-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    /* Progress bar */
+    .booking-progress {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+    }
+    .progress-step {
+      flex: 1;
+      padding: 1rem 0.5rem;
+      text-align: center;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+      border-bottom: 2px solid transparent;
+      transition: all 0.25s;
+      position: relative;
+    }
+    .progress-step.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .progress-step.done {
+      color: var(--gold);
+      border-bottom-color: var(--gold);
+    }
+    .progress-step .step-num {
+      display: block;
+      font-size: 0.65rem;
+      opacity: 0.6;
+      margin-bottom: 0.15rem;
+    }
+
+    /* Paneles */
+    .booking-body { padding: clamp(1.5rem, 4vw, 2.5rem); }
+    .booking-panel { display: none; }
+    .booking-panel.active {
+      display: block;
+      animation: panelIn 0.28s ease;
+    }
+    @keyframes panelIn {
+      from { opacity: 0; transform: translateX(10px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .booking-panel-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem;
+      margin-bottom: 0.35rem;
+    }
+    .booking-panel-sub {
+      font-size: 0.84rem;
+      color: var(--text-muted);
+      margin-bottom: 1.75rem;
+    }
+
+    /* ── PANEL 1: Calendario ── */
+    .cal-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    .cal-nav-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .cal-nav-row h4 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.1rem;
+      font-weight: 400;
+    }
+    .cal-nav-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      width: 30px; height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      color: var(--text-mid);
+      transition: all 0.2s;
+    }
+    .cal-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+    }
+    .cal-dow {
+      text-align: center;
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding-bottom: 0.5rem;
+    }
+    .cal-day {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+      position: relative;
+    }
+    .cal-day.empty { cursor: default; }
+    .cal-day.disabled {
+      color: var(--border);
+      cursor: not-allowed;
+    }
+    .cal-day.today {
+      font-weight: 500;
+      border-color: var(--bg-pink);
+      color: var(--accent);
+    }
+    .cal-day.has-slots::after {
+      content: '';
+      position: absolute;
+      bottom: 2px;
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: var(--gold);
+    }
+    .cal-day:hover:not(.disabled):not(.empty) {
+      background: var(--bg-pink);
+      border-color: var(--border-pink);
+    }
+    .cal-day.selected {
+      background: var(--accent);
+      color: #fff;
+      border-color: transparent;
+    }
+    .cal-day.selected::after { background: rgba(255,255,255,0.7); }
+
+    /* Slots horarios */
+    .slots-panel {
+      border-left: 1px solid var(--border);
+      padding-left: 1.5rem;
+    }
+    .slots-date {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+    .slots-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+    }
+    .slot-btn {
+      padding: 0.55rem 0.25rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .slot-btn:hover:not(.taken) {
+      border-color: var(--accent);
+      background: rgba(232,144,144,0.06);
+    }
+    .slot-btn.selected {
+      background: var(--accent);
+      color: #fff;
+      border-color: transparent;
+    }
+    .slot-btn.taken {
+      color: var(--border);
+      cursor: not-allowed;
+      text-decoration: line-through;
+      background: var(--bg);
+    }
+    .slots-empty {
+      font-size: 0.84rem;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 2rem 0;
+      grid-column: 1 / -1;
+    }
+
+    /* ── PANEL 2: Servicio ── */
+    .servicios-select-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .svc-option {
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .svc-option:hover { border-color: var(--accent); }
+    .svc-option.selected {
+      border-color: var(--accent);
+      background: rgba(232,144,144,0.06);
+    }
+    .svc-option.selected::after {
+      content: '✓';
+      position: absolute;
+      top: 0.6rem; right: 0.75rem;
+      width: 18px; height: 18px;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 0.65rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .svc-option-grupo {
+      font-size: 0.65rem;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 0.3rem;
+    }
+    .svc-option-nombre {
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .svc-option-dur {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    /* ── PANEL 3: Datos ── */
+    .datos-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 1rem;
+    }
+
+    /* ── PANEL 4: Confirmación ── */
+    .confirm-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .confirm-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.6rem 0;
+      font-size: 0.88rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .confirm-row:last-child { border-bottom: none; }
+    .confirm-row .cl { color: var(--text-muted); }
+    .confirm-row .cv { font-weight: 500; color: var(--text); }
+
+    /* ── PANEL 5: Éxito ── */
+    .success-wrap {
+      text-align: center;
+      padding: 2rem 1rem;
+    }
+    .success-icon {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: var(--bg-pink);
+      border: 1px solid var(--border-pink);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      margin: 0 auto 1.5rem;
+      animation: popIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+    }
+    @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
+    .success-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 1.75rem;
+    }
+
+    /* Nav booking footer */
+    .booking-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      margin-top: 1.5rem;
+      gap: 1rem;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 860px) {
+      .hero-inner { grid-template-columns: 1fr; }
+      .hero-visual { display: none; }
+      .cal-wrap { grid-template-columns: 1fr; }
+      .slots-panel { border-left: none; padding-left: 0; border-top: 1px solid var(--border); padding-top: 1.25rem; }
+      .datos-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 500px) {
+      .servicios-select-grid { grid-template-columns: 1fr; }
+      .progress-step .step-label { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ NAV ══════════════════════════════════════════════════ -->
+<nav class="nav">
+  <a href="index.html" class="nav-logo">✦ <span>mi negocio</span></a>
+  <ul class="nav-links">
+    <li><a href="#inicio">Inicio</a></li>
+    <li><a href="#servicios">Servicios</a></li>
+    <li><a href="#turnos">Turnos</a></li>
+    <li><a href="admin.html" class="nav-admin">Admin</a></li>
+  </ul>
+  <div class="nav-right">
+    <button class="theme-btn" aria-label="Cambiar tema"></button>
+    <button class="hamburger" aria-label="Menú">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ══ HERO ══════════════════════════════════════════════════ -->
+<section class="hero" id="inicio">
+  <div class="hero-bg"></div>
+  <div class="hero-inner">
+    <div>
+      <div class="hero-tag reveal">✦ &nbsp;Reservas online</div>
+      <h1 class="reveal" style="transition-delay:.08s">
+        Tu manicura<br><em>perfecta</em><br>te espera
+      </h1>
+      <p class="hero-desc reveal" style="transition-delay:.15s">
+        Elegí tu servicio, fecha y horario en minutos. Confirmación inmediata por mail y recordatorio automático.
+      </p>
+      <div class="hero-actions reveal" style="transition-delay:.22s">
+        <a href="#turnos" class="btn btn-primary btn-lg">Reservar turno</a>
+        <a href="#servicios" class="btn btn-outline btn-lg">Ver servicios</a>
+      </div>
+      <div class="hero-stats reveal" style="transition-delay:.3s">
+        <div>
+          <div class="hero-stat-num">10</div>
+          <div class="hero-stat-label">Servicios</div>
+        </div>
+        <div>
+          <div class="hero-stat-num">100%</div>
+          <div class="hero-stat-label">Online</div>
+        </div>
+        <div>
+          <div class="hero-stat-num">📅</div>
+          <div class="hero-stat-label">iPhone sync</div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-img-frame">
+        <!-- Reemplazá con: <img src="assets/hero.jpg" alt="Manicura"> -->
+        <div class="hero-img-placeholder">
+          <span class="ph-icon">💅</span>
+          <p>Subí tu foto aquí<br><small>Guardala como <strong>assets/hero.jpg</strong></small></p>
+        </div>
+      </div>
+      <div class="hero-float hero-float-1">
+        <span>✓</span> Turno confirmado
+      </div>
+      <div class="hero-float hero-float-2">
+        <span>📅</span> Sync iPhone
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ SERVICIOS ══════════════════════════════════════════════ -->
+<section class="servicios-section" id="servicios">
+  <div class="section">
+    <div class="section-header reveal">
+      <div class="eyebrow">Lo que ofrezco</div>
+      <h2>Servicios</h2>
+    </div>
+    <div class="servicios-grupos reveal" id="serviciosLista"></div>
+  </div>
+</section>
+
+<!-- ══ TURNOS ════════════════════════════════════════════════ -->
+<section class="turnos-section" id="turnos">
+  <div class="section">
+    <div class="section-header reveal">
+      <div class="eyebrow">Agenda online</div>
+      <h2>Reservá tu turno</h2>
+    </div>
+
+    <div class="booking-container reveal">
+
+      <!-- Progress -->
+      <div class="booking-progress">
+        <div class="progress-step active" id="ps-1">
+          <span class="step-num">01</span>
+          <span class="step-label">Fecha y hora</span>
+        </div>
+        <div class="progress-step" id="ps-2">
+          <span class="step-num">02</span>
+          <span class="step-label">Servicio</span>
+        </div>
+        <div class="progress-step" id="ps-3">
+          <span class="step-num">03</span>
+          <span class="step-label">Tus datos</span>
+        </div>
+        <div class="progress-step" id="ps-4">
+          <span class="step-num">04</span>
+          <span class="step-label">Confirmar</span>
+        </div>
+      </div>
+
+      <div class="booking-body">
+
+        <!-- ─ Panel 1: Calendario ─ -->
+        <div class="booking-panel active" id="panel-1">
+          <h3 class="booking-panel-title">¿Qué día te viene bien?</h3>
+          <p class="booking-panel-sub">Solo aparecen los días y horarios disponibles.</p>
+          <div class="cal-wrap">
+            <div>
+              <div class="cal-nav-row">
+                <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+                <h4 id="calTitle"></h4>
+                <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
+              </div>
+              <div class="cal-grid" id="calGrid"></div>
+            </div>
+            <div class="slots-panel">
+              <div id="slotsWrap">
+                <p class="slots-empty" style="padding:3rem 0">← Elegí un día para ver los horarios</p>
+              </div>
+            </div>
+          </div>
+          <div class="booking-footer">
+            <div></div>
+            <button class="btn btn-primary" id="btnP1" onclick="goPanel(2)" disabled>
+              Elegir servicio →
+            </button>
+          </div>
+        </div>
+
+        <!-- ─ Panel 2: Servicio ─ -->
+        <div class="booking-panel" id="panel-2">
+          <h3 class="booking-panel-title">¿Qué servicio querés?</h3>
+          <p class="booking-panel-sub">Cada servicio tiene una duración estimada.</p>
+          <div class="servicios-select-grid" id="svcSelectGrid"></div>
+          <div class="booking-footer">
+            <button class="btn btn-ghost" onclick="goPanel(1)">← Volver</button>
+            <button class="btn btn-primary" id="btnP2" onclick="goPanel(3)" disabled>
+              Mis datos →
+            </button>
+          </div>
+        </div>
+
+        <!-- ─ Panel 3: Datos ─ -->
+        <div class="booking-panel" id="panel-3">
+          <h3 class="booking-panel-title">Tus datos</h3>
+          <p class="booking-panel-sub">Para enviarte la confirmación por mail.</p>
+          <div class="datos-grid">
+            <div class="form-group">
+              <label>Nombre</label>
+              <input type="text" id="inputNombre" placeholder="María García">
+            </div>
+            <div class="form-group">
+              <label>Mail</label>
+              <input type="email" id="inputMail" placeholder="hola@mail.com">
+            </div>
+            <div class="form-group">
+              <label>Teléfono (opcional)</label>
+              <input type="tel" id="inputTel" placeholder="11 1234-5678">
+            </div>
+            <div class="form-group">
+              <label>Nota (opcional)</label>
+              <input type="text" id="inputNota" placeholder="Ej: uñas cortas, alergia...">
+            </div>
+          </div>
+          <div class="booking-footer">
+            <button class="btn btn-ghost" onclick="goPanel(2)">← Volver</button>
+            <button class="btn btn-primary" onclick="validateDatos()">Revisar reserva →</button>
+          </div>
+        </div>
+
+        <!-- ─ Panel 4: Confirmar ─ -->
+        <div class="booking-panel" id="panel-4">
+          <h3 class="booking-panel-title">Revisá tu reserva</h3>
+          <p class="booking-panel-sub">Confirmá y te mandamos el mail al instante.</p>
+          <div class="confirm-box" id="confirmBox"></div>
+          <div class="booking-footer">
+            <button class="btn btn-ghost" onclick="goPanel(3)">← Volver</button>
+            <button class="btn btn-primary btn-lg" onclick="confirmarTurno()" id="btnConfirmar">
+              Confirmar reserva
+            </button>
+          </div>
+        </div>
+
+        <!-- ─ Panel 5: Éxito ─ -->
+        <div class="booking-panel" id="panel-5">
+          <div class="success-wrap">
+            <div class="success-icon">✦</div>
+            <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;margin-bottom:.75rem">
+              ¡Reserva confirmada!
+            </h3>
+            <p style="color:var(--text-muted);max-width:380px;margin:0 auto;font-size:.9rem;line-height:1.7" id="successMsg"></p>
+            <div class="success-actions">
+              <button class="btn btn-secondary" onclick="downloadTurnoICS()">
+                📅 Agregar al calendario
+              </button>
+              <button class="btn btn-outline" onclick="resetBooking()">
+                Hacer otra reserva
+              </button>
+            </div>
+            <p style="font-size:.75rem;color:var(--text-muted);margin-top:1.5rem">
+              El archivo .ics se abre directamente en el Calendario de tu iPhone
+            </p>
+          </div>
+        </div>
+
+      </div><!-- /booking-body -->
+    </div><!-- /booking-container -->
+  </div>
+</section>
+
+<!-- ══ FOOTER ════════════════════════════════════════════════ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-logo">✦ <span>mi negocio</span></div>
+    <ul class="footer-links">
+      <li><a href="#inicio">Inicio</a></li>
+      <li><a href="#servicios">Servicios</a></li>
+      <li><a href="#turnos">Turnos</a></li>
+      <li><a href="admin.html">Admin</a></li>
+    </ul>
+  </div>
+  <div class="footer-copy">
+    <span>© 2025 · Todos los derechos reservados</span>
+    <span>Hecho con 💛</span>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script>
+// ════════════════════════════════════════════════════════════
+//  ESTADO DE LA RESERVA
+// ════════════════════════════════════════════════════════════
+const booking = {
+  fecha:    null,   // 'YYYY-MM-DD'
+  slot:     null,   // '10:00'
+  servicio: null,   // objeto servicio
+  nombre:   '',
+  mail:     '',
+  tel:      '',
+  nota:     '',
+};
+
+let currentPanel = 1;
+let calYear  = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+
+// ════════════════════════════════════════════════════════════
+//  NAVEGACIÓN ENTRE PANELES
+// ════════════════════════════════════════════════════════════
+function goPanel(n) {
+  document.getElementById('panel-' + currentPanel).classList.remove('active');
+  document.getElementById('ps-' + currentPanel)?.classList.remove('active');
+
+  if (n > currentPanel) {
+    document.getElementById('ps-' + currentPanel)?.classList.add('done');
+  } else {
+    // volver: quitar done del actual
+    document.getElementById('ps-' + currentPanel)?.classList.remove('done');
+  }
+
+  currentPanel = n;
+  document.getElementById('panel-' + n).classList.add('active');
+  document.getElementById('ps-' + n)?.classList.add('active');
+
+  if (n === 2) renderSvcSelect();
+  if (n === 4) renderConfirm();
+
+  window.scrollTo({ top: document.getElementById('turnos').offsetTop - 80, behavior: 'smooth' });
+}
+
+// ════════════════════════════════════════════════════════════
+//  PANEL 1 — CALENDARIO
+// ════════════════════════════════════════════════════════════
+function changeMonth(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0)  { calMonth = 11; calYear--; }
+  renderCal();
+}
+
+function renderCal() {
+  const agenda = getAgenda();
+  const today  = new Date(); today.setHours(0,0,0,0);
+  const first  = new Date(calYear, calMonth, 1);
+  const last   = new Date(calYear, calMonth + 1, 0);
+  const taken  = getTakenSlots();
+
+  document.getElementById('calTitle').textContent =
+    MESES[calMonth] + ' ' + calYear;
+
+  let html = DIAS.map(d => `<div class="cal-dow">${d}</div>`).join('');
+  for (let i = 0; i < first.getDay(); i++) html += '<div class="cal-day empty"></div>';
+
+  for (let d = 1; d <= last.getDate(); d++) {
+    const dt  = new Date(calYear, calMonth, d);
+    const key = fmtDate(dt);
+    const past     = dt < today;
+    const blocked  = agenda.diasBloqueados.includes(key);
+    const enabled  = agenda.diasHabilitados.includes(dt.getDay());
+    const disabled = past || blocked || !enabled;
+    const isToday  = dt.getTime() === today.getTime();
+    const isSel    = booking.fecha === key;
+
+    const slots     = agenda.slots;
+    const takenDay  = taken[key] || [];
+    const hasSlots  = !disabled && slots.some(s => !takenDay.includes(s));
+
+    let cls = 'cal-day';
+    if (disabled)  cls += ' disabled';
+    if (isToday)   cls += ' today';
+    if (isSel)     cls += ' selected';
+    if (hasSlots)  cls += ' has-slots';
+
+    const click = disabled ? '' : `onclick="selectDate('${key}')"`;
+    html += `<div class="${cls}" ${click}>${d}</div>`;
+  }
+  document.getElementById('calGrid').innerHTML = html;
+}
+
+function selectDate(key) {
+  booking.fecha = key;
+  booking.slot  = null;
+  document.getElementById('btnP1').disabled = true;
+  renderCal();
+  renderSlots(key);
+}
+
+function renderSlots(key) {
+  const agenda = getAgenda();
+  const taken  = (getTakenSlots()[key] || []);
+  const slots  = agenda.slots;
+  const dt     = new Date(key + 'T00:00:00');
+
+  let html = `<p class="slots-date">${fmtDateHuman(dt)}</p>`;
+
+  if (!slots.length) {
+    html += '<p class="slots-empty">Sin horarios para este día.</p>';
+  } else {
+    html += '<div class="slots-grid">';
+    html += slots.map(s => {
+      const isTaken = taken.includes(s);
+      const isSel   = booking.slot === s;
+      return `<button class="slot-btn ${isTaken ? 'taken' : ''} ${isSel ? 'selected' : ''}"
+        ${isTaken ? 'disabled' : `onclick="selectSlot('${s}')"`}>${s}</button>`;
+    }).join('');
+    html += '</div>';
+  }
+
+  document.getElementById('slotsWrap').innerHTML = html;
+}
+
+function selectSlot(s) {
+  booking.slot = s;
+  document.getElementById('btnP1').disabled = false;
+  renderSlots(booking.fecha);
+}
+
+// ════════════════════════════════════════════════════════════
+//  PANEL 2 — SERVICIO
+// ════════════════════════════════════════════════════════════
+function renderSvcSelect() {
+  const agenda = getAgenda();
+  const svcs   = agenda.servicios || getDefaultServicios();
+
+  // Agrupar
+  const grupos = {};
+  svcs.forEach(s => {
+    if (!grupos[s.grupo]) grupos[s.grupo] = [];
+    grupos[s.grupo].push(s);
+  });
+
+  let html = '';
+  Object.entries(grupos).forEach(([grupo, items]) => {
+    html += `<div style="grid-column:1/-1;font-size:.7rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-top:.5rem">${grupo}</div>`;
+    html += items.map(s => `
+      <div class="svc-option ${booking.servicio?.id === s.id ? 'selected' : ''}"
+           onclick="selectServicio('${s.id}')">
+        <div class="svc-option-grupo">${s.grupo}</div>
+        <div class="svc-option-nombre">${s.nombre}</div>
+        <div class="svc-option-dur">⏱ ${s.duracion} min</div>
+      </div>
+    `).join('');
+  });
+
+  document.getElementById('svcSelectGrid').innerHTML = html;
+}
+
+function selectServicio(id) {
+  const svcs = (getAgenda().servicios || getDefaultServicios());
+  booking.servicio = svcs.find(s => s.id === id);
+  document.getElementById('btnP2').disabled = false;
+  renderSvcSelect();
+}
+
+// ════════════════════════════════════════════════════════════
+//  PANEL 3 — DATOS
+// ════════════════════════════════════════════════════════════
+function validateDatos() {
+  const nombre = document.getElementById('inputNombre').value.trim();
+  const mail   = document.getElementById('inputMail').value.trim();
+  if (!nombre) { showToast('⚠ Ingresá tu nombre'); return; }
+  if (!mail || !mail.includes('@')) { showToast('⚠ Ingresá un mail válido'); return; }
+  booking.nombre = nombre;
+  booking.mail   = mail;
+  booking.tel    = document.getElementById('inputTel').value.trim();
+  booking.nota   = document.getElementById('inputNota').value.trim();
+  goPanel(4);
+}
+
+// ════════════════════════════════════════════════════════════
+//  PANEL 4 — CONFIRMAR
+// ════════════════════════════════════════════════════════════
+function renderConfirm() {
+  const dt = new Date(booking.fecha + 'T00:00:00');
+  document.getElementById('confirmBox').innerHTML = `
+    <div class="confirm-row">
+      <span class="cl">Fecha</span>
+      <span class="cv">${fmtDateHuman(dt)}</span>
+    </div>
+    <div class="confirm-row">
+      <span class="cl">Horario</span>
+      <span class="cv">${booking.slot} hs</span>
+    </div>
+    <div class="confirm-row">
+      <span class="cl">Servicio</span>
+      <span class="cv">${booking.servicio.nombre}</span>
+    </div>
+    <div class="confirm-row">
+      <span class="cl">Duración estimada</span>
+      <span class="cv">${booking.servicio.duracion} min</span>
+    </div>
+    <div class="confirm-row">
+      <span class="cl">Nombre</span>
+      <span class="cv">${booking.nombre}</span>
+    </div>
+    <div class="confirm-row">
+      <span class="cl">Mail de confirmación</span>
+      <span class="cv">${booking.mail}</span>
+    </div>
+    ${booking.nota ? `
+    <div class="confirm-row">
+      <span class="cl">Nota</span>
+      <span class="cv">${booking.nota}</span>
+    </div>` : ''}
+  `;
+}
+
+// ════════════════════════════════════════════════════════════
+//  CONFIRMAR TURNO
+// ════════════════════════════════════════════════════════════
+function confirmarTurno() {
+  const btn = document.getElementById('btnConfirmar');
+  btn.innerHTML = '<span class="loader"></span>';
+  btn.disabled  = true;
+
+  const turno = {
+    id:       Date.now().toString(),
+    fecha:    booking.fecha,
+    horario:  booking.slot,
+    servicio: booking.servicio.nombre,
+    duracion: booking.servicio.duracion,
+    nombre:   booking.nombre,
+    mail:     booking.mail,
+    tel:      booking.tel,
+    nota:     booking.nota,
+    estado:   'pendiente',
+    creadoEn: new Date().toISOString(),
+  };
+
+  // Guardar turno
+  DB.push('turnos', turno);
+
+  // Bloquear el slot
+  addTakenSlot(turno.fecha, turno.horario);
+
+  // Mensaje de éxito
+  const dt = new Date(turno.fecha + 'T00:00:00');
+  document.getElementById('successMsg').innerHTML =
+    `Te esperamos el <strong>${fmtDateHuman(dt)}</strong> a las <strong>${turno.horario} hs</strong> para tu <strong>${turno.servicio}</strong>.<br><br>
+    Guardá el turno en tu calendario para no olvidarlo.`;
+
+  // Guardar para el .ics
+  window._lastTurno = turno;
+
+  setTimeout(() => {
+    goPanel(5);
+    // Marcar steps como done
+    ['ps-1','ps-2','ps-3','ps-4'].forEach(id => {
+      document.getElementById(id)?.classList.add('done');
+      document.getElementById(id)?.classList.remove('active');
+    });
+  }, 600);
+}
+
+function downloadTurnoICS() {
+  if (!window._lastTurno) return;
+  downloadICS(window._lastTurno);
+}
+
+function resetBooking() {
+  Object.assign(booking, { fecha: null, slot: null, servicio: null, nombre: '', mail: '', tel: '', nota: '' });
+  window._lastTurno = null;
+  ['ps-1','ps-2','ps-3','ps-4'].forEach(id => {
+    document.getElementById(id)?.classList.remove('done','active');
+  });
+  currentPanel = 0;
+  goPanel(1);
+  renderCal();
+}
+
+// ════════════════════════════════════════════════════════════
+//  SECCIÓN SERVICIOS (informativa)
+// ════════════════════════════════════════════════════════════
+function renderServiciosLista() {
+  const svcs = (getAgenda().servicios || getDefaultServicios());
+  const grupos = {};
+  svcs.forEach(s => {
+    if (!grupos[s.grupo]) grupos[s.grupo] = [];
+    grupos[s.grupo].push(s);
+  });
+
+  document.getElementById('serviciosLista').innerHTML =
+    Object.entries(grupos).map(([grupo, items]) => `
+      <div>
+        <div class="servicio-grupo-titulo">${grupo}</div>
+        <div class="servicios-grid">
+          ${items.map(s => `
+            <div class="servicio-card">
+              <div class="servicio-card-nombre">${s.nombre}</div>
+              <div class="servicio-card-dur">⏱ ${s.duracion} min</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+}
+
+// ════════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════════
+renderCal();
+renderServiciosLista();
+</script>
+</body>
+</html>
