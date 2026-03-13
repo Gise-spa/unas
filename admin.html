@@ -288,9 +288,10 @@
       background: rgba(61,32,32,0.35);
       backdrop-filter: blur(4px);
       z-index: 200;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
-      padding: 1rem;
+      padding: 1.5rem 1rem;
+      overflow-y: auto;
     }
     .modal-overlay.open { display: flex; }
     .modal-box {
@@ -302,6 +303,7 @@
       max-width: 520px;
       box-shadow: var(--shadow-lg);
       animation: panelIn 0.25s ease;
+      margin: auto;
     }
     .modal-header {
       display: flex;
