@@ -508,6 +508,7 @@
     <div class="dash-nav-logo">✦ <span>Admin</span></div>
     <div class="dash-nav-right">
       <button class="theme-btn" aria-label="Cambiar tema"></button>
+      <button class="btn btn-secondary btn-sm" onclick="sincronizarDesdeSheet()">↻ Sync Drive</button>
       <a href="index.html" class="btn btn-outline btn-sm" target="_blank">Ver sitio →</a>
       <button class="btn btn-ghost btn-sm" onclick="doLogout()">Salir</button>
     </div>
@@ -755,6 +756,52 @@
 
 <script src="js/main.js"></script>
 <script>
+// ════════════════════════════════════════════════════════════
+//  CONFIGURACIÓN — URL de tu Apps Script
+// ════════════════════════════════════════════════════════════
+const API_URL = 'https://script.google.com/macros/s/AKfycbx7Q7Qpw3TQ2Pv8CYLLlc7qXoDZpz0kWLUaJB0c1wK0cwPfb2nPHb6QbQhWvSDadrJ6/exec';
+
+// ── Llamadas a la API ──────────────────────────────────────
+async function apiPost(data) {
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(data),
+    });
+    return { ok: true };
+  } catch(e) {
+    console.warn('API error:', e);
+    return { error: e.message };
+  }
+}
+
+async function apiGet(sheet) {
+  try {
+    const res = await fetch(API_URL + '?sheet=' + sheet);
+    const json = await res.json();
+    return json.data || [];
+  } catch(e) {
+    console.warn('apiGet error:', e);
+    return [];
+  }
+}
+
+async function sincronizarDesdeSheet() {
+  showToast('↻ Sincronizando con Drive...');
+  const [turnos, inventario] = await Promise.all([
+    apiGet('turnos'),
+    apiGet('inventario'),
+  ]);
+  if (turnos.length)     saveTurnos(turnos);
+  if (inventario.length) saveInventario(inventario);
+  renderTurnos();
+  renderInventario();
+  renderInvTabs();
+  showToast('✓ Sincronizado con tu Google Sheet');
+}
+
 
 // ════════════════════════════════════════════════════════════
 //  LOGIN
@@ -782,6 +829,8 @@ function initDashboard() {
   renderInventario();
   renderInvTabs();
   renderCategorias();
+  // Cargar datos desde Google Sheet al iniciar
+  sincronizarDesdeSheet();
 }
 
 // ════════════════════════════════════════════════════════════
@@ -869,6 +918,7 @@ function cambiarEstado(id, estado) {
   if (estado === 'cancelado') removeTakenSlot(arr[idx].fecha, arr[idx].horario);
   arr[idx].estado = estado;
   saveTurnos(arr);
+  apiPost({ action: 'updateEstado', id: id, estado: estado });
   renderTurnos();
   showToast(estado === 'confirmado' ? '✓ Turno confirmado' : '✗ Turno cancelado');
 }
@@ -1119,6 +1169,7 @@ function ajustarStock(id, delta) {
   if (idx < 0) return;
   arr[idx].stock = Math.max(0, (Number(arr[idx].stock) || 0) + delta);
   saveInventario(arr);
+  apiPost({ action: 'updateStock', id: id, stock: arr[idx].stock });
   renderInventario();
 }
 
@@ -1128,6 +1179,7 @@ function toggleVisibilidad(id) {
   if (idx < 0) return;
   arr[idx].visibilidad = arr[idx].visibilidad === 'publico' ? 'privado' : 'publico';
   saveInventario(arr);
+  apiPost({ action: 'updateVis', id: id, vis: arr[idx].visibilidad });
   renderInventario();
   showToast(arr[idx].visibilidad === 'publico' ? '👁 Ahora es público' : '🔒 Ahora es privado');
 }
@@ -1234,13 +1286,21 @@ function guardarProducto() {
   cerrarModal();
   renderInventario();
   renderInvTabs();
-  showToast(idx >= 0 ? '✓ Producto actualizado' : '✓ Producto agregado');
+  // Sincronizar con Google Sheet
+  apiPost({ action: 'saveInventario', row: producto }).then(r => {
+    // Si había foto nueva, subirla a Drive
+    if (window._fotoB64 && window._fotoB64.startsWith('data:')) {
+      apiPost({ action: 'uploadFoto', id: producto.id, b64: window._fotoB64, nombre: producto.id });
+    }
+  });
+  showToast(idx >= 0 ? '✓ Producto guardado en Drive' : '✓ Producto agregado a Drive');
 }
 
 function eliminarProducto(id) {
   if (!confirm('¿Eliminar este producto?')) return;
   const arr = getInventario().filter(p => p.id !== id);
   saveInventario(arr);
+  apiPost({ action: 'deleteRow', sheet: 'inventario', id: id });
   renderInventario();
   renderInvTabs();
   showToast('Producto eliminado');
