@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catálogo — Mi negocio</title>
+  <meta name="description" content="Catálogo de esmaltes y productos disponibles." />
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .page-hero {
+      padding: calc(var(--nav-h) + 3.5rem) clamp(1.25rem,5vw,3rem) 3rem;
+      text-align: center;
+      background:
+        radial-gradient(ellipse 60% 50% at 50% 0%, rgba(251,207,232,0.45) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 40% at 20% 80%, rgba(253,230,138,0.35) 0%, transparent 55%),
+        var(--bg);
+    }
+    .page-hero .eyebrow { margin-bottom: .6rem; }
+    .page-hero h1 { margin-bottom: .75rem; }
+    .page-hero p {
+      color: var(--text-muted);
+      max-width: 460px;
+      margin: 0 auto;
+      font-size: .95rem;
+    }
+
+    /* Filtros */
+    .filtros-bar {
+      max-width: 1160px;
+      margin: 2.5rem auto 0;
+      padding: 0 clamp(1.25rem,5vw,3rem);
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      flex-wrap: wrap;
+    }
+    .filtro-chip {
+      padding: .4rem 1rem;
+      border-radius: 50px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-muted);
+      font-size: .8rem;
+      cursor: pointer;
+      transition: all .18s;
+      white-space: nowrap;
+    }
+    .filtro-chip:hover { border-color: var(--accent); color: var(--accent); }
+    .filtro-chip.active {
+      background: var(--bg-yellow);
+      border-color: var(--gold);
+      color: var(--text);
+      font-weight: 500;
+    }
+    .buscar-wrap {
+      margin-left: auto;
+      position: relative;
+    }
+    .buscar-wrap input {
+      padding: .45rem 1rem .45rem 2.2rem;
+      border-radius: 50px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .82rem;
+      outline: none;
+      width: 200px;
+      transition: border-color .2s, width .3s;
+    }
+    .buscar-wrap input:focus {
+      border-color: var(--accent);
+      width: 240px;
+    }
+    .buscar-icon {
+      position: absolute;
+      left: .75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: .85rem;
+      pointer-events: none;
+    }
+
+    /* Grid de productos */
+    .productos-section {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 2rem clamp(1.25rem,5vw,3rem) 5rem;
+    }
+    .productos-count {
+      font-size: .8rem;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+    }
+    .productos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1.25rem;
+    }
+
+    /* Card producto */
+    .producto-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      transition: transform .22s, box-shadow .22s;
+    }
+    .producto-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+    }
+    .producto-foto {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      display: block;
+      background: var(--bg-pink);
+    }
+    .producto-foto-placeholder {
+      width: 100%;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+    }
+    .producto-body {
+      padding: 1rem;
+    }
+    .producto-cat {
+      font-size: .68rem;
+      font-weight: 500;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: .3rem;
+    }
+    .producto-nombre {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.05rem;
+      color: var(--text);
+      margin-bottom: .2rem;
+    }
+    .producto-marca {
+      font-size: .78rem;
+      color: var(--text-muted);
+      margin-bottom: .6rem;
+    }
+    .producto-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .7rem 1rem;
+      border-top: 1px solid var(--border);
+    }
+    .color-dot {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .stock-badge {
+      font-size: .72rem;
+      font-weight: 500;
+      padding: .18rem .6rem;
+      border-radius: 50px;
+    }
+
+    /* Skeleton loader */
+    .skeleton-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .skeleton {
+      background: linear-gradient(90deg,
+        var(--border) 25%,
+        var(--bg) 50%,
+        var(--border) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+    }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+    .sk-img  { width: 100%; aspect-ratio: 1; }
+    .sk-line { height: 13px; margin: .85rem .85rem .4rem; border-radius: 6px; }
+    .sk-line.short { width: 60%; }
+
+    /* Estado vacío */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-muted);
+      grid-column: 1 / -1;
+    }
+    .empty-state .empty-icon {
+      font-size: 3rem;
+      display: block;
+      margin-bottom: 1rem;
+      opacity: .4;
+    }
+
+    @media (max-width: 600px) {
+      .buscar-wrap { margin-left: 0; width: 100%; }
+      .buscar-wrap input { width: 100%; }
+      .buscar-wrap input:focus { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html" class="nav-logo">✦ <span>mi negocio</span></a>
+  <ul class="nav-links">
+    <li><a href="index.html">Inicio</a></li>
+    <li><a href="catalogo.html" class="active">Catálogo</a></li>
+    <li><a href="index.html#turnos">Turnos</a></li>
+    <li><a href="admin.html" class="nav-admin">Admin</a></li>
+  </ul>
+  <div class="nav-right">
+    <button class="theme-btn" aria-label="Cambiar tema"></button>
+    <button class="hamburger" aria-label="Menú">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Hero -->
+<div class="page-hero">
+  <div class="eyebrow reveal">Productos disponibles</div>
+  <h1 class="reveal" style="transition-delay:.08s">Catálogo</h1>
+  <p class="reveal" style="transition-delay:.15s">
+    Explorá todos los esmaltes y productos disponibles.
+  </p>
+</div>
+
+<!-- Filtros -->
+<div class="filtros-bar reveal" id="filtrosBar">
+  <div class="filtro-chip active" data-cat="">Todos</div>
+  <!-- Las categorías se agregan dinámicamente -->
+  <div class="buscar-wrap">
+    <span class="buscar-icon">🔍</span>
+    <input type="text" id="buscarInput" placeholder="Buscar…" oninput="filtrar()">
+  </div>
+</div>
+
+<!-- Productos -->
+<div class="productos-section">
+  <div class="productos-count" id="productosCount"></div>
+  <div class="productos-grid" id="productosGrid">
+    <!-- Skeletons mientras carga -->
+    <div class="skeleton-card"><div class="skeleton sk-img"></div><div class="skeleton sk-line"></div><div class="skeleton sk-line short"></div></div>
+    <div class="skeleton-card"><div class="skeleton sk-img"></div><div class="skeleton sk-line"></div><div class="skeleton sk-line short"></div></div>
+    <div class="skeleton-card"><div class="skeleton sk-img"></div><div class="skeleton sk-line"></div><div class="skeleton sk-line short"></div></div>
+    <div class="skeleton-card"><div class="skeleton sk-img"></div><div class="skeleton sk-line"></div><div class="skeleton sk-line short"></div></div>
+    <div class="skeleton-card"><div class="skeleton sk-img"></div><div class="skeleton sk-line"></div><div class="skeleton sk-line short"></div></div>
+    <div class="skeleton-card"><div class="skeleton sk-img"></div><div class="skeleton sk-line"></div><div class="skeleton sk-line short"></div></div>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-logo">✦ <span>mi negocio</span></div>
+    <ul class="footer-links">
+      <li><a href="index.html">Inicio</a></li>
+      <li><a href="catalogo.html">Catálogo</a></li>
+      <li><a href="index.html#turnos">Turnos</a></li>
+    </ul>
+  </div>
+  <div class="footer-copy">
+    <span>© 2025 · Todos los derechos reservados</span>
+    <span>Hecho con 💛</span>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbx7Q7Qpw3TQ2Pv8CYLLlc7qXoDZpz0kWLUaJB0c1wK0cwPfb2nPHb6QbQhWvSDadrJ6/exec';
+
+let todosLosProductos = [];
+let catActiva = '';
+
+// ── Cargar productos ───────────────────────────────────────
+async function cargarProductos() {
+  try {
+    // Intentar desde API primero
+    const res  = await fetch(API_URL + '?sheet=inventario');
+    const json = await res.json();
+    const data = json.data || [];
+    // Solo mostrar los públicos
+    todosLosProductos = data.filter(p =>
+      String(p.visibilidad).toLowerCase() === 'publico'
+    );
+  } catch(e) {
+    // Fallback a localStorage si la API falla
+    todosLosProductos = getInventario().filter(p => p.visibilidad === 'publico');
+  }
+
+  construirFiltros();
+  filtrar();
+}
+
+// ── Construir chips de categorías ──────────────────────────
+function construirFiltros() {
+  const cats = [...new Set(todosLosProductos.map(p => p.categoria).filter(Boolean))].sort();
+  const bar  = document.getElementById('filtrosBar');
+  // Quitar chips viejos excepto "Todos" y el buscador
+  bar.querySelectorAll('.filtro-chip:not([data-cat=""])').forEach(el => el.remove());
+  const buscar = bar.querySelector('.buscar-wrap');
+  cats.forEach(c => {
+    const chip = document.createElement('div');
+    chip.className = 'filtro-chip';
+    chip.dataset.cat = c;
+    chip.textContent = c;
+    chip.onclick = () => setCat(c);
+    bar.insertBefore(chip, buscar);
+  });
+}
+
+function setCat(cat) {
+  catActiva = cat;
+  document.querySelectorAll('.filtro-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.cat === cat);
+  });
+  filtrar();
+}
+
+// ── Filtrar y renderizar ───────────────────────────────────
+function filtrar() {
+  const q = (document.getElementById('buscarInput').value || '').toLowerCase();
+  const lista = todosLosProductos.filter(p => {
+    const matchCat = !catActiva || p.categoria === catActiva;
+    const matchQ   = !q ||
+      (p.nombre||'').toLowerCase().includes(q) ||
+      (p.marca||'').toLowerCase().includes(q);
+    return matchCat && matchQ;
+  });
+  renderProductos(lista);
+}
+
+// ── Renderizar grid ────────────────────────────────────────
+function renderProductos(lista) {
+  const grid = document.getElementById('productosGrid');
+  const count = document.getElementById('productosCount');
+
+  count.textContent = lista.length
+    ? `${lista.length} producto${lista.length !== 1 ? 's' : ''}`
+    : '';
+
+  if (!lista.length) {
+    grid.innerHTML = `
+      <div class="empty-state">
+        <span class="empty-icon">💅</span>
+        <p>${todosLosProductos.length === 0
+          ? 'Todavía no hay productos publicados.'
+          : 'No encontramos productos con ese filtro.'}</p>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = lista.map(p => {
+    const stock = Number(p.stock) || Number(p.stock === 0 ? 0 : p.stock);
+    let stockHtml = '';
+    if (stock <= 0) {
+      stockHtml = `<span class="stock-badge" style="background:rgba(239,68,68,.1);color:#dc2626">Sin stock</span>`;
+    } else if (stock <= 2) {
+      stockHtml = `<span class="stock-badge" style="background:rgba(245,158,11,.1);color:#b45309">Últimos</span>`;
+    } else {
+      stockHtml = `<span class="stock-badge" style="background:rgba(34,197,94,.1);color:#16a34a">Disponible</span>`;
+    }
+
+    const fotoHtml = p.fotoUrl
+      ? `<img class="producto-foto" src="${p.fotoUrl}" alt="${p.nombre}" loading="lazy">`
+      : `<div class="producto-foto-placeholder" style="background:${p.color || 'var(--bg-pink)'}">
+           <span style="font-size:3rem;opacity:.3">💅</span>
+         </div>`;
+
+    return `
+      <article class="producto-card reveal">
+        ${fotoHtml}
+        <div class="producto-body">
+          <div class="producto-cat">${p.categoria || ''}</div>
+          <div class="producto-nombre">${p.nombre || '—'}</div>
+          <div class="producto-marca">${p.marca || ''}</div>
+        </div>
+        <div class="producto-footer">
+          ${p.color
+            ? `<span class="color-dot" style="background:${p.color}" title="${p.color}"></span>`
+            : '<span></span>'}
+          ${stockHtml}
+        </div>
+      </article>`;
+  }).join('');
+
+  // Activar animaciones en los nuevos elementos
+  document.querySelectorAll('.reveal:not(.visible)').forEach(el => {
+    revealObserver.observe(el);
+  });
+}
+
+// ── Init ───────────────────────────────────────────────────
+cargarProductos();
+</script>
+</body>
+</html>
