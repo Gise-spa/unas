@@ -526,6 +526,7 @@
   <ul class="nav-links">
     <li><a href="#inicio">Inicio</a></li>
     <li><a href="#servicios">Servicios</a></li>
+    <li><a href="catalogo.html">Catálogo</a></li>
     <li><a href="#turnos">Turnos</a></li>
     <li><a href="admin.html" class="nav-admin">Admin</a></li>
   </ul>
@@ -744,6 +745,7 @@
     <ul class="footer-links">
       <li><a href="#inicio">Inicio</a></li>
       <li><a href="#servicios">Servicios</a></li>
+      <li><a href="catalogo.html">Catálogo</a></li>
       <li><a href="#turnos">Turnos</a></li>
       <li><a href="admin.html">Admin</a></li>
     </ul>
@@ -756,6 +758,26 @@
 
 <script src="js/main.js"></script>
 <script>
+// ════════════════════════════════════════════════════════════
+//  CONFIGURACIÓN API
+// ════════════════════════════════════════════════════════════
+const API_URL = 'https://script.google.com/macros/s/AKfycbx7Q7Qpw3TQ2Pv8CYLLlc7qXoDZpz0kWLUaJB0c1wK0cwPfb2nPHb6QbQhWvSDadrJ6/exec';
+
+async function apiPost(data) {
+  try {
+    await fetch(API_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(data),
+    });
+    return { ok: true };
+  } catch(e) {
+    console.warn('API error:', e);
+    return { error: e.message };
+  }
+}
+
 // ════════════════════════════════════════════════════════════
 //  ESTADO DE LA RESERVA
 // ════════════════════════════════════════════════════════════
@@ -996,11 +1018,14 @@ function confirmarTurno() {
     creadoEn: new Date().toISOString(),
   };
 
-  // Guardar turno
+  // Guardar turno en localStorage
   DB.push('turnos', turno);
 
   // Bloquear el slot
   addTakenSlot(turno.fecha, turno.horario);
+
+  // Guardar en Google Sheet
+  apiPost({ action: 'saveTurno', row: turno });
 
   // Mensaje de éxito
   const dt = new Date(turno.fecha + 'T00:00:00');
