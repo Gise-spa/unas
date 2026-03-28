@@ -689,6 +689,37 @@
   </div><!-- /dash-layout -->
 </div><!-- /dashboard -->
 
+<!-- ══ MODAL INPUT ══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalInput">
+  <div class="modal-box" style="max-width:380px">
+    <div class="modal-header">
+      <h3 id="inputModalTitulo" style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:400">Renombrar</h3>
+      <button class="modal-close" onclick="cerrarInputModal()">×</button>
+    </div>
+    <div class="form-group">
+      <label id="inputModalLabel">Nuevo nombre</label>
+      <input type="text" id="inputModalVal" placeholder="">
+    </div>
+    <div style="display:flex;gap:.6rem;margin-top:.5rem">
+      <button class="btn btn-primary" style="flex:1" onclick="confirmarInputModal()">Guardar</button>
+      <button class="btn btn-outline" onclick="cerrarInputModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL CONFIRMAR ══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalConfirmar">
+  <div class="modal-box" style="max-width:380px;text-align:center">
+    <div style="font-size:2rem;margin-bottom:1rem" id="confirmIcon">⚠️</div>
+    <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:400;margin-bottom:.6rem" id="confirmTitulo">¿Estás segura?</h3>
+    <p style="font-size:.88rem;color:var(--text-muted);margin-bottom:1.75rem;line-height:1.6" id="confirmMensaje"></p>
+    <div style="display:flex;gap:.6rem">
+      <button class="btn btn-outline" style="flex:1" onclick="cerrarConfirm()">Cancelar</button>
+      <button class="btn btn-primary" style="flex:1;background:rgba(239,68,68,.85)" id="confirmBtn">Eliminar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ MODAL PRODUCTO ════════════════════════════════════════ -->
 <div class="modal-overlay" id="modalProducto">
   <div class="modal-box">
@@ -838,16 +869,79 @@ async function forzarSync() {
 
 // Limpiar caché local del inventario
 function limpiarCache() {
-  if (!confirm('¿Limpiar el inventario local y recargar desde Google Sheet?')) return;
-  localStorage.removeItem('inventario');
-  localStorage.removeItem('deleted_ids');
-  forzarSync().then(() => {
-    renderInventario();
-    renderInvTabs();
-    showToast('✓ Caché limpiado');
+  showConfirm({
+    titulo: 'Limpiar caché local',
+    mensaje: 'Se borra el inventario guardado en este navegador y se recarga desde Google Sheet.',
+    icono: '🗑',
+    btnTxt: 'Limpiar',
+    btnColor: 'var(--gold)',
+    onOk: () => {
+      localStorage.removeItem('inventario');
+      localStorage.removeItem('deleted_ids');
+      forzarSync().then(() => {
+        renderInventario();
+        renderInvTabs();
+        showToast('✓ Caché limpiado');
+      });
+    }
   });
 }
 
+
+// ════════════════════════════════════════════════════════════
+//  MODAL DE INPUT (reemplaza prompt() nativo)
+// ════════════════════════════════════════════════════════════
+let _inputModalCallback = null;
+
+function showInputModal({ titulo, label, valorActual = '', placeholder = '', onOk }) {
+  document.getElementById('inputModalTitulo').textContent = titulo;
+  document.getElementById('inputModalLabel').textContent  = label;
+  document.getElementById('inputModalVal').value          = valorActual;
+  document.getElementById('inputModalVal').placeholder    = placeholder;
+  _inputModalCallback = onOk;
+  document.getElementById('modalInput').classList.add('open');
+  setTimeout(() => document.getElementById('inputModalVal').focus(), 100);
+}
+
+function confirmarInputModal() {
+  const val = document.getElementById('inputModalVal').value.trim();
+  if (!val) return;
+  cerrarInputModal();
+  if (_inputModalCallback) _inputModalCallback(val);
+}
+
+function cerrarInputModal() {
+  document.getElementById('modalInput').classList.remove('open');
+  _inputModalCallback = null;
+}
+
+// Enter para confirmar
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('modalInput').classList.contains('open')) {
+    confirmarInputModal();
+  }
+  if (e.key === 'Escape') {
+    cerrarInputModal();
+    cerrarConfirm();
+    cerrarModal();
+  }
+});
+
+// ════════════════════════════════════════════════════════════
+//  MODAL DE CONFIRMACIÓN (reemplaza confirm() nativo)
+// ════════════════════════════════════════════════════════════
+function showConfirm({ titulo, mensaje, icono = '🗑', btnTxt = 'Eliminar', btnColor = 'rgba(239,68,68,.85)', onOk }) {
+  document.getElementById('confirmTitulo').textContent  = titulo;
+  document.getElementById('confirmMensaje').textContent = mensaje;
+  document.getElementById('confirmIcon').textContent    = icono;
+  document.getElementById('confirmBtn').textContent     = btnTxt;
+  document.getElementById('confirmBtn').style.background = btnColor;
+  document.getElementById('confirmBtn').onclick = () => { cerrarConfirm(); onOk(); };
+  document.getElementById('modalConfirmar').classList.add('open');
+}
+function cerrarConfirm() {
+  document.getElementById('modalConfirmar').classList.remove('open');
+}
 
 // ════════════════════════════════════════════════════════════
 //  LOGIN
@@ -1173,8 +1267,9 @@ function renderInventario() {
     if (stock <= 0)       { dotCls = 'dot-canc'; estadoTxt = 'Sin stock'; }
     else if (stock <= 2)  { dotCls = 'dot-pend'; estadoTxt = 'Stock bajo'; }
 
-    const fotoHtml = p.foto
-      ? `<img src="${p.foto}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;border:1px solid var(--border)">`
+    const fotoSrc = p.fotoUrl || p.foto || '';
+    const fotoHtml = (fotoSrc && fotoSrc !== '⏳')
+      ? `<img src="${fotoSrc}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;border:1px solid var(--border)" onerror="this.style.display='none'">`
       : `<div style="width:40px;height:40px;border-radius:6px;background:${p.color || 'var(--bg-pink)'};border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--text-muted)">
           ${p.color ? '' : '?'}
         </div>`;
@@ -1261,11 +1356,13 @@ function abrirModalProducto(id) {
     document.getElementById('mStock').value   = p.stock    ?? 1;
     document.getElementById('mNotas').value   = p.notas    || '';
     setVisibilidad(p.visibilidad || 'privado');
-    if (p.foto) {
-      document.getElementById('mFotoPreview').src = p.foto;
+    // Mostrar foto: puede estar en p.fotoUrl (Drive) o p.foto (base64 viejo)
+    const fotoSrc = p.fotoUrl || p.foto || '';
+    if (fotoSrc && fotoSrc !== '⏳') {
+      document.getElementById('mFotoPreview').src = fotoSrc;
       document.getElementById('mFotoPreview').style.display = 'block';
-      document.getElementById('fotoLabel').textContent = '📷 Cambiar foto';
-      window._fotoB64 = p.foto;
+      document.getElementById('fotoLabel').style.display = 'none';
+      window._fotoB64 = '';  // No resubir si no cambia
     }
   } else {
     document.getElementById('mNombre').value  = '';
@@ -1383,19 +1480,25 @@ function guardarProducto() {
 }
 
 function eliminarProducto(id) {
-  if (!confirm('¿Eliminar este producto?')) return;
-  // Guardar en lista negra
-  const deleted = JSON.parse(localStorage.getItem('deleted_ids') || '[]');
-  if (!deleted.includes(String(id))) deleted.push(String(id));
-  localStorage.setItem('deleted_ids', JSON.stringify(deleted));
-  // Borrar localmente usando String comparison
-  const arr = getInventario().filter(p => String(p.id) !== String(id));
-  saveInventario(arr);
-  // Borrar en Google Sheet
-  apiPost({ action: 'deleteRow', sheet: 'inventario', id: id });
-  renderInventario();
-  renderInvTabs();
-  showToast('✓ Producto eliminado');
+  const p = getInventario().find(x => String(x.id) === String(id));
+  const nombre = p ? p.nombre : 'este producto';
+  showConfirm({
+    titulo: 'Eliminar producto',
+    mensaje: `¿Eliminás "${nombre}"? Esta acción no se puede deshacer.`,
+    icono: '🗑',
+    btnTxt: 'Sí, eliminar',
+    onOk: () => {
+      const deleted = JSON.parse(localStorage.getItem('deleted_ids') || '[]');
+      if (!deleted.includes(String(id))) deleted.push(String(id));
+      localStorage.setItem('deleted_ids', JSON.stringify(deleted));
+      const arr = getInventario().filter(p => String(p.id) !== String(id));
+      saveInventario(arr);
+      apiPost({ action: 'deleteRow', sheet: 'inventario', id: id });
+      renderInventario();
+      renderInvTabs();
+      showToast('✓ Producto eliminado');
+    }
+  });
 }
 
 // ── Exportar ────────────────────────────────────────────────
@@ -1466,33 +1569,55 @@ function agregarCategoria() {
 }
 
 function editarCat(i) {
-  const cats    = getCategorias();
-  const nuevo   = prompt('Nuevo nombre para la categoría:', cats[i]);
-  if (!nuevo || nuevo === cats[i]) return;
-  // actualizar productos con esa categoría
-  const inv = getInventario().map(p => p.categoria === cats[i] ? {...p, categoria: nuevo} : p);
-  saveInventario(inv);
-  cats[i] = nuevo;
-  saveCategorias(cats);
-  renderCategorias();
-  renderInvTabs();
-  renderInventario();
-  showToast('✓ Categoría renombrada');
+  const cats = getCategorias();
+  showInputModal({
+    titulo:      'Renombrar categoría',
+    label:       'Nuevo nombre',
+    valorActual: cats[i],
+    placeholder: cats[i],
+    onOk: (nuevo) => {
+      if (nuevo === cats[i]) return;
+      // Actualizar productos con esa categoría
+      const inv = getInventario().map(p =>
+        p.categoria === cats[i] ? {...p, categoria: nuevo} : p
+      );
+      saveInventario(inv);
+      cats[i] = nuevo;
+      saveCategorias(cats);
+      renderCategorias();
+      renderInvTabs();
+      renderInventario();
+      showToast('✓ Categoría renombrada');
+    }
+  });
 }
 
 function eliminarCat(i) {
   const cats = getCategorias();
-  if (!confirm(`¿Eliminar la categoría "${cats[i]}"? Los productos de esa categoría quedarán sin categoría asignada.`)) return;
-  cats.splice(i, 1);
-  saveCategorias(cats);
-  renderCategorias();
-  renderInvTabs();
-  showToast('Categoría eliminada');
+  showConfirm({
+    titulo: 'Eliminar categoría',
+    mensaje: `¿Eliminás "${cats[i]}"? Los productos de esa categoría quedarán sin categoría asignada.`,
+    icono: '🏷',
+    btnTxt: 'Sí, eliminar',
+    onOk: () => {
+      cats.splice(i, 1);
+      saveCategorias(cats);
+      renderCategorias();
+      renderInvTabs();
+      showToast('Categoría eliminada');
+    }
+  });
 }
 
 // Cerrar modal al hacer click afuera
 document.getElementById('modalProducto').addEventListener('click', function(e) {
   if (e.target === this) cerrarModal();
+});
+document.getElementById('modalConfirmar').addEventListener('click', function(e) {
+  if (e.target === this) cerrarConfirm();
+});
+document.getElementById('modalInput').addEventListener('click', function(e) {
+  if (e.target === this) cerrarInputModal();
 });
 
 </script>
