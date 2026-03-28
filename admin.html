@@ -1285,7 +1285,7 @@ function renderInventario() {
       <td style="text-align:center">
         <div class="qty-control">
           <button class="qty-btn" onclick="ajustarStock('${p.id}',-1)">−</button>
-          <span class="qty-num">${stock}</span>
+          <span class="qty-num" data-qty-id="${p.id}">${stock}</span>
           <button class="qty-btn" onclick="ajustarStock('${p.id}',+1)">+</button>
         </div>
       </td>
@@ -1307,12 +1307,17 @@ function renderInventario() {
 function ajustarStock(id, delta) {
   const arr = getInventario();
   const idx = arr.findIndex(p => String(p.id) === String(id));
-  if (idx < 0) { showToast('⚠ Producto no encontrado, recargá la página'); return; }
+  if (idx < 0) {
+    // No está en localStorage, buscarlo igual para actualizar
+    showToast('⚠ Sincronizando...');
+    forzarSync();
+    return;
+  }
   const nuevoStock = Math.max(0, (Number(arr[idx].stock) || 0) + delta);
   arr[idx].stock = nuevoStock;
   saveInventario(arr);
   apiPost({ action: 'updateStock', id: id, stock: nuevoStock });
-  // Actualizar solo el número en pantalla sin rerenderizar todo
+  // Actualizar número en pantalla sin re-renderizar
   const qtyEl = document.querySelector(`[data-qty-id="${id}"]`);
   if (qtyEl) qtyEl.textContent = nuevoStock;
   else renderInventario();
@@ -1321,7 +1326,7 @@ function ajustarStock(id, delta) {
 function toggleVisibilidad(id) {
   const arr = getInventario();
   const idx = arr.findIndex(p => String(p.id) === String(id));
-  if (idx < 0) { showToast('⚠ Producto no encontrado, recargá la página'); return; }
+  if (idx < 0) { showToast('⚠ Sincronizando...'); forzarSync(); return; }
   arr[idx].visibilidad = arr[idx].visibilidad === 'publico' ? 'privado' : 'publico';
   saveInventario(arr);
   apiPost({ action: 'updateVis', id: id, vis: arr[idx].visibilidad });
@@ -1346,8 +1351,8 @@ function abrirModalProducto(id) {
   window._fotoB64 = '';
 
   if (id) {
-    const p = getInventario().find(x => x.id === id);
-    if (!p) return;
+    const p = getInventario().find(x => String(x.id) === String(id));
+    if (!p) { showToast('⚠ Producto no encontrado. Hacé Sync primero.'); return; }
     document.getElementById('mNombre').value  = p.nombre   || '';
     document.getElementById('mMarca').value   = p.marca    || '';
     document.getElementById('mCategoria').value = p.categoria || getCategorias()[0];
@@ -1455,14 +1460,12 @@ function guardarProducto() {
   const arr = getInventario();
   const idx = arr.findIndex(p => p.id === producto.id);
   if (idx >= 0) arr[idx] = producto; else arr.push(producto);
-  // Guardar sin base64 en localStorage (muy pesado, rompe el storage)
-  const productoLocal = {...producto, foto: producto.foto ? '⏳' : ''};
-  if (idx >= 0) arr[idx] = productoLocal; else { arr.pop(); arr.push(productoLocal); }
-  // Reconstruir array correctamente
-  const arrFinal = getInventario();
-  const idxFinal = arrFinal.findIndex(p => p.id === producto.id);
+  // Guardar en localStorage sin base64 (muy pesado)
   const productoSinFoto = {...producto, foto: ''};
-  if (idxFinal >= 0) arrFinal[idxFinal] = productoSinFoto; else arrFinal.push(productoSinFoto);
+  const arrFinal = getInventario();
+  const idxFinal = arrFinal.findIndex(p => String(p.id) === String(producto.id));
+  if (idxFinal >= 0) arrFinal[idxFinal] = productoSinFoto;
+  else arrFinal.push(productoSinFoto);
   saveInventario(arrFinal);
   cerrarModal();
   renderInventario();
