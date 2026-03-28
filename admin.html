@@ -448,135 +448,186 @@
     }
 
     /* Responsive */
+    /* ══ MOBILE — todo en 1 columna, sin scroll horizontal ══ */
     @media (max-width: 768px) {
-      /* Layout */
-      .dash-layout { grid-template-columns: 1fr; }
-      .dash-content { padding: 1rem; }
 
-      /* Sidebar horizontal scrollable */
+      /* Evitar overflow horizontal en toda la página */
+      html, body { overflow-x: hidden; max-width: 100vw; }
+
+      /* Layout: sidebar arriba, contenido abajo */
+      .dash-layout {
+        grid-template-columns: 1fr;
+        width: 100%;
+        overflow-x: hidden;
+      }
+
+      /* Sidebar: barra horizontal con scroll */
       .dash-sidebar {
-        position: static;
+        position: sticky;
+        top: var(--nav-h);
+        z-index: 50;
         height: auto;
         border-right: none;
         border-bottom: 1px solid var(--border);
-        padding: .5rem 0;
+        padding: 0;
         display: flex;
+        flex-direction: row;
         flex-wrap: nowrap;
         overflow-x: auto;
+        overflow-y: hidden;
         -webkit-overflow-scrolling: touch;
-        gap: 0;
         scrollbar-width: none;
+        background: var(--bg-card);
       }
       .dash-sidebar::-webkit-scrollbar { display: none; }
       .sidebar-label { display: none; }
+      .sidebar-icon  { display: none; }
       .sidebar-link {
-        padding: .6rem 1rem;
+        padding: .75rem 1.1rem;
         border-left: none;
         border-bottom: 2px solid transparent;
-        font-size: .78rem;
+        font-size: .8rem;
         white-space: nowrap;
         flex-shrink: 0;
       }
       .sidebar-link.active {
         border-left: none;
         border-bottom-color: var(--accent);
+        background: rgba(232,144,144,0.06);
       }
 
-      /* Stats */
-      .stats-row { grid-template-columns: repeat(2,1fr); gap: .6rem; }
-      .stat-num  { font-size: 1.5rem; }
+      /* Contenido: ancho completo, padding cómodo */
+      .dash-content {
+        width: 100%;
+        max-width: 100%;
+        padding: 1rem;
+        overflow-x: hidden;
+        box-sizing: border-box;
+      }
 
-      /* Tabla — cards en mobile en vez de filas */
-      .table-scroll { overflow-x: visible; }
-      table, thead, tbody, th, td, tr { display: block; }
-      thead { display: none; }
+      /* Stats: 2 columnas */
+      .stats-row {
+        grid-template-columns: 1fr 1fr;
+        gap: .6rem;
+      }
+      .stat-num { font-size: 1.6rem; }
+
+      /* Nav admin */
+      .dash-nav { padding: 0 1rem; gap: .5rem; }
+      .dash-nav .btn-outline { display: none; }
+
+      /* Table card: cada fila se vuelve una tarjeta */
+      .table-card { border-radius: var(--radius-md); }
+      .table-scroll { overflow-x: hidden; }
+      table  { width: 100%; }
+      thead  { display: none; }
       tbody tr {
-        background: var(--bg-card);
+        display: block;
+        background: var(--bg);
         border: 1px solid var(--border);
         border-radius: var(--radius-md);
-        margin-bottom: .75rem;
-        padding: .75rem;
-        position: relative;
+        margin: .75rem 0;
+        padding: .85rem;
       }
       tbody td {
-        border: none;
-        padding: .25rem 0;
-        font-size: .84rem;
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         gap: .5rem;
+        padding: .3rem 0;
+        border: none;
+        font-size: .84rem;
+        line-height: 1.4;
       }
       tbody td::before {
         content: attr(data-label);
         font-size: .68rem;
         font-weight: 500;
-        letter-spacing: .06em;
         text-transform: uppercase;
+        letter-spacing: .06em;
         color: var(--text-muted);
-        min-width: 80px;
+        min-width: 72px;
+        padding-top: 2px;
         flex-shrink: 0;
       }
-      /* Última col de acciones — botones en fila */
+      /* Fila de acciones — sin label, botones en fila */
+      tbody td[data-label=""],
       tbody td:last-child {
         flex-wrap: wrap;
-        gap: .35rem;
-        margin-top: .35rem;
-        padding-top: .5rem;
+        gap: .4rem;
+        padding-top: .6rem;
+        margin-top: .4rem;
         border-top: 1px solid var(--border);
       }
       tbody td:last-child::before { display: none; }
 
-      /* Nav bar admin */
-      .dash-nav { padding: 0 1rem; }
-      .dash-nav .btn-outline { display: none; }
-
-      /* Modal full width */
-      .modal-box {
-        max-width: 100% !important;
-        margin: 0 !important;
-        border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+      /* Toolbar tabla */
+      .table-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: .6rem;
+        padding: .85rem;
       }
+      .table-toolbar-actions {
+        flex-direction: column;
+        width: 100%;
+      }
+      .table-toolbar-actions .input-sm { width: 100%; }
+      .table-toolbar-actions select   { width: 100%; }
+
+      /* Modal desde abajo tipo sheet */
       .modal-overlay {
         align-items: flex-end !important;
         padding: 0 !important;
       }
+      .modal-box {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
 
-      /* Grid formulario modal — 1 col */
-      .modal-box > div[style*="grid"] {
+      /* Formulario modal: 1 columna */
+      .modal-box > div[style*="grid-template-columns"] {
         grid-template-columns: 1fr !important;
       }
 
-      /* Toolbar tabla */
-      .table-toolbar { flex-direction: column; align-items: flex-start; }
-      .table-toolbar-actions { width: 100%; }
-      .table-toolbar-actions .input-sm[type="text"] { width: 100%; }
+      /* Categorías y agenda */
+      .panel-section { padding: 1.1rem; }
+      .toggle-grid { gap: .35rem; }
+      .toggle-chip { font-size: .76rem; padding: .3rem .7rem; }
 
-      /* Inv tabs scroll */
+      /* Inv tabs */
       .inv-tabs {
         flex-wrap: nowrap;
         overflow-x: auto;
         scrollbar-width: none;
-        padding-bottom: .25rem;
+        padding-bottom: .3rem;
+        -webkit-overflow-scrolling: touch;
       }
       .inv-tabs::-webkit-scrollbar { display: none; }
       .inv-tab { flex-shrink: 0; }
 
-      /* Panel section */
-      .panel-section { padding: 1.25rem; }
+      /* Búsqueda inventario */
+      #invBuscar { max-width: 100% !important; width: 100% !important; }
 
-      /* Toggle grid */
-      .toggle-grid { gap: .4rem; }
-      .toggle-chip { font-size: .76rem; padding: .35rem .7rem; }
+      /* Botones stock más grandes (touch) */
+      .qty-btn { width: 34px; height: 34px; font-size: 1.1rem; }
+      .qty-num { font-size: 1rem; min-width: 34px; }
 
-      /* Qty control más grande para touch */
-      .qty-btn { width: 32px; height: 32px; font-size: 1.1rem; }
-      .qty-num  { font-size: 1rem; min-width: 32px; }
+      /* Servicios duración */
+      #serviciosDuracion > div > div > div {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: .4rem;
+      }
     }
 
-    /* Muy pequeño */
     @media (max-width: 400px) {
       .stats-row { grid-template-columns: 1fr 1fr; }
-      .stat-card { padding: .85rem; }
+      .stat-card  { padding: .75rem; }
+      .stat-num   { font-size: 1.35rem; }
     }
   </style>
 </head>
@@ -1138,8 +1189,8 @@ function renderTurnos() {
         <div style="font-size:.76rem;color:var(--text-muted)">${t.mail}</div>
       </td>
       <td data-label="Servicio">${t.servicio}</td>
-      <td data-label="Fecha" style="white-space:nowrap">${fmtDateHuman(dt)}</td>
-      <td data-label="Horario" style="white-space:nowrap">${t.horario} hs · ${t.duracion} min</td>
+      <td data-label="Fecha">${fmtDateHuman(dt)}</td>
+      <td data-label="Horario">${t.horario} hs · ${t.duracion} min</td>
       <td style="white-space:nowrap">
         <div style="display:flex;flex-direction:column;gap:3px">
           ${t.estado==='pendiente' ? `
@@ -1387,15 +1438,15 @@ function renderInventario() {
       </td>
       <td data-label="Marca" style="font-size:.82rem">${p.marca || '—'}</td>
       <td data-label="Categoría"><span class="badge badge-yellow" style="font-size:.7rem">${p.categoria || '—'}</span></td>
-      <td data-label="Stock" style="text-align:center">
+      <td data-label="Stock" style="text-align:left">
         <div class="qty-control">
           <button class="qty-btn" onclick="ajustarStock('${p.id}',-1)">−</button>
           <span class="qty-num" data-qty-id="${p.id}">${stock}</span>
           <button class="qty-btn" onclick="ajustarStock('${p.id}',+1)">+</button>
         </div>
       </td>
-      <td><span class="dot ${dotCls}"></span>${estadoTxt}</td>
-      <td>
+      <td data-label="Estado"><span class="dot ${dotCls}"></span>${estadoTxt}</td>
+      <td data-label="Visib.">
         <span class="vis-toggle ${p.visibilidad||'privado'}"
               onclick="toggleVisibilidad('${p.id}')">
           ${p.visibilidad === 'publico' ? '👁 Público' : '🔒 Privado'}
