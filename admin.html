@@ -5,894 +5,266 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin — Mi negocio</title>
   <link rel="stylesheet" href="css/styles.css" />
-  <style>
-    /* ── Login ── */
-    .login-page {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem;
-      background:
-        radial-gradient(ellipse 60% 60% at 30% 40%, rgba(253,230,138,0.4) 0%, transparent 60%),
-        radial-gradient(ellipse 50% 50% at 75% 65%, rgba(251,207,232,0.45) 0%, transparent 55%),
-        var(--bg);
-    }
-    .login-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-xl);
-      padding: 3rem 2.5rem;
-      width: 100%;
-      max-width: 400px;
-      box-shadow: var(--shadow-lg);
-      text-align: center;
-    }
-    .login-logo {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 1.6rem;
-      font-style: italic;
-      color: var(--text);
-      margin-bottom: 0.4rem;
-    }
-    .login-logo span { color: var(--accent); }
-    .login-sub {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      margin-bottom: 2rem;
-    }
-    .login-error {
-      background: rgba(239,68,68,0.08);
-      border: 1px solid rgba(239,68,68,0.2);
-      color: #dc2626;
-      border-radius: var(--radius-sm);
-      padding: 0.65rem 1rem;
-      font-size: 0.82rem;
-      margin-bottom: 1rem;
-      display: none;
-    }
-
-    /* ── Dashboard ── */
-    .dashboard { display: none; }
-
-    .dash-nav {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 100;
-      height: var(--nav-h);
-      background: var(--bg-nav);
-      backdrop-filter: blur(16px);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 clamp(1.25rem, 4vw, 2.5rem);
-    }
-    .dash-nav-logo {
-      font-family: 'Cormorant Garamond', serif;
-      font-style: italic;
-      font-size: 1.25rem;
-      color: var(--text);
-    }
-    .dash-nav-logo span { color: var(--accent); }
-    .dash-nav-right {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    /* Sidebar + content */
-    .dash-layout {
-      display: grid;
-      grid-template-columns: 220px 1fr;
-      min-height: 100vh;
-      padding-top: var(--nav-h);
-    }
-    .dash-sidebar {
-      background: var(--bg-card);
-      border-right: 1px solid var(--border);
-      padding: 2rem 0;
-      position: sticky;
-      top: var(--nav-h);
-      height: calc(100vh - var(--nav-h));
-      overflow-y: auto;
-    }
-    .sidebar-label {
-      font-size: 0.65rem;
-      font-weight: 500;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      padding: 0 1.5rem;
-      margin-bottom: 0.5rem;
-      margin-top: 1.5rem;
-    }
-    .sidebar-label:first-child { margin-top: 0; }
-    .sidebar-link {
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-      padding: 0.65rem 1.5rem;
-      font-size: 0.85rem;
-      color: var(--text-mid);
-      cursor: pointer;
-      transition: all 0.18s;
-      border-left: 2px solid transparent;
-      user-select: none;
-    }
-    .sidebar-link:hover {
-      background: var(--bg);
-      color: var(--text);
-    }
-    .sidebar-link.active {
-      color: var(--accent);
-      border-left-color: var(--accent);
-      background: rgba(232,144,144,0.06);
-      font-weight: 500;
-    }
-    .sidebar-icon { font-size: 1rem; width: 20px; text-align: center; }
-
-    .dash-content {
-      padding: clamp(1.5rem, 3vw, 2.5rem);
-      max-width: 1000px;
-    }
-
-    /* Stats row */
-    .stats-row {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-    .stat-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      padding: 1.25rem;
-    }
-    .stat-num {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 2rem;
-      color: var(--accent);
-      line-height: 1;
-      margin-bottom: 0.25rem;
-    }
-    .stat-label {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-
-    /* Tabla */
-    .table-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-    }
-    .table-toolbar {
-      padding: 1.1rem 1.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid var(--border);
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
-    .table-toolbar h3 {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 1.15rem;
-      font-weight: 400;
-    }
-    .table-toolbar-actions {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    .table-scroll { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
-    th {
-      text-align: left;
-      padding: 0.75rem 1rem;
-      font-size: 0.68rem;
-      font-weight: 500;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      border-bottom: 1px solid var(--border);
-      white-space: nowrap;
-      background: var(--bg);
-    }
-    td {
-      padding: 0.85rem 1rem;
-      border-bottom: 1px solid var(--border);
-      vertical-align: middle;
-      color: var(--text);
-    }
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: rgba(253,230,138,0.08); }
-
-    /* Input inline */
-    .input-sm {
-      padding: 0.4rem 0.7rem;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.82rem;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    .input-sm:focus { border-color: var(--accent); }
-
-    /* Agenda toggles */
-    .toggle-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-bottom: 1.25rem;
-    }
-    .toggle-chip {
-      padding: 0.4rem 0.9rem;
-      border-radius: 50px;
-      border: 1px solid var(--border);
-      background: var(--bg);
-      color: var(--text-mid);
-      font-size: 0.8rem;
-      cursor: pointer;
-      transition: all 0.18s;
-      user-select: none;
-    }
-    .toggle-chip:hover { border-color: var(--accent); color: var(--accent); }
-    .toggle-chip.on {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
-    }
-    .toggle-chip.on-gold {
-      background: var(--bg-yellow);
-      border-color: var(--gold);
-      color: var(--text);
-    }
-
-    /* Panel sections */
-    .panel-section {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 1.75rem;
-      margin-bottom: 1.5rem;
-    }
-    .panel-section h3 {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 1.15rem;
-      font-weight: 400;
-      margin-bottom: 0.35rem;
-    }
-    .panel-section-sub {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      margin-bottom: 1.25rem;
-    }
-
-    /* Modal */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(61,32,32,0.35);
-      backdrop-filter: blur(4px);
-      z-index: 200;
-      align-items: flex-start;
-      justify-content: center;
-      padding: 1.5rem 1rem;
-      overflow-y: auto;
-    }
-    .modal-overlay.open { display: flex; }
-    .modal-box {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-xl);
-      padding: 2rem;
-      width: 100%;
-      max-width: 520px;
-      box-shadow: var(--shadow-lg);
-      animation: panelIn 0.25s ease;
-      margin: auto;
-    }
-    .modal-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1.5rem;
-    }
-    .modal-header h3 {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 1.3rem;
-      font-weight: 400;
-    }
-    .modal-close {
-      background: none;
-      border: none;
-      font-size: 1.3rem;
-      color: var(--text-muted);
-      cursor: pointer;
-      line-height: 1;
-    }
-    .modal-close:hover { color: var(--text); }
-
-    /* Inventario foto */
-    .foto-upload {
-      border: 1.5px dashed var(--border);
-      border-radius: var(--radius-md);
-      padding: 1.5rem;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.2s;
-      margin-bottom: 1rem;
-    }
-    .foto-upload:hover { border-color: var(--accent); background: rgba(232,144,144,0.04); }
-    .foto-upload input { display: none; }
-    .foto-preview {
-      width: 64px; height: 64px;
-      border-radius: var(--radius-sm);
-      object-fit: cover;
-      margin: 0 auto 0.5rem;
-      border: 1px solid var(--border);
-    }
-
-    /* Stock cantidad */
-    .qty-control {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-    .qty-btn {
-      width: 26px; height: 26px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      background: var(--bg);
-      color: var(--text);
-      font-size: 1rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.15s;
-      line-height: 1;
-    }
-    .qty-btn:hover { border-color: var(--accent); color: var(--accent); }
-    .qty-num {
-      min-width: 28px;
-      text-align: center;
-      font-weight: 500;
-      font-size: 0.9rem;
-    }
-
-    /* Visibilidad toggle */
-    .vis-toggle {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      font-size: 0.75rem;
-      cursor: pointer;
-      padding: 0.2rem 0.6rem;
-      border-radius: 50px;
-      border: 1px solid var(--border);
-      background: var(--bg);
-      transition: all 0.18s;
-      user-select: none;
-    }
-    .vis-toggle.publico {
-      background: rgba(34,197,94,0.1);
-      border-color: rgba(34,197,94,0.3);
-      color: #16a34a;
-    }
-    .vis-toggle.privado {
-      background: var(--bg);
-      color: var(--text-muted);
-    }
-
-    /* Dot estado */
-    .dot {
-      display: inline-block;
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      margin-right: 5px;
-      flex-shrink: 0;
-    }
-    .dot-ok     { background: #22c55e; }
-    .dot-low    { background: #f59e0b; }
-    .dot-out    { background: #ef4444; }
-    .dot-pend   { background: #f59e0b; }
-    .dot-conf   { background: #22c55e; }
-    .dot-canc   { background: #ef4444; }
-
-    /* Tabs inventario */
-    .inv-tabs {
-      display: flex;
-      gap: 0.4rem;
-      margin-bottom: 1.5rem;
-      flex-wrap: wrap;
-    }
-    .inv-tab {
-      padding: 0.45rem 1rem;
-      border-radius: 50px;
-      border: 1px solid var(--border);
-      background: var(--bg);
-      color: var(--text-muted);
-      font-size: 0.8rem;
-      cursor: pointer;
-      transition: all 0.18s;
-    }
-    .inv-tab:hover { border-color: var(--accent); color: var(--accent); }
-    .inv-tab.active {
-      background: var(--bg-yellow);
-      border-color: var(--gold);
-      color: var(--text);
-      font-weight: 500;
-    }
-
-    /* Página activa en sidebar */
-    .dash-tab-content { display: none; }
-    .dash-tab-content.active { display: block; animation: panelIn 0.25s ease; }
-
-    @keyframes panelIn {
-      from { opacity: 0; transform: translateY(8px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Responsive */
-    /* ══ MOBILE — todo en 1 columna, sin scroll horizontal ══ */
-    @media (max-width: 768px) {
-
-      /* Evitar overflow horizontal en toda la página */
-      html, body { overflow-x: hidden; max-width: 100vw; }
-
-      /* Layout: sidebar arriba, contenido abajo */
-      .dash-layout {
-        grid-template-columns: 1fr;
-        width: 100%;
-        overflow-x: hidden;
-      }
-
-      /* Sidebar: barra horizontal con scroll */
-      .dash-sidebar {
-        position: sticky;
-        top: var(--nav-h);
-        z-index: 50;
-        height: auto;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-        padding: 0;
-        display: flex;
-        flex-direction: row;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        overflow-y: hidden;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-        background: var(--bg-card);
-      }
-      .dash-sidebar::-webkit-scrollbar { display: none; }
-      .sidebar-label { display: none; }
-      .sidebar-icon  { display: none; }
-      .sidebar-link {
-        padding: .75rem 1.1rem;
-        border-left: none;
-        border-bottom: 2px solid transparent;
-        font-size: .8rem;
-        white-space: nowrap;
-        flex-shrink: 0;
-      }
-      .sidebar-link.active {
-        border-left: none;
-        border-bottom-color: var(--accent);
-        background: rgba(232,144,144,0.06);
-      }
-
-      /* Contenido: ancho completo, padding cómodo */
-      .dash-content {
-        width: 100%;
-        max-width: 100%;
-        padding: 1rem;
-        overflow-x: hidden;
-        box-sizing: border-box;
-      }
-
-      /* Stats: 2 columnas */
-      .stats-row {
-        grid-template-columns: 1fr 1fr;
-        gap: .6rem;
-      }
-      .stat-num { font-size: 1.6rem; }
-
-      /* Nav admin */
-      .dash-nav { padding: 0 1rem; gap: .5rem; }
-      .dash-nav .btn-outline { display: none; }
-
-      /* Table card: cada fila se vuelve una tarjeta */
-      .table-card { border-radius: var(--radius-md); }
-      .table-scroll { overflow-x: hidden; }
-      table  { width: 100%; }
-      thead  { display: none; }
-      tbody tr {
-        display: block;
-        background: var(--bg);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
-        margin: .75rem 0;
-        padding: .85rem;
-      }
-      tbody td {
-        display: flex;
-        align-items: flex-start;
-        gap: .5rem;
-        padding: .3rem 0;
-        border: none;
-        font-size: .84rem;
-        line-height: 1.4;
-      }
-      tbody td::before {
-        content: attr(data-label);
-        font-size: .68rem;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: .06em;
-        color: var(--text-muted);
-        min-width: 72px;
-        padding-top: 2px;
-        flex-shrink: 0;
-      }
-      /* Fila de acciones — sin label, botones en fila */
-      tbody td[data-label=""],
-      tbody td:last-child {
-        flex-wrap: wrap;
-        gap: .4rem;
-        padding-top: .6rem;
-        margin-top: .4rem;
-        border-top: 1px solid var(--border);
-      }
-      tbody td:last-child::before { display: none; }
-
-      /* Toolbar tabla */
-      .table-toolbar {
-        flex-direction: column;
-        align-items: stretch;
-        gap: .6rem;
-        padding: .85rem;
-      }
-      .table-toolbar-actions {
-        flex-direction: column;
-        width: 100%;
-      }
-      .table-toolbar-actions .input-sm { width: 100%; }
-      .table-toolbar-actions select   { width: 100%; }
-
-      /* Modal desde abajo tipo sheet */
-      .modal-overlay {
-        align-items: flex-end !important;
-        padding: 0 !important;
-      }
-      .modal-box {
-        max-width: 100% !important;
-        width: 100% !important;
-        margin: 0 !important;
-        border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
-        max-height: 90vh;
-        overflow-y: auto;
-      }
-
-      /* Formulario modal: 1 columna */
-      .modal-box > div[style*="grid-template-columns"] {
-        grid-template-columns: 1fr !important;
-      }
-
-      /* Categorías y agenda */
-      .panel-section { padding: 1.1rem; }
-      .toggle-grid { gap: .35rem; }
-      .toggle-chip { font-size: .76rem; padding: .3rem .7rem; }
-
-      /* Inv tabs */
-      .inv-tabs {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        scrollbar-width: none;
-        padding-bottom: .3rem;
-        -webkit-overflow-scrolling: touch;
-      }
-      .inv-tabs::-webkit-scrollbar { display: none; }
-      .inv-tab { flex-shrink: 0; }
-
-      /* Búsqueda inventario */
-      #invBuscar { max-width: 100% !important; width: 100% !important; }
-
-      /* Botones stock más grandes (touch) */
-      .qty-btn { width: 34px; height: 34px; font-size: 1.1rem; }
-      .qty-num { font-size: 1rem; min-width: 34px; }
-
-      /* Servicios duración */
-      #serviciosDuracion > div > div > div {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: .4rem;
-      }
-    }
-
-    @media (max-width: 400px) {
-      .stats-row { grid-template-columns: 1fr 1fr; }
-      .stat-card  { padding: .75rem; }
-      .stat-num   { font-size: 1.35rem; }
-    }
-  </style>
+  <link rel="stylesheet" href="css/admin.css" />
 </head>
 <body>
 
-<!-- ══ LOGIN ════════════════════════════════════════════════ -->
-<div class="login-page" id="loginPage">
-  <div class="login-card">
-    <div class="login-logo">✦ <span>Panel</span> Admin</div>
-    <p class="login-sub">Acceso privado</p>
-    <div class="login-error" id="loginError">Usuario o contraseña incorrectos</div>
-    <form id="loginForm" autocomplete="off">
-      <div class="form-group" style="text-align:left">
-        <label>Usuario</label>
-        <input type="text" id="loginUser" placeholder="Tu usuario" autocomplete="username">
-      </div>
-      <div class="form-group" style="text-align:left">
-        <label>Contraseña</label>
-        <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
-      </div>
-      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:.5rem">
-        Ingresar →
-      </button>
-    </form>
-    <p style="margin-top:1.5rem;font-size:.78rem">
-      <a href="index.html" style="color:var(--text-muted)">← Volver al sitio</a>
-    </p>
+<!-- ══ LOGIN ══════════════════════════════════════════════ -->
+<div id="loginPage">
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo">✦ <span>Panel</span> Admin</div>
+      <p class="login-sub">Acceso privado</p>
+      <div class="login-error" id="loginError">Usuario o contraseña incorrectos</div>
+      <form id="loginForm" autocomplete="off">
+        <div class="form-group" style="text-align:left">
+          <label>Usuario</label>
+          <input type="text" id="loginUser" placeholder="Tu usuario" autocomplete="username">
+        </div>
+        <div class="form-group" style="text-align:left">
+          <label>Contraseña</label>
+          <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:.5rem">Ingresar →</button>
+      </form>
+      <p style="margin-top:1.25rem;font-size:.78rem">
+        <a href="index.html" style="color:var(--text-muted)">← Volver al sitio</a>
+      </p>
+    </div>
   </div>
 </div>
 
-<!-- ══ DASHBOARD ════════════════════════════════════════════ -->
-<div class="dashboard" id="dashboard">
+<!-- ══ ADMIN PAGE ══════════════════════════════════════════ -->
+<div id="adminPage" class="admin-page" style="display:none">
 
-  <!-- Nav -->
-  <nav class="dash-nav">
-    <div class="dash-nav-logo">✦ <span>Admin</span></div>
-    <div class="dash-nav-right">
+  <!-- Top bar -->
+  <header class="admin-topbar">
+    <div class="topbar-left">
+      <button class="menu-btn" id="menuBtn" aria-label="Menú">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="topbar-logo">✦ <span>Admin</span></div>
+    </div>
+    <div class="topbar-right">
       <button class="theme-btn" aria-label="Cambiar tema"></button>
-      <button class="btn btn-secondary btn-sm" onclick="forzarSync()" title="Sincronizar con Google Sheet">↻ Sync</button>
-      <button class="btn btn-ghost btn-sm" onclick="limpiarCache()" title="Limpiar caché local" style="color:var(--text-muted);font-size:.78rem">🗑 Caché</button>
-      <a href="index.html" class="btn btn-outline btn-sm" target="_blank">Ver sitio →</a>
+      <button class="btn btn-outline btn-sm" onclick="forzarSync()">↻ Sync</button>
+      <button class="btn btn-ghost btn-sm" onclick="limpiarCache()" style="font-size:.76rem">🗑 Caché</button>
       <button class="btn btn-ghost btn-sm" onclick="doLogout()">Salir</button>
+    </div>
+  </header>
+
+  <!-- Drawer overlay -->
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+
+  <!-- Drawer lateral -->
+  <nav class="admin-drawer" id="adminDrawer">
+    <div class="drawer-section">
+      <div class="drawer-label">General</div>
+      <div class="drawer-item active" data-sec="inicio" onclick="irA('inicio')">
+        <span class="di-icon">🏠</span> Inicio
+      </div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-label">Gestión</div>
+      <div class="drawer-item" data-sec="turnos" onclick="irA('turnos')">
+        <span class="di-icon">📅</span> Turnos
+        <span class="di-badge" id="turnosBadge" style="display:none"></span>
+      </div>
+      <div class="drawer-item" data-sec="agenda" onclick="irA('agenda')">
+        <span class="di-icon">🗓</span> Mi Agenda
+      </div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-label">Inventario</div>
+      <div class="drawer-item" data-sec="inventario" onclick="irA('inventario')">
+        <span class="di-icon">💅</span> Productos
+      </div>
+      <div class="drawer-item" data-sec="categorias" onclick="irA('categorias')">
+        <span class="di-icon">🏷</span> Categorías
+      </div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-label">Próximamente</div>
+      <div class="drawer-item future"><span class="di-icon">💰</span> Precios<span class="coming">pronto</span></div>
+      <div class="drawer-item future"><span class="di-icon">📸</span> Galería<span class="coming">pronto</span></div>
+      <div class="drawer-item future"><span class="di-icon">📝</span> Blog<span class="coming">pronto</span></div>
+      <div class="drawer-item future"><span class="di-icon">⚙️</span> Configuración<span class="coming">pronto</span></div>
+    </div>
+    <div style="padding:1.25rem;margin-top:auto">
+      <a href="index.html" target="_blank" class="btn btn-outline btn-sm" style="width:100%;justify-content:center">Ver sitio →</a>
     </div>
   </nav>
 
-  <div class="dash-layout">
+  <!-- Contenido principal -->
+  <main class="admin-main">
 
-    <!-- Sidebar -->
-    <aside class="dash-sidebar">
-      <div class="sidebar-label">Gestión</div>
-      <div class="sidebar-link active" onclick="showTab('turnos')">
-        <span class="sidebar-icon">📅</span> Turnos
+    <!-- INICIO -->
+    <div class="admin-section active" id="sec-inicio">
+      <h2 class="section-title">Buen día 👋</h2>
+      <p class="section-subtitle">Resumen de tu agenda</p>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-num" id="stPend" style="color:var(--gold)">—</div><div class="stat-label">Pendientes</div></div>
+        <div class="stat-card"><div class="stat-num" id="stConf" style="color:#22c55e">—</div><div class="stat-label">Confirmados</div></div>
+        <div class="stat-card"><div class="stat-num" id="stHoy" style="color:var(--accent)">—</div><div class="stat-label">Hoy</div></div>
+        <div class="stat-card"><div class="stat-num" id="stMes">—</div><div class="stat-label">Este mes</div></div>
       </div>
-      <div class="sidebar-link" onclick="showTab('agenda')">
-        <span class="sidebar-icon">🗓</span> Mi Agenda
-      </div>
-      <div class="sidebar-label">Inventario</div>
-      <div class="sidebar-link" onclick="showTab('inventario')">
-        <span class="sidebar-icon">💅</span> Productos
-      </div>
-      <div class="sidebar-link" onclick="showTab('categorias')">
-        <span class="sidebar-icon">🏷</span> Categorías
-      </div>
-    </aside>
-
-    <!-- Contenido -->
-    <main class="dash-content">
-
-      <!-- ══ TURNOS ══════════════════════════════════════ -->
-      <div class="dash-tab-content active" id="tab-turnos">
-        <div class="stats-row" id="turnosStats"></div>
-        <div class="table-card">
-          <div class="table-toolbar">
-            <h3>Reservas</h3>
-            <div class="table-toolbar-actions">
-              <select class="input-sm" id="turnoFiltro" onchange="renderTurnos()">
-                <option value="">Todos</option>
-                <option value="pendiente">Pendientes</option>
-                <option value="confirmado">Confirmados</option>
-                <option value="cancelado">Cancelados</option>
-              </select>
-              <button class="btn btn-outline btn-sm" onclick="renderTurnos()">↺ Actualizar</button>
-            </div>
+      <div class="dashboard-grid">
+        <div class="panel-card">
+          <div class="panel-card-header"><h3>Turnos de hoy</h3></div>
+          <div class="panel-card-body"><ul class="today-list" id="listHoy"></ul></div>
+        </div>
+        <div class="panel-card">
+          <div class="panel-card-header">
+            <h3>Pendientes de confirmar</h3>
+            <button class="btn btn-outline btn-sm" onclick="irA('turnos')">Ver todos →</button>
           </div>
-          <div class="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>Estado</th>
-                  <th>Cliente</th>
-                  <th>Servicio</th>
-                  <th>Fecha</th>
-                  <th>Horario</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="turnosBody"></tbody>
-            </table>
-          </div>
+          <div class="panel-card-body"><ul class="today-list" id="listPend"></ul></div>
         </div>
       </div>
+      <div class="stats-grid" style="margin-top:1.25rem">
+        <div class="stat-card"><div class="stat-num" id="stInv" style="color:var(--accent)">—</div><div class="stat-label">Productos</div></div>
+        <div class="stat-card"><div class="stat-num" id="stLow" style="color:#f59e0b">—</div><div class="stat-label">Stock bajo</div></div>
+      </div>
+    </div>
 
-      <!-- ══ AGENDA ══════════════════════════════════════ -->
-      <div class="dash-tab-content" id="tab-agenda">
-
-        <!-- Días habilitados -->
-        <div class="panel-section">
-          <h3>Días habilitados</h3>
-          <p class="panel-section-sub">Seleccioná los días de la semana en que atendés.</p>
-          <div class="toggle-grid" id="diasToggle"></div>
-          <button class="btn btn-primary btn-sm" onclick="saveDias()">Guardar días</button>
+    <!-- TURNOS -->
+    <div class="admin-section" id="sec-turnos">
+      <h2 class="section-title">Turnos</h2>
+      <p class="section-subtitle">Gestioná las reservas de tus clientes</p>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-num" id="tStPend" style="color:var(--gold)">—</div><div class="stat-label">Pendientes</div></div>
+        <div class="stat-card"><div class="stat-num" id="tStConf" style="color:#22c55e">—</div><div class="stat-label">Confirmados</div></div>
+        <div class="stat-card"><div class="stat-num" id="tStHoy" style="color:var(--accent)">—</div><div class="stat-label">Hoy</div></div>
+        <div class="stat-card"><div class="stat-num" id="tStMes">—</div><div class="stat-label">Este mes</div></div>
+      </div>
+      <div class="panel-card">
+        <div class="panel-card-header">
+          <h3>Reservas</h3>
+          <div class="panel-card-header-actions">
+            <select class="input-sm" id="turnoFiltro" onchange="renderTurnos()">
+              <option value="">Todos</option>
+              <option value="pendiente">Pendientes</option>
+              <option value="confirmado">Confirmados</option>
+              <option value="cancelado">Cancelados</option>
+            </select>
+            <button class="btn btn-outline btn-sm" onclick="renderTurnos()">↺</button>
+          </div>
         </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Estado</th><th>Cliente</th><th>Servicio</th><th>Fecha</th><th>Horario</th><th>Acciones</th></tr></thead>
+            <tbody id="turnosBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
-        <!-- Horarios -->
-        <div class="panel-section">
-          <h3>Horarios disponibles</h3>
-          <p class="panel-section-sub">Los horarios que verán tus clientes para reservar.</p>
-          <div class="toggle-grid" id="slotsToggle"></div>
-          <div style="display:flex;gap:.5rem;margin-top:.75rem;align-items:center">
+    <!-- AGENDA -->
+    <div class="admin-section" id="sec-agenda">
+      <h2 class="section-title">Mi Agenda</h2>
+      <p class="section-subtitle">Configurá tu disponibilidad</p>
+      <div class="panel-card" style="margin-bottom:1.25rem">
+        <div class="panel-card-header"><h3>Días habilitados</h3></div>
+        <div class="panel-card-body">
+          <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem">Días de la semana en que atendés.</p>
+          <div class="chip-grid" id="diasChips"></div>
+          <button class="btn btn-primary btn-sm" style="margin-top:1rem" onclick="guardarDias()">Guardar días</button>
+        </div>
+      </div>
+      <div class="panel-card" style="margin-bottom:1.25rem">
+        <div class="panel-card-header"><h3>Horarios disponibles</h3></div>
+        <div class="panel-card-body">
+          <div class="chip-grid scrollable" id="slotsChips" style="margin-bottom:1rem"></div>
+          <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap">
             <input type="time" id="nuevoSlot" class="input-sm">
-            <button class="btn btn-outline btn-sm" onclick="agregarSlot()">+ Agregar horario</button>
+            <button class="btn btn-outline btn-sm" onclick="agregarSlot()">+ Agregar</button>
           </div>
-          <button class="btn btn-primary btn-sm" style="margin-top:1rem" onclick="saveSlots()">Guardar horarios</button>
+          <button class="btn btn-primary btn-sm" onclick="guardarSlots()">Guardar horarios</button>
         </div>
-
-        <!-- Duración por servicio -->
-        <div class="panel-section">
-          <h3>Duración por servicio</h3>
-          <p class="panel-section-sub">Cambiá el tiempo estimado de cada servicio. Se actualiza en la página automáticamente.</p>
-          <div id="serviciosDuracion"></div>
-          <button class="btn btn-primary btn-sm" style="margin-top:1rem" onclick="saveDuraciones()">Guardar duraciones</button>
+      </div>
+      <div class="panel-card" style="margin-bottom:1.25rem">
+        <div class="panel-card-header"><h3>Duración por servicio</h3></div>
+        <div class="panel-card-body">
+          <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem">Los cambios se reflejan en el sitio automáticamente.</p>
+          <div id="duracionesWrap"></div>
+          <button class="btn btn-primary btn-sm" style="margin-top:1rem" onclick="guardarDuraciones()">Guardar duraciones</button>
         </div>
-
-        <!-- Bloquear fechas -->
-        <div class="panel-section">
-          <h3>Bloquear fechas</h3>
-          <p class="panel-section-sub">Feriados, vacaciones o días que no atendés.</p>
-          <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:1rem">
+      </div>
+      <div class="panel-card">
+        <div class="panel-card-header"><h3>Bloquear fechas</h3></div>
+        <div class="panel-card-body">
+          <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem">Feriados, vacaciones o días que no atendés.</p>
+          <div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap">
             <input type="date" id="fechaBloqueo" class="input-sm">
             <button class="btn btn-outline btn-sm" onclick="bloquearFecha()">Bloquear</button>
           </div>
-          <div class="toggle-grid" id="fechasBloqueadas"></div>
-        </div>
-
-      </div>
-
-      <!-- ══ INVENTARIO ══════════════════════════════════ -->
-      <div class="dash-tab-content" id="tab-inventario">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
-          <div>
-            <h2 style="font-family:'Cormorant Garamond',serif;font-weight:400;font-size:1.6rem">Inventario</h2>
-            <p style="font-size:.82rem;color:var(--text-muted)">Tus productos con foto, stock y visibilidad.</p>
-          </div>
-          <button class="btn btn-primary" onclick="abrirModalProducto()">+ Agregar producto</button>
-        </div>
-
-        <!-- Tabs por categoría -->
-        <div class="inv-tabs" id="invTabs"></div>
-
-        <!-- Búsqueda -->
-        <div style="margin-bottom:1.25rem">
-          <input type="text" class="input-sm" id="invBuscar"
-            placeholder="Buscar por nombre, marca…"
-            style="width:100%;max-width:320px"
-            oninput="renderInventario()">
-        </div>
-
-        <div class="table-card">
-          <div class="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th style="width:52px">Foto</th>
-                  <th>Nombre</th>
-                  <th>Marca</th>
-                  <th>Categoría</th>
-                  <th style="text-align:center">Stock</th>
-                  <th>Estado</th>
-                  <th>Visibilidad</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="invBody"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Alerta stock bajo -->
-        <div id="stockAlerta" style="display:none;margin-top:1.25rem;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:var(--radius-md);padding:1rem 1.25rem">
-          <p style="font-size:.82rem;font-weight:500;margin-bottom:.5rem">⚠ Productos con stock bajo:</p>
-          <div id="stockAlertaLista" style="display:flex;flex-wrap:wrap;gap:.4rem"></div>
-        </div>
-
-        <!-- Export -->
-        <div style="display:flex;gap:.5rem;margin-top:1.25rem">
-          <button class="btn btn-outline btn-sm" onclick="exportCSV()">⬇ Exportar CSV</button>
-          <button class="btn btn-outline btn-sm" onclick="exportXLS()">⬇ Exportar Excel</button>
+          <div class="chip-grid" id="fechasBloqueadas"></div>
         </div>
       </div>
+    </div>
 
-      <!-- ══ CATEGORÍAS ══════════════════════════════════ -->
-      <div class="dash-tab-content" id="tab-categorias">
-        <div class="panel-section">
-          <h3>Categorías del inventario</h3>
-          <p class="panel-section-sub">Agregá, renombrá o eliminá categorías. Los cambios se aplican al instante.</p>
+    <!-- INVENTARIO -->
+    <div class="admin-section" id="sec-inventario">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+        <div>
+          <h2 class="section-title" style="margin-bottom:.2rem">Inventario</h2>
+          <p class="section-subtitle" style="margin-bottom:0">Productos con foto, stock y visibilidad</p>
+        </div>
+        <button class="btn btn-primary" onclick="abrirModalProducto()">+ Agregar producto</button>
+      </div>
+      <div class="stock-alerta" id="stockAlerta">
+        <p>⚠ Productos con stock bajo:</p>
+        <div class="stock-alerta-lista" id="stockAlertaLista"></div>
+      </div>
+      <div class="chip-grid scrollable" id="invTabs" style="margin-bottom:1rem"></div>
+      <input type="text" class="input-sm" id="invBuscar"
+        placeholder="Buscar por nombre o marca…"
+        style="width:100%;max-width:300px;margin-bottom:1rem"
+        oninput="renderInventario()">
+      <div class="panel-card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Foto</th><th>Nombre</th><th>Marca</th><th>Categoría</th><th>Stock</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="invBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div style="display:flex;gap:.5rem;margin-top:1rem">
+        <button class="btn btn-outline btn-sm" onclick="exportCSV()">⬇ CSV</button>
+      </div>
+    </div>
+
+    <!-- CATEGORÍAS -->
+    <div class="admin-section" id="sec-categorias">
+      <h2 class="section-title">Categorías</h2>
+      <p class="section-subtitle">Agregá, renombrá o eliminá categorías del inventario</p>
+      <div class="panel-card">
+        <div class="panel-card-body">
           <div id="catLista" style="margin-bottom:1.25rem"></div>
-          <div style="display:flex;gap:.5rem;align-items:center">
+          <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
             <input type="text" id="nuevaCat" class="input-sm" placeholder="Nueva categoría…" style="max-width:220px">
             <button class="btn btn-primary btn-sm" onclick="agregarCategoria()">+ Agregar</button>
           </div>
         </div>
       </div>
+    </div>
 
-    </main>
-  </div><!-- /dash-layout -->
-</div><!-- /dashboard -->
-
-<!-- ══ MODAL INPUT ══════════════════════════════════════════════ -->
-<div class="modal-overlay" id="modalInput">
-  <div class="modal-box" style="max-width:380px">
-    <div class="modal-header">
-      <h3 id="inputModalTitulo" style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:400">Renombrar</h3>
-      <button class="modal-close" onclick="cerrarInputModal()">×</button>
-    </div>
-    <div class="form-group">
-      <label id="inputModalLabel">Nuevo nombre</label>
-      <input type="text" id="inputModalVal" placeholder="">
-    </div>
-    <div style="display:flex;gap:.6rem;margin-top:.5rem">
-      <button class="btn btn-primary" style="flex:1" onclick="confirmarInputModal()">Guardar</button>
-      <button class="btn btn-outline" onclick="cerrarInputModal()">Cancelar</button>
-    </div>
-  </div>
+  </main>
 </div>
 
-<!-- ══ MODAL CONFIRMAR ══════════════════════════════════════════ -->
-<div class="modal-overlay" id="modalConfirmar">
-  <div class="modal-box" style="max-width:380px;text-align:center">
-    <div style="font-size:2rem;margin-bottom:1rem" id="confirmIcon">⚠️</div>
-    <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:400;margin-bottom:.6rem" id="confirmTitulo">¿Estás segura?</h3>
-    <p style="font-size:.88rem;color:var(--text-muted);margin-bottom:1.75rem;line-height:1.6" id="confirmMensaje"></p>
-    <div style="display:flex;gap:.6rem">
-      <button class="btn btn-outline" style="flex:1" onclick="cerrarConfirm()">Cancelar</button>
-      <button class="btn btn-primary" style="flex:1;background:rgba(239,68,68,.85)" id="confirmBtn">Eliminar</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ MODAL PRODUCTO ════════════════════════════════════════ -->
+<!-- MODAL PRODUCTO -->
 <div class="modal-overlay" id="modalProducto">
   <div class="modal-box">
     <div class="modal-header">
-      <h3 id="modalTitulo">Agregar producto</h3>
-      <button class="modal-close" onclick="cerrarModal()">×</button>
+      <h3 id="modalProdTitulo">Agregar producto</h3>
+      <button class="modal-close" onclick="cerrarModal('modalProducto')">×</button>
     </div>
-
     <input type="hidden" id="mIdx">
-
-    <!-- Foto -->
-    <div class="foto-upload" id="fotoUploadArea" onclick="document.getElementById('mFotoInput').click()">
+    <div class="foto-upload-area" onclick="document.getElementById('mFotoInput').click()">
       <input type="file" id="mFotoInput" accept="image/*" onchange="previewFoto(event)">
-      <img id="mFotoPreview" class="foto-preview" src="" style="display:none">
-      <p style="font-size:.8rem;color:var(--text-muted)" id="fotoLabel">📷 Tocá para subir una foto</p>
+      <img id="mFotoPreview" class="foto-preview-img">
+      <p id="fotoLabel" style="font-size:.82rem;color:var(--text-muted)">📷 Tocá para subir una foto</p>
     </div>
-
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
       <div class="form-group" style="grid-column:1/-1">
         <label>Nombre</label>
@@ -907,878 +279,79 @@
         <select id="mCategoria"></select>
       </div>
       <div class="form-group">
-        <label>Color (hex)</label>
+        <label>Color</label>
         <div style="display:flex;gap:.5rem;align-items:center">
           <input type="color" id="mColorPicker" value="#FBCFE8"
-            style="width:40px;height:34px;border-radius:6px;border:1px solid var(--border);padding:2px;cursor:pointer"
+            style="width:38px;height:34px;border-radius:6px;border:1px solid var(--border);padding:2px;cursor:pointer"
             oninput="document.getElementById('mColor').value=this.value">
-          <input type="text" id="mColor" placeholder="#FBCFE8" style="flex:1"
-            oninput="if(this.value.length===7) document.getElementById('mColorPicker').value=this.value">
+          <input type="text" id="mColor" placeholder="#FBCFE8"
+            oninput="if(this.value.length===7)document.getElementById('mColorPicker').value=this.value">
         </div>
       </div>
       <div class="form-group">
-        <label>Stock (unidades)</label>
-        <input type="number" id="mStock" min="0" value="1" placeholder="1">
+        <label>Stock</label>
+        <input type="number" id="mStock" min="0" value="1">
       </div>
       <div class="form-group" style="grid-column:1/-1">
         <label>Notas (opcional)</label>
-        <input type="text" id="mNotas" placeholder="Ej: edición limitada, pendiente de reponer…">
+        <input type="text" id="mNotas" placeholder="Ej: edición limitada…">
       </div>
       <div class="form-group" style="grid-column:1/-1">
         <label>Visibilidad</label>
-        <div style="display:flex;gap:.6rem;margin-top:.4rem;flex-wrap:wrap">
-          <button type="button" id="visPrivado"
-            onclick="setVisibilidad('privado')"
-            style="flex:1;padding:.65rem 1rem;border-radius:var(--radius-md);border:1.5px solid var(--accent);background:rgba(232,144,144,0.1);color:var(--text);font-family:'DM Sans',sans-serif;font-size:.85rem;cursor:pointer;transition:all .2s;font-weight:500">
-            🔒 Privado — solo yo lo veo
+        <div style="display:flex;gap:.5rem;margin-top:.3rem">
+          <button type="button" id="visPrivado" onclick="setVis('privado')"
+            style="flex:1;padding:.6rem;border-radius:var(--radius-md);font-family:'DM Sans',sans-serif;font-size:.84rem;cursor:pointer;transition:all .2s;border:1.5px solid var(--accent);background:rgba(232,144,144,.1);color:var(--text);font-weight:500">
+            🔒 Privado
           </button>
-          <button type="button" id="visPublico"
-            onclick="setVisibilidad('publico')"
-            style="flex:1;padding:.65rem 1rem;border-radius:var(--radius-md);border:1.5px solid var(--border);background:var(--bg);color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:.85rem;cursor:pointer;transition:all .2s">
-            👁 Público — aparece en catálogo
+          <button type="button" id="visPublico" onclick="setVis('publico')"
+            style="flex:1;padding:.6rem;border-radius:var(--radius-md);font-family:'DM Sans',sans-serif;font-size:.84rem;cursor:pointer;transition:all .2s;border:1.5px solid var(--border);background:var(--bg);color:var(--text-muted)">
+            👁 Público
           </button>
         </div>
         <input type="hidden" id="mVis" value="privado">
       </div>
     </div>
-
-    <div style="display:flex;gap:.75rem;margin-top:.5rem">
+    <div style="display:flex;gap:.6rem;margin-top:.75rem">
       <button class="btn btn-primary" style="flex:1" onclick="guardarProducto()">Guardar</button>
-      <button class="btn btn-outline" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn btn-outline" onclick="cerrarModal('modalProducto')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR -->
+<div class="modal-overlay" id="modalConfirmar">
+  <div class="modal-box" style="max-width:360px">
+    <div class="confirm-box">
+      <span class="confirm-icon" id="cfIcon">⚠️</span>
+      <h3 id="cfTitulo">¿Estás segura?</h3>
+      <p id="cfMsg"></p>
+      <div class="confirm-btns">
+        <button class="btn btn-outline" style="flex:1" onclick="cerrarConfirm()">Cancelar</button>
+        <button class="btn btn-primary" style="flex:1" id="cfBtn" onclick="confirmarOk()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL INPUT -->
+<div class="modal-overlay" id="modalInput">
+  <div class="modal-box" style="max-width:360px">
+    <div class="modal-header">
+      <h3 id="inpTitulo">Renombrar</h3>
+      <button class="modal-close" onclick="cerrarModal('modalInput')">×</button>
+    </div>
+    <div class="form-group">
+      <label id="inpLabel">Nuevo nombre</label>
+      <input type="text" id="inpVal">
+    </div>
+    <div style="display:flex;gap:.6rem">
+      <button class="btn btn-primary" style="flex:1" onclick="confirmarInput()">Guardar</button>
+      <button class="btn btn-outline" onclick="cerrarModal('modalInput')">Cancelar</button>
     </div>
   </div>
 </div>
 
 <script src="js/main.js"></script>
-<script>
-// ════════════════════════════════════════════════════════════
-//  CONFIGURACIÓN — URL de tu Apps Script
-// ════════════════════════════════════════════════════════════
-const API_URL = 'https://script.google.com/macros/s/AKfycbx7Q7Qpw3TQ2Pv8CYLLlc7qXoDZpz0kWLUaJB0c1wK0cwPfb2nPHb6QbQhWvSDadrJ6/exec';
-
-// ── Llamadas a la API ──────────────────────────────────────
-async function apiPost(data) {
-  try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(data),
-    });
-    return { ok: true };
-  } catch(e) {
-    console.warn('API error:', e);
-    return { error: e.message };
-  }
-}
-
-async function apiGet(sheet) {
-  try {
-    const res = await fetch(API_URL + '?sheet=' + sheet);
-    const json = await res.json();
-    return json.data || [];
-  } catch(e) {
-    console.warn('apiGet error:', e);
-    return [];
-  }
-}
-
-async function sincronizarDesdeSheet() {
-  showToast('↻ Sincronizando turnos...');
-  try {
-    // Solo sincronizar turnos automáticamente
-    // El inventario se maneja solo localmente para evitar conflictos
-    const turnosRemoto = await apiGet('turnos');
-    if (turnosRemoto && turnosRemoto.length) {
-      saveTurnos(turnosRemoto);
-    }
-    renderTurnos();
-    showToast('✓ Turnos sincronizados');
-  } catch(e) {
-    showToast('Sin conexión — mostrando datos locales');
-  }
-}
-
-// Forzar sincronización completa (botón manual)
-async function forzarSync() {
-  showToast('↻ Sincronizando todo...');
-  try {
-    const [turnosRemoto, invRemoto] = await Promise.all([
-      apiGet('turnos'),
-      apiGet('inventario'),
-    ]);
-    if (turnosRemoto && turnosRemoto.length) saveTurnos(turnosRemoto);
-    if (invRemoto && invRemoto.length) {
-      // Al sincronizar manual, el Sheet tiene prioridad
-      // pero limpiamos las fotos base64 y dejamos solo fotoUrl
-      const limpio = invRemoto.map(p => ({...p, foto: ''}));
-      saveInventario(limpio);
-    }
-    renderTurnos();
-    renderInventario();
-    renderInvTabs();
-    showToast('✓ Todo sincronizado desde Google Sheet');
-  } catch(e) {
-    showToast('Error al sincronizar — revisá tu conexión');
-  }
-}
-
-// Limpiar caché local del inventario
-function limpiarCache() {
-  showConfirm({
-    titulo: 'Limpiar caché local',
-    mensaje: 'Se borra el inventario guardado en este navegador y se recarga desde Google Sheet.',
-    icono: '🗑',
-    btnTxt: 'Limpiar',
-    btnColor: 'var(--gold)',
-    onOk: () => {
-      localStorage.removeItem('inventario');
-      localStorage.removeItem('deleted_ids');
-      forzarSync().then(() => {
-        renderInventario();
-        renderInvTabs();
-        showToast('✓ Caché limpiado');
-      });
-    }
-  });
-}
-
-
-// ════════════════════════════════════════════════════════════
-//  MODAL DE INPUT (reemplaza prompt() nativo)
-// ════════════════════════════════════════════════════════════
-let _inputModalCallback = null;
-
-function showInputModal({ titulo, label, valorActual = '', placeholder = '', onOk }) {
-  document.getElementById('inputModalTitulo').textContent = titulo;
-  document.getElementById('inputModalLabel').textContent  = label;
-  document.getElementById('inputModalVal').value          = valorActual;
-  document.getElementById('inputModalVal').placeholder    = placeholder;
-  _inputModalCallback = onOk;
-  document.getElementById('modalInput').classList.add('open');
-  setTimeout(() => document.getElementById('inputModalVal').focus(), 100);
-}
-
-function confirmarInputModal() {
-  const val = document.getElementById('inputModalVal').value.trim();
-  if (!val) return;
-  cerrarInputModal();
-  if (_inputModalCallback) _inputModalCallback(val);
-}
-
-function cerrarInputModal() {
-  document.getElementById('modalInput').classList.remove('open');
-  _inputModalCallback = null;
-}
-
-// Enter para confirmar
-document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && document.getElementById('modalInput').classList.contains('open')) {
-    confirmarInputModal();
-  }
-  if (e.key === 'Escape') {
-    cerrarInputModal();
-    cerrarConfirm();
-    cerrarModal();
-  }
-});
-
-// ════════════════════════════════════════════════════════════
-//  MODAL DE CONFIRMACIÓN (reemplaza confirm() nativo)
-// ════════════════════════════════════════════════════════════
-function showConfirm({ titulo, mensaje, icono = '🗑', btnTxt = 'Eliminar', btnColor = 'rgba(239,68,68,.85)', onOk }) {
-  document.getElementById('confirmTitulo').textContent  = titulo;
-  document.getElementById('confirmMensaje').textContent = mensaje;
-  document.getElementById('confirmIcon').textContent    = icono;
-  document.getElementById('confirmBtn').textContent     = btnTxt;
-  document.getElementById('confirmBtn').style.background = btnColor;
-  document.getElementById('confirmBtn').onclick = () => { cerrarConfirm(); onOk(); };
-  document.getElementById('modalConfirmar').classList.add('open');
-}
-function cerrarConfirm() {
-  document.getElementById('modalConfirmar').classList.remove('open');
-}
-
-// ════════════════════════════════════════════════════════════
-//  LOGIN
-// ════════════════════════════════════════════════════════════
-document.getElementById('loginForm').addEventListener('submit', e => {
-  e.preventDefault();
-  const u = document.getElementById('loginUser').value.trim();
-  const p = document.getElementById('loginPass').value;
-  if (doLogin(u, p)) {
-    initDashboard();
-  } else {
-    document.getElementById('loginError').style.display = 'block';
-  }
-});
-
-window.addEventListener('DOMContentLoaded', () => {
-  if (isLoggedIn()) initDashboard();
-});
-
-function initDashboard() {
-  document.getElementById('loginPage').style.display    = 'none';
-  document.getElementById('dashboard').style.display    = 'block';
-  renderTurnos();
-  initAgendaPanel();
-  renderInventario();
-  renderInvTabs();
-  renderCategorias();
-  // Cargar datos desde Google Sheet al iniciar
-  sincronizarDesdeSheet();
-}
-
-// ════════════════════════════════════════════════════════════
-//  SIDEBAR NAVEGACIÓN
-// ════════════════════════════════════════════════════════════
-function showTab(id) {
-  document.querySelectorAll('.dash-tab-content').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.sidebar-link').forEach(el => el.classList.remove('active'));
-  document.getElementById('tab-' + id).classList.add('active');
-  event.currentTarget.classList.add('active');
-  if (id === 'inventario') { renderInvTabs(); renderInventario(); }
-  if (id === 'categorias') renderCategorias();
-  if (id === 'turnos')     renderTurnos();
-  if (id === 'agenda')     initAgendaPanel();
-}
-
-// ════════════════════════════════════════════════════════════
-//  TURNOS
-// ════════════════════════════════════════════════════════════
-function renderTurnos() {
-  const todos   = getTurnos();
-  const filtro  = document.getElementById('turnoFiltro').value;
-  const hoy     = todayStr();
-  const mes     = hoy.slice(0,7);
-
-  // Stats
-  document.getElementById('turnosStats').innerHTML = [
-    { n: todos.filter(t=>t.estado==='pendiente').length,  l: 'Pendientes',  c: 'var(--gold)'  },
-    { n: todos.filter(t=>t.estado==='confirmado').length, l: 'Confirmados', c: '#22c55e'      },
-    { n: todos.filter(t=>t.fecha===hoy).length,           l: 'Hoy',         c: 'var(--accent)'},
-    { n: todos.filter(t=>(t.fecha||'').startsWith(mes)).length, l: 'Este mes', c: 'var(--text)'},
-  ].map(s => `
-    <div class="stat-card">
-      <div class="stat-num" style="color:${s.c}">${s.n}</div>
-      <div class="stat-label">${s.l}</div>
-    </div>
-  `).join('');
-
-  const lista = filtro ? todos.filter(t=>t.estado===filtro) : todos;
-  const sorted = [...lista].sort((a,b)=>(a.fecha+a.horario).localeCompare(b.fecha+b.horario));
-
-  if (!sorted.length) {
-    document.getElementById('turnosBody').innerHTML =
-      `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">Sin turnos${filtro ? ' en este estado' : ''}.</td></tr>`;
-    return;
-  }
-
-  document.getElementById('turnosBody').innerHTML = sorted.map(t => {
-    const realIdx = todos.findIndex(x => x.id === t.id);
-    const dotCls  = { pendiente:'dot-pend', confirmado:'dot-conf', cancelado:'dot-canc' }[t.estado] || '';
-    const dt      = new Date(t.fecha + 'T00:00:00');
-    const waMsg   = encodeURIComponent(`Hola ${t.nombre}! Tu turno de ${t.servicio} el ${fmtDateHuman(dt)} a las ${t.horario}hs está confirmado ✓`);
-    const waRem   = encodeURIComponent(`Hola ${t.nombre}! Te recuerdo que en 1 hora tenés turno de ${t.servicio} a las ${t.horario}hs.`);
-    const waN     = t.tel ? `549${t.tel.replace(/\D/g,'')}` : '';
-
-    return `<tr>
-      <td data-label="Estado"><span class="dot ${dotCls}"></span>${t.estado}</td>
-      <td data-label="Cliente">
-        <div style="font-weight:500">${t.nombre}</div>
-        <div style="font-size:.76rem;color:var(--text-muted)">${t.mail}</div>
-      </td>
-      <td data-label="Servicio">${t.servicio}</td>
-      <td data-label="Fecha">${fmtDateHuman(dt)}</td>
-      <td data-label="Horario">${t.horario} hs · ${t.duracion} min</td>
-      <td style="white-space:nowrap">
-        <div style="display:flex;flex-direction:column;gap:3px">
-          ${t.estado==='pendiente' ? `
-            <button onclick="cambiarEstado('${t.id}','confirmado')" class="btn btn-sm" style="background:rgba(34,197,94,.12);color:#16a34a;border:none;padding:.28rem .6rem">✓ Confirmar</button>
-            <button onclick="cambiarEstado('${t.id}','cancelado')"  class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#dc2626;border:none;padding:.28rem .6rem">✗ Cancelar</button>
-          ` : ''}
-          ${t.estado==='confirmado' && waN ? `
-            <a href="https://wa.me/${waN}?text=${waRem}" target="_blank" class="btn btn-sm" style="background:var(--bg-yellow);border:none;color:var(--text);padding:.28rem .6rem">⏰ Recordatorio</a>
-          ` : ''}
-          <button onclick="exportarTurnoICS('${t.id}')" class="btn btn-sm" style="background:none;border:1px solid var(--border);color:var(--text-muted);padding:.28rem .6rem">📅 .ics</button>
-        </div>
-      </td>
-    </tr>`;
-  }).join('');
-}
-
-function cambiarEstado(id, estado) {
-  const arr = getTurnos();
-  const idx = arr.findIndex(t => t.id === id);
-  if (idx < 0) return;
-  if (estado === 'cancelado') removeTakenSlot(arr[idx].fecha, arr[idx].horario);
-  arr[idx].estado = estado;
-  saveTurnos(arr);
-  apiPost({ action: 'updateEstado', id: id, estado: estado });
-  renderTurnos();
-  showToast(estado === 'confirmado' ? '✓ Turno confirmado' : '✗ Turno cancelado');
-}
-
-function exportarTurnoICS(id) {
-  const t = getTurnos().find(x => x.id === id);
-  if (!t) return;
-  downloadICS(t);
-}
-
-// ════════════════════════════════════════════════════════════
-//  AGENDA
-// ════════════════════════════════════════════════════════════
-const DIAS_NOMBRES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-const BASE_SLOTS   = ['08:00','09:00','10:00','11:00','12:00','13:00',
-                      '14:00','15:00','16:00','17:00','18:00','19:00','20:00'];
-
-let agendaTemp = null;
-
-function initAgendaPanel() {
-  agendaTemp = JSON.parse(JSON.stringify(getAgenda()));
-  renderDiasToggle();
-  renderSlotsToggle();
-  renderServiciosDuracion();
-  renderFechasBloqueadas();
-}
-
-function renderDiasToggle() {
-  document.getElementById('diasToggle').innerHTML = DIAS_NOMBRES.map((d,i) => `
-    <div class="toggle-chip ${agendaTemp.diasHabilitados.includes(i) ? 'on' : ''}"
-         onclick="toggleDia(${i})">${d}</div>
-  `).join('');
-}
-
-function toggleDia(i) {
-  const arr = agendaTemp.diasHabilitados;
-  const idx = arr.indexOf(i);
-  if (idx >= 0) arr.splice(idx, 1); else arr.push(i);
-  renderDiasToggle();
-}
-
-function saveDias() {
-  const ag = getAgenda();
-  ag.diasHabilitados = agendaTemp.diasHabilitados;
-  DB.set('agenda_config', ag);
-  showToast('✓ Días guardados');
-}
-
-function renderSlotsToggle() {
-  document.getElementById('slotsToggle').innerHTML = agendaTemp.slots.map(s => `
-    <div class="toggle-chip on-gold" style="display:flex;align-items:center;gap:.3rem">
-      ${s}
-      <span onclick="quitarSlot('${s}')"
-        style="cursor:pointer;color:var(--text-muted);font-size:.9rem;line-height:1;margin-left:.2rem">×</span>
-    </div>
-  `).join('');
-}
-
-function agregarSlot() {
-  const val = document.getElementById('nuevoSlot').value;
-  if (!val || agendaTemp.slots.includes(val)) return;
-  agendaTemp.slots.push(val);
-  agendaTemp.slots.sort();
-  renderSlotsToggle();
-}
-
-function quitarSlot(s) {
-  agendaTemp.slots = agendaTemp.slots.filter(x => x !== s);
-  renderSlotsToggle();
-}
-
-function saveSlots() {
-  const ag = getAgenda();
-  ag.slots = agendaTemp.slots;
-  DB.set('agenda_config', ag);
-  showToast('✓ Horarios guardados');
-}
-
-function renderServiciosDuracion() {
-  const svcs = agendaTemp.servicios || getDefaultServicios();
-  const grupos = {};
-  svcs.forEach(s => { if (!grupos[s.grupo]) grupos[s.grupo]=[]; grupos[s.grupo].push(s); });
-
-  document.getElementById('serviciosDuracion').innerHTML =
-    Object.entries(grupos).map(([g, items]) => `
-      <div style="margin-bottom:1.25rem">
-        <div style="font-size:.7rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem">${g}</div>
-        <div style="display:flex;flex-direction:column;gap:.5rem">
-          ${items.map(s => `
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border)">
-              <span style="font-size:.85rem;color:var(--text)">${s.nombre}</span>
-              <div style="display:flex;align-items:center;gap:.4rem">
-                <input type="number" class="input-sm" id="dur_${s.id}"
-                  value="${s.duracion}" min="5" step="5"
-                  style="width:70px;text-align:center">
-                <span style="font-size:.76rem;color:var(--text-muted)">min</span>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `).join('');
-}
-
-function saveDuraciones() {
-  const ag   = getAgenda();
-  const svcs = ag.servicios || getDefaultServicios();
-  svcs.forEach(s => {
-    const input = document.getElementById('dur_' + s.id);
-    if (input) s.duracion = parseInt(input.value) || s.duracion;
-  });
-  ag.servicios = svcs;
-  DB.set('agenda_config', ag);
-  showToast('✓ Duraciones guardadas — el sitio ya las refleja');
-}
-
-function bloquearFecha() {
-  const val = document.getElementById('fechaBloqueo').value;
-  if (!val) return;
-  const ag = getAgenda();
-  if (!ag.diasBloqueados.includes(val)) ag.diasBloqueados.push(val);
-  DB.set('agenda_config', ag);
-  agendaTemp = JSON.parse(JSON.stringify(ag));
-  renderFechasBloqueadas();
-  showToast('✓ Fecha bloqueada');
-}
-
-function desbloquearFecha(val) {
-  const ag = getAgenda();
-  ag.diasBloqueados = ag.diasBloqueados.filter(d => d !== val);
-  DB.set('agenda_config', ag);
-  agendaTemp = JSON.parse(JSON.stringify(ag));
-  renderFechasBloqueadas();
-}
-
-function renderFechasBloqueadas() {
-  const ag  = getAgenda();
-  const div = document.getElementById('fechasBloqueadas');
-  if (!ag.diasBloqueados.length) {
-    div.innerHTML = '<span style="font-size:.82rem;color:var(--text-muted)">Sin fechas bloqueadas.</span>';
-    return;
-  }
-  div.innerHTML = ag.diasBloqueados.sort().map(d => `
-    <div class="toggle-chip" style="background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.25);color:#dc2626;display:flex;align-items:center;gap:.3rem">
-      ${d}
-      <span onclick="desbloquearFecha('${d}')"
-        style="cursor:pointer;margin-left:.2rem;font-size:.9rem">×</span>
-    </div>
-  `).join('');
-}
-
-// ════════════════════════════════════════════════════════════
-//  INVENTARIO
-// ════════════════════════════════════════════════════════════
-let invCatActiva = '';
-
-function renderInvTabs() {
-  const cats = ['Todos', ...getCategorias()];
-  document.getElementById('invTabs').innerHTML = cats.map(c => `
-    <div class="inv-tab ${(invCatActiva === c || (!invCatActiva && c==='Todos')) ? 'active' : ''}"
-         onclick="setInvCat('${c}')">${c}</div>
-  `).join('');
-}
-
-function setInvCat(c) {
-  invCatActiva = c === 'Todos' ? '' : c;
-  renderInvTabs();
-  renderInventario();
-}
-
-function renderInventario() {
-  const todos   = getInventario();
-  const buscar  = (document.getElementById('invBuscar')?.value || '').toLowerCase();
-  const filtro  = invCatActiva;
-
-  const lista = todos.filter(p => {
-    const matchCat = !filtro || p.categoria === filtro;
-    const matchQ   = !buscar ||
-      (p.nombre||'').toLowerCase().includes(buscar) ||
-      (p.marca||'').toLowerCase().includes(buscar);
-    return matchCat && matchQ;
-  });
-
-  // Alertas stock bajo
-  const bajo = todos.filter(p => Number(p.stock) > 0 && Number(p.stock) <= 2);
-  const alertBox = document.getElementById('stockAlerta');
-  alertBox.style.display = bajo.length ? 'block' : 'none';
-  document.getElementById('stockAlertaLista').innerHTML = bajo.map(p =>
-    `<span style="background:rgba(245,158,11,.15);color:#92400e;border-radius:50px;padding:.2rem .75rem;font-size:.76rem;font-weight:500">
-      ${p.nombre} (${p.stock} u.)
-    </span>`
-  ).join('');
-
-  if (!lista.length) {
-    document.getElementById('invBody').innerHTML =
-      `<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted)">
-        ${todos.length === 0 ? 'Todavía no cargaste productos. Hacé click en "+ Agregar producto".' : 'Sin resultados.'}
-      </td></tr>`;
-    return;
-  }
-
-  document.getElementById('invBody').innerHTML = lista.map(p => {
-    const realIdx = todos.findIndex(x => x.id === p.id);
-    const stock   = Number(p.stock);
-    let dotCls = 'dot-conf', estadoTxt = 'Ok';
-    if (stock <= 0)       { dotCls = 'dot-canc'; estadoTxt = 'Sin stock'; }
-    else if (stock <= 2)  { dotCls = 'dot-pend'; estadoTxt = 'Stock bajo'; }
-
-    const fotoSrc = p.fotoUrl || p.foto || '';
-    const fotoHtml = (fotoSrc && fotoSrc !== '⏳')
-      ? `<img src="${fotoSrc}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;border:1px solid var(--border)" onerror="this.style.display='none'">`
-      : `<div style="width:40px;height:40px;border-radius:6px;background:${p.color || 'var(--bg-pink)'};border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--text-muted)">
-          ${p.color ? '' : '?'}
-        </div>`;
-
-    return `<tr>
-      <td data-label="Foto">${fotoHtml}</td>
-      <td data-label="Nombre">
-        <div style="font-weight:500;font-size:.85rem">${p.nombre}</div>
-        ${p.notas ? `<div style="font-size:.73rem;color:var(--text-muted)">${p.notas}</div>` : ''}
-      </td>
-      <td data-label="Marca" style="font-size:.82rem">${p.marca || '—'}</td>
-      <td data-label="Categoría"><span class="badge badge-yellow" style="font-size:.7rem">${p.categoria || '—'}</span></td>
-      <td data-label="Stock" style="text-align:left">
-        <div class="qty-control">
-          <button class="qty-btn" onclick="ajustarStock('${p.id}',-1)">−</button>
-          <span class="qty-num" data-qty-id="${p.id}">${stock}</span>
-          <button class="qty-btn" onclick="ajustarStock('${p.id}',+1)">+</button>
-        </div>
-      </td>
-      <td data-label="Estado"><span class="dot ${dotCls}"></span>${estadoTxt}</td>
-      <td data-label="Visib.">
-        <span class="vis-toggle ${p.visibilidad||'privado'}"
-              onclick="toggleVisibilidad('${p.id}')">
-          ${p.visibilidad === 'publico' ? '👁 Público' : '🔒 Privado'}
-        </span>
-      </td>
-      <td style="white-space:nowrap">
-        <button onclick="editarProducto('${p.id}')" class="btn btn-sm" style="background:var(--bg-yellow);border:none;padding:.28rem .6rem">✏</button>
-        <button onclick="eliminarProducto('${p.id}')" class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#dc2626;border:none;padding:.28rem .6rem;margin-left:3px">🗑</button>
-      </td>
-    </tr>`;
-  }).join('');
-}
-
-function ajustarStock(id, delta) {
-  const arr = getInventario();
-  const idx = arr.findIndex(p => String(p.id) === String(id));
-  if (idx < 0) {
-    // No está en localStorage, buscarlo igual para actualizar
-    showToast('⚠ Sincronizando...');
-    forzarSync();
-    return;
-  }
-  const nuevoStock = Math.max(0, (Number(arr[idx].stock) || 0) + delta);
-  arr[idx].stock = nuevoStock;
-  saveInventario(arr);
-  apiPost({ action: 'updateStock', id: id, stock: nuevoStock });
-  // Actualizar número en pantalla sin re-renderizar
-  const qtyEl = document.querySelector(`[data-qty-id="${id}"]`);
-  if (qtyEl) qtyEl.textContent = nuevoStock;
-  else renderInventario();
-}
-
-function toggleVisibilidad(id) {
-  const arr = getInventario();
-  const idx = arr.findIndex(p => String(p.id) === String(id));
-  if (idx < 0) { showToast('⚠ Sincronizando...'); forzarSync(); return; }
-  arr[idx].visibilidad = arr[idx].visibilidad === 'publico' ? 'privado' : 'publico';
-  saveInventario(arr);
-  apiPost({ action: 'updateVis', id: id, vis: arr[idx].visibilidad });
-  renderInventario();
-  showToast(arr[idx].visibilidad === 'publico' ? '👁 Ahora es público' : '🔒 Ahora es privado');
-}
-
-// ── Modal producto ──────────────────────────────────────────
-function poblarSelectCategorias() {
-  const cats = getCategorias();
-  document.getElementById('mCategoria').innerHTML =
-    cats.map(c => `<option value="${c}">${c}</option>`).join('');
-}
-
-function abrirModalProducto(id) {
-  poblarSelectCategorias();
-  document.getElementById('modalTitulo').textContent = id ? 'Editar producto' : 'Agregar producto';
-  document.getElementById('mIdx').value = id || '';
-  document.getElementById('mFotoPreview').style.display = 'none';
-  document.getElementById('fotoLabel').style.display    = 'block';
-  document.getElementById('mFotoPreview').src = '';
-  window._fotoB64 = '';
-
-  if (id) {
-    const p = getInventario().find(x => String(x.id) === String(id));
-    if (!p) { showToast('⚠ Producto no encontrado. Hacé Sync primero.'); return; }
-    document.getElementById('mNombre').value  = p.nombre   || '';
-    document.getElementById('mMarca').value   = p.marca    || '';
-    document.getElementById('mCategoria').value = p.categoria || getCategorias()[0];
-    document.getElementById('mColor').value   = p.color    || '';
-    document.getElementById('mColorPicker').value = p.color || '#FBCFE8';
-    document.getElementById('mStock').value   = p.stock    ?? 1;
-    document.getElementById('mNotas').value   = p.notas    || '';
-    setVisibilidad(p.visibilidad || 'privado');
-    // Mostrar foto: puede estar en p.fotoUrl (Drive) o p.foto (base64 viejo)
-    const fotoSrc = p.fotoUrl || p.foto || '';
-    if (fotoSrc && fotoSrc !== '⏳') {
-      document.getElementById('mFotoPreview').src = fotoSrc;
-      document.getElementById('mFotoPreview').style.display = 'block';
-      document.getElementById('fotoLabel').style.display = 'none';
-      window._fotoB64 = '';  // No resubir si no cambia
-    }
-  } else {
-    document.getElementById('mNombre').value  = '';
-    document.getElementById('mMarca').value   = '';
-    document.getElementById('mColor').value   = '';
-    document.getElementById('mColorPicker').value = '#FBCFE8';
-    document.getElementById('mStock').value   = 1;
-    document.getElementById('mNotas').value   = '';
-    setVisibilidad('privado');
-    document.getElementById('fotoLabel').textContent = '📷 Tocá para subir una foto';
-  }
-
-  document.getElementById('modalProducto').classList.add('open');
-}
-
-function editarProducto(id) { abrirModalProducto(id); }
-
-function cerrarModal() {
-  document.getElementById('modalProducto').classList.remove('open');
-}
-
-function previewFoto(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  // Comprimir a max 400px para no saturar localStorage
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const max = 400;
-      let w = img.width, h = img.height;
-      if (w > max) { h = Math.round(h * max / w); w = max; }
-      if (h > max) { w = Math.round(w * max / h); h = max; }
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      const b64 = canvas.toDataURL('image/jpeg', 0.75);
-      window._fotoB64 = b64;
-      document.getElementById('mFotoPreview').src = b64;
-      document.getElementById('mFotoPreview').style.display = 'block';
-      document.getElementById('fotoLabel').textContent = '📷 Cambiar foto';
-    };
-    img.src = ev.target.result;
-  };
-  reader.readAsDataURL(file);
-}
-
-function setVisibilidad(val) {
-  document.getElementById('mVis').value = val;
-  const btnPriv = document.getElementById('visPrivado');
-  const btnPub  = document.getElementById('visPublico');
-  if (!btnPriv || !btnPub) return;
-  if (val === 'privado') {
-    btnPriv.style.border = '1.5px solid var(--accent)';
-    btnPriv.style.background = 'rgba(232,144,144,0.1)';
-    btnPriv.style.color = 'var(--text)';
-    btnPriv.style.fontWeight = '500';
-    btnPub.style.border = '1.5px solid var(--border)';
-    btnPub.style.background = 'var(--bg)';
-    btnPub.style.color = 'var(--text-muted)';
-    btnPub.style.fontWeight = '400';
-  } else {
-    btnPub.style.border = '1.5px solid var(--accent)';
-    btnPub.style.background = 'rgba(232,144,144,0.1)';
-    btnPub.style.color = 'var(--text)';
-    btnPub.style.fontWeight = '500';
-    btnPriv.style.border = '1.5px solid var(--border)';
-    btnPriv.style.background = 'var(--bg)';
-    btnPriv.style.color = 'var(--text-muted)';
-    btnPriv.style.fontWeight = '400';
-  }
-}
-
-function guardarProducto() {
-  const nombre = document.getElementById('mNombre').value.trim();
-  if (!nombre) { showToast('⚠ El nombre es obligatorio'); return; }
-
-  const producto = {
-    id:          document.getElementById('mIdx').value || Date.now().toString(),
-    nombre,
-    marca:       document.getElementById('mMarca').value.trim(),
-    categoria:   document.getElementById('mCategoria').value,
-    color:       document.getElementById('mColor').value.trim() || document.getElementById('mColorPicker').value,
-    stock:       Math.max(0, parseInt(document.getElementById('mStock').value) || 0),
-    notas:       document.getElementById('mNotas').value.trim(),
-    visibilidad: document.getElementById('mVis').value,
-    foto:        window._fotoB64 || '',
-  };
-
-  const arr = getInventario();
-  const idx = arr.findIndex(p => p.id === producto.id);
-  if (idx >= 0) arr[idx] = producto; else arr.push(producto);
-  // Guardar en localStorage sin base64 (muy pesado)
-  const productoSinFoto = {...producto, foto: ''};
-  const arrFinal = getInventario();
-  const idxFinal = arrFinal.findIndex(p => String(p.id) === String(producto.id));
-  if (idxFinal >= 0) arrFinal[idxFinal] = productoSinFoto;
-  else arrFinal.push(productoSinFoto);
-  saveInventario(arrFinal);
-  cerrarModal();
-  renderInventario();
-  renderInvTabs();
-  // Subir a Google Sheet
-  apiPost({ action: 'saveInventario', row: {...producto, foto: ''} });
-  // Subir foto a Drive por separado
-  if (window._fotoB64 && window._fotoB64.startsWith('data:')) {
-    showToast('⏳ Subiendo foto a Drive...');
-    apiPost({ action: 'uploadFoto', id: producto.id, b64: window._fotoB64, nombre: producto.id })
-      .then(() => showToast('✓ Foto guardada en Drive'));
-  } else {
-    showToast(idx >= 0 ? '✓ Producto actualizado' : '✓ Producto agregado');
-  }
-}
-
-function eliminarProducto(id) {
-  const p = getInventario().find(x => String(x.id) === String(id));
-  const nombre = p ? p.nombre : 'este producto';
-  showConfirm({
-    titulo: 'Eliminar producto',
-    mensaje: `¿Eliminás "${nombre}"? Esta acción no se puede deshacer.`,
-    icono: '🗑',
-    btnTxt: 'Sí, eliminar',
-    onOk: () => {
-      const deleted = JSON.parse(localStorage.getItem('deleted_ids') || '[]');
-      if (!deleted.includes(String(id))) deleted.push(String(id));
-      localStorage.setItem('deleted_ids', JSON.stringify(deleted));
-      const arr = getInventario().filter(p => String(p.id) !== String(id));
-      saveInventario(arr);
-      apiPost({ action: 'deleteRow', sheet: 'inventario', id: id });
-      renderInventario();
-      renderInvTabs();
-      showToast('✓ Producto eliminado');
-    }
-  });
-}
-
-// ── Exportar ────────────────────────────────────────────────
-function invToRows() {
-  return getInventario().map(p => [
-    p.nombre||'', p.marca||'', p.categoria||'', p.color||'',
-    p.stock??0,
-    Number(p.stock)<=0?'Sin stock':Number(p.stock)<=2?'Stock bajo':'Ok',
-    p.visibilidad||'privado',
-    p.notas||'',
-  ]);
-}
-
-function exportCSV() {
-  const header = ['Nombre','Marca','Categoría','Color','Stock','Estado','Visibilidad','Notas'];
-  const csv = [header,...invToRows()].map(r =>
-    r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')
-  ).join('\n');
-  dlFile(new Blob([csv],{type:'text/csv;charset=utf-8;'}), 'inventario.csv');
-  showToast('⬇ CSV descargado');
-}
-
-function exportXLS() {
-  const header = ['Nombre','Marca','Categoría','Color','Stock','Estado','Visibilidad','Notas'];
-  let xml = `<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Worksheet ss:Name="Inventario"><Table>`;
-  [header,...invToRows()].forEach(row => {
-    xml += '<Row>' + row.map(v =>
-      `<Cell><Data ss:Type="${typeof v==='number'?'Number':'String'}">${String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</Data></Cell>`
-    ).join('') + '</Row>';
-  });
-  xml += '</Table></Worksheet></Workbook>';
-  dlFile(new Blob([xml],{type:'application/vnd.ms-excel'}), 'inventario.xls');
-  showToast('⬇ Excel descargado');
-}
-
-function dlFile(blob, name) {
-  const a = Object.assign(document.createElement('a'), {
-    href: URL.createObjectURL(blob), download: name
-  });
-  a.click();
-}
-
-// ════════════════════════════════════════════════════════════
-//  CATEGORÍAS
-// ════════════════════════════════════════════════════════════
-function renderCategorias() {
-  const cats = getCategorias();
-  document.getElementById('catLista').innerHTML = cats.map((c,i) => `
-    <div style="display:flex;align-items:center;gap:.5rem;padding:.6rem .75rem;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:.4rem">
-      <span style="flex:1;font-size:.88rem">${c}</span>
-      <button onclick="editarCat(${i})" class="btn btn-sm btn-ghost" style="padding:.2rem .5rem;font-size:.75rem">✏</button>
-      <button onclick="eliminarCat(${i})" class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#dc2626;border:none;padding:.2rem .5rem;font-size:.75rem">🗑</button>
-    </div>
-  `).join('') || '<p style="color:var(--text-muted);font-size:.84rem">Sin categorías. Agregá la primera.</p>';
-}
-
-function agregarCategoria() {
-  const val = document.getElementById('nuevaCat').value.trim();
-  if (!val) return;
-  const cats = getCategorias();
-  if (cats.includes(val)) { showToast('Ya existe esa categoría'); return; }
-  cats.push(val);
-  saveCategorias(cats);
-  document.getElementById('nuevaCat').value = '';
-  renderCategorias();
-  renderInvTabs();
-  showToast('✓ Categoría agregada');
-}
-
-function editarCat(i) {
-  const cats = getCategorias();
-  showInputModal({
-    titulo:      'Renombrar categoría',
-    label:       'Nuevo nombre',
-    valorActual: cats[i],
-    placeholder: cats[i],
-    onOk: (nuevo) => {
-      if (nuevo === cats[i]) return;
-      // Actualizar productos con esa categoría
-      const inv = getInventario().map(p =>
-        p.categoria === cats[i] ? {...p, categoria: nuevo} : p
-      );
-      saveInventario(inv);
-      cats[i] = nuevo;
-      saveCategorias(cats);
-      renderCategorias();
-      renderInvTabs();
-      renderInventario();
-      showToast('✓ Categoría renombrada');
-    }
-  });
-}
-
-function eliminarCat(i) {
-  const cats = getCategorias();
-  showConfirm({
-    titulo: 'Eliminar categoría',
-    mensaje: `¿Eliminás "${cats[i]}"? Los productos de esa categoría quedarán sin categoría asignada.`,
-    icono: '🏷',
-    btnTxt: 'Sí, eliminar',
-    onOk: () => {
-      cats.splice(i, 1);
-      saveCategorias(cats);
-      renderCategorias();
-      renderInvTabs();
-      showToast('Categoría eliminada');
-    }
-  });
-}
-
-// Cerrar modal al hacer click afuera
-document.getElementById('modalProducto').addEventListener('click', function(e) {
-  if (e.target === this) cerrarModal();
-});
-document.getElementById('modalConfirmar').addEventListener('click', function(e) {
-  if (e.target === this) cerrarConfirm();
-});
-document.getElementById('modalInput').addEventListener('click', function(e) {
-  if (e.target === this) cerrarInputModal();
-});
-
-</script>
+<script src="js/admin.js"></script>
 </body>
 </html>
