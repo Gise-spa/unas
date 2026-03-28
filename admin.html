@@ -449,29 +449,134 @@
 
     /* Responsive */
     @media (max-width: 768px) {
+      /* Layout */
       .dash-layout { grid-template-columns: 1fr; }
+      .dash-content { padding: 1rem; }
+
+      /* Sidebar horizontal scrollable */
       .dash-sidebar {
         position: static;
         height: auto;
         border-right: none;
         border-bottom: 1px solid var(--border);
-        padding: 1rem 0;
+        padding: .5rem 0;
         display: flex;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
         gap: 0;
+        scrollbar-width: none;
       }
+      .dash-sidebar::-webkit-scrollbar { display: none; }
       .sidebar-label { display: none; }
       .sidebar-link {
-        padding: 0.5rem 1rem;
+        padding: .6rem 1rem;
         border-left: none;
         border-bottom: 2px solid transparent;
-        font-size: 0.78rem;
+        font-size: .78rem;
+        white-space: nowrap;
+        flex-shrink: 0;
       }
       .sidebar-link.active {
         border-left: none;
         border-bottom-color: var(--accent);
       }
-      .stats-row { grid-template-columns: repeat(2,1fr); }
+
+      /* Stats */
+      .stats-row { grid-template-columns: repeat(2,1fr); gap: .6rem; }
+      .stat-num  { font-size: 1.5rem; }
+
+      /* Tabla — cards en mobile en vez de filas */
+      .table-scroll { overflow-x: visible; }
+      table, thead, tbody, th, td, tr { display: block; }
+      thead { display: none; }
+      tbody tr {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        margin-bottom: .75rem;
+        padding: .75rem;
+        position: relative;
+      }
+      tbody td {
+        border: none;
+        padding: .25rem 0;
+        font-size: .84rem;
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+      }
+      tbody td::before {
+        content: attr(data-label);
+        font-size: .68rem;
+        font-weight: 500;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        min-width: 80px;
+        flex-shrink: 0;
+      }
+      /* Última col de acciones — botones en fila */
+      tbody td:last-child {
+        flex-wrap: wrap;
+        gap: .35rem;
+        margin-top: .35rem;
+        padding-top: .5rem;
+        border-top: 1px solid var(--border);
+      }
+      tbody td:last-child::before { display: none; }
+
+      /* Nav bar admin */
+      .dash-nav { padding: 0 1rem; }
+      .dash-nav .btn-outline { display: none; }
+
+      /* Modal full width */
+      .modal-box {
+        max-width: 100% !important;
+        margin: 0 !important;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+      }
+      .modal-overlay {
+        align-items: flex-end !important;
+        padding: 0 !important;
+      }
+
+      /* Grid formulario modal — 1 col */
+      .modal-box > div[style*="grid"] {
+        grid-template-columns: 1fr !important;
+      }
+
+      /* Toolbar tabla */
+      .table-toolbar { flex-direction: column; align-items: flex-start; }
+      .table-toolbar-actions { width: 100%; }
+      .table-toolbar-actions .input-sm[type="text"] { width: 100%; }
+
+      /* Inv tabs scroll */
+      .inv-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: none;
+        padding-bottom: .25rem;
+      }
+      .inv-tabs::-webkit-scrollbar { display: none; }
+      .inv-tab { flex-shrink: 0; }
+
+      /* Panel section */
+      .panel-section { padding: 1.25rem; }
+
+      /* Toggle grid */
+      .toggle-grid { gap: .4rem; }
+      .toggle-chip { font-size: .76rem; padding: .35rem .7rem; }
+
+      /* Qty control más grande para touch */
+      .qty-btn { width: 32px; height: 32px; font-size: 1.1rem; }
+      .qty-num  { font-size: 1rem; min-width: 32px; }
+    }
+
+    /* Muy pequeño */
+    @media (max-width: 400px) {
+      .stats-row { grid-template-columns: 1fr 1fr; }
+      .stat-card { padding: .85rem; }
     }
   </style>
 </head>
@@ -1027,14 +1132,14 @@ function renderTurnos() {
     const waN     = t.tel ? `549${t.tel.replace(/\D/g,'')}` : '';
 
     return `<tr>
-      <td><span class="dot ${dotCls}"></span>${t.estado}</td>
-      <td>
+      <td data-label="Estado"><span class="dot ${dotCls}"></span>${t.estado}</td>
+      <td data-label="Cliente">
         <div style="font-weight:500">${t.nombre}</div>
         <div style="font-size:.76rem;color:var(--text-muted)">${t.mail}</div>
       </td>
-      <td>${t.servicio}</td>
-      <td style="white-space:nowrap">${fmtDateHuman(dt)}</td>
-      <td style="white-space:nowrap">${t.horario} hs · ${t.duracion} min</td>
+      <td data-label="Servicio">${t.servicio}</td>
+      <td data-label="Fecha" style="white-space:nowrap">${fmtDateHuman(dt)}</td>
+      <td data-label="Horario" style="white-space:nowrap">${t.horario} hs · ${t.duracion} min</td>
       <td style="white-space:nowrap">
         <div style="display:flex;flex-direction:column;gap:3px">
           ${t.estado==='pendiente' ? `
@@ -1275,14 +1380,14 @@ function renderInventario() {
         </div>`;
 
     return `<tr>
-      <td>${fotoHtml}</td>
-      <td>
+      <td data-label="Foto">${fotoHtml}</td>
+      <td data-label="Nombre">
         <div style="font-weight:500;font-size:.85rem">${p.nombre}</div>
         ${p.notas ? `<div style="font-size:.73rem;color:var(--text-muted)">${p.notas}</div>` : ''}
       </td>
-      <td style="font-size:.82rem">${p.marca || '—'}</td>
-      <td><span class="badge badge-yellow" style="font-size:.7rem">${p.categoria || '—'}</span></td>
-      <td style="text-align:center">
+      <td data-label="Marca" style="font-size:.82rem">${p.marca || '—'}</td>
+      <td data-label="Categoría"><span class="badge badge-yellow" style="font-size:.7rem">${p.categoria || '—'}</span></td>
+      <td data-label="Stock" style="text-align:center">
         <div class="qty-control">
           <button class="qty-btn" onclick="ajustarStock('${p.id}',-1)">−</button>
           <span class="qty-num" data-qty-id="${p.id}">${stock}</span>
