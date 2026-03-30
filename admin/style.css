@@ -824,3 +824,53 @@ tr:hover td { background: rgba(253,230,138,.06); }
   background: rgba(34,197,94,.13);
   color: #16a34a;
 }
+
+/* ── Modal foto — vista grande ──────────────────────────── */
+.foto-modal-wrap {
+  width: 100%;
+  margin-bottom: 1rem;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.foto-empty-area {
+  width: 100%;
+  aspect-ratio: 4/3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-pink);
+  cursor: pointer;
+  transition: background .2s;
+}
+.foto-empty-area:hover { background: var(--bg-yellow); }
+
+.foto-preview-area {
+  position: relative;
+  width: 100%;
+}
+.foto-modal-img {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  display: block;
+}
+.foto-replace-btn {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(0,0,0,.55);
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  padding: .4rem .9rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: .76rem;
+  font-weight: 500;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background .2s;
+}
+.foto-replace-btn:hover { background: rgba(0,0,0,.75); }
