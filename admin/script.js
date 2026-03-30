@@ -562,8 +562,11 @@ function guardarProducto() {
   const nombre = document.getElementById('mNombre').value.trim();
   if (!nombre) { showToast('⚠ El nombre es obligatorio'); return; }
 
+  const idActual = document.getElementById('mIdx').value;
+  const existente = idActual ? getInventario().find(p => String(p.id) === String(idActual)) : null;
+
   const producto = {
-    id:          document.getElementById('mIdx').value || Date.now().toString(),
+    id:          idActual || Date.now().toString(),
     nombre,
     marca:       document.getElementById('mMarca').value.trim(),
     categoria:   document.getElementById('mCategoria').value,
@@ -571,7 +574,8 @@ function guardarProducto() {
     stock:       Math.max(0, parseInt(document.getElementById('mStock').value)||0),
     notas:       document.getElementById('mNotas').value.trim(),
     visibilidad: document.getElementById('mVis').value,
-    fotoUrl:     '',
+    // Preservar fotoUrl existente — solo se pisa si se sube foto nueva
+    fotoUrl:     existente?.fotoUrl || '',
   };
 
   const arr = getInventario();
