@@ -478,6 +478,54 @@ function eliminarProducto(id, borrarFoto) {
   renderInventario(); showToast('✓ Producto eliminado');
 }
 
+// ════════════════════════════════════════════════════════
+//  PDF
+// ════════════════════════════════════════════════════════
+function abrirModalPDF() {
+  // Poblar selector de categorías
+  const sel = document.getElementById('pdfCategoria');
+  sel.innerHTML = getCategorias().map(c => `<option value="${c}">${c}</option>`).join('');
+  // Reset radio
+  document.querySelector('input[name="pdfFiltro"][value=""]').checked = true;
+  abrirModal('modalPDF');
+}
+
+async function generarPDF() {
+  const btn     = document.getElementById('btnGenerarPDF');
+  const filtro  = document.querySelector('input[name="pdfFiltro"]:checked')?.value || '';
+  const cat     = document.getElementById('pdfCategoria').value;
+  const filtroFinal = filtro === 'categoria' ? cat : filtro;
+
+  // Filtrar productos
+  const todos = getInventario();
+  let items;
+  if (filtroFinal === 'bajo') {
+    items = todos.filter(p => Number(p.stock) <= 2);
+  } else if (filtroFinal && filtroFinal !== 'bajo') {
+    items = todos.filter(p => p.categoria === filtroFinal);
+  } else {
+    items = todos;
+  }
+
+  if (!items.length) { showToast('⚠ No hay productos con ese filtro'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="btn-spinner"></span> Generando...';
+
+  const r = await apiPost({ action: 'exportarPDF', items, filtro: filtroFinal });
+
+  btn.disabled = false;
+  btn.innerHTML = '📄 Generar PDF';
+
+  if (r.ok && r.url) {
+    cerrarModal('modalPDF');
+    showToast('✓ PDF generado — abriendo...');
+    window.open(r.url, '_blank');
+  } else {
+    showToast('⚠ ' + (r.error || 'Error al generar el PDF'));
+  }
+}
+
 function exportCSV() {
   const h = ['Nombre','Marca','Categoría','Color','Stock','Estado','Visibilidad','Notas'];
   const rows = getInventario().map(p => [
