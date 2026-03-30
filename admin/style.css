@@ -792,3 +792,12 @@ tr:hover td { background: rgba(253,230,138,.06); }
     gap: .75rem;
   }
 }
+
+/* ── Fix footer tarjeta inventario ─────────────────────── */
+.inv-card-footer {
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+.inv-card-actions {
+  flex-shrink: 0;
+}
