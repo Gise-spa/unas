@@ -583,15 +583,37 @@ async function detectarColorGemini() {
   btn.innerHTML = '<span class="btn-spinner"></span> Detectando...';
   btn.disabled = true;
   try {
-    let payload;
+    let b64;
     if (window._fotoB64 && window._fotoB64.startsWith('data:')) {
-      payload = { action: 'detectarColor', b64: window._fotoB64 };
+      // Foto nueva — ya tenemos el b64
+      b64 = window._fotoB64;
     } else if (window._fotoUrlActual) {
-      payload = { action: 'detectarColor', url: window._fotoUrlActual };
+      // Foto existente en Drive — la convertimos a b64 desde el canvas
+      const img = document.getElementById('mFotoPreview');
+      if (!img || !img.src) {
+        showToast('⚠ No hay foto para analizar');
+        btn.innerHTML = orig; btn.disabled = false; return;
+      }
+      // Dibujar en canvas para obtener b64 (evita CORS usando la img ya cargada)
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width  = img.naturalWidth  || img.width  || 400;
+        canvas.height = img.naturalHeight || img.height || 400;
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        b64 = canvas.toDataURL('image/jpeg', .85);
+      } catch(corsErr) {
+        // Si hay CORS, mandamos la URL igual y dejamos que Gemini intente
+        b64 = null;
+      }
     } else {
       showToast('⚠ No hay foto para analizar');
       btn.innerHTML = orig; btn.disabled = false; return;
     }
+
+    const payload = b64
+      ? { action: 'detectarColor', b64: b64 }
+      : { action: 'detectarColor', url: window._fotoUrlActual };
+
     const r = await apiPost(payload);
     if (r.ok && r.color) {
       document.getElementById('mColor').value = r.color;
