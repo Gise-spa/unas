@@ -647,3 +647,148 @@ tr:hover td { background: rgba(253,230,138,.06); }
   .stat-card  { padding: .75rem; }
   .stat-num   { font-size: 1.25rem; }
 }
+
+/* ══════════════════════════════════════════════════════
+   INVENTARIO — Grilla de tarjetas
+   ══════════════════════════════════════════════════════ */
+
+.inv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.1rem;
+}
+
+.inv-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .75rem;
+  font-size: .88rem;
+}
+
+/* Card */
+.inv-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: transform .2s, box-shadow .2s;
+}
+.inv-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Foto */
+.inv-card-foto {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: var(--bg-pink);
+}
+.inv-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.inv-card-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Círculo de color — abajo a la derecha sobre la foto */
+.inv-color-dot {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(255,255,255,.85);
+  box-shadow: 0 1px 4px rgba(0,0,0,.25);
+  pointer-events: none;
+}
+
+/* Badge visibilidad — arriba a la izquierda */
+.inv-vis-badge {
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  background: rgba(0,0,0,.45);
+  color: #fff;
+  border-radius: 50px;
+  padding: .18rem .5rem;
+  font-size: .72rem;
+  cursor: pointer;
+  transition: background .15s;
+  backdrop-filter: blur(4px);
+  user-select: none;
+}
+.inv-vis-badge:hover { background: rgba(0,0,0,.65); }
+.inv-vis-badge.pub {
+  background: rgba(34,197,94,.75);
+}
+
+/* Body */
+.inv-card-body {
+  padding: .75rem .85rem .85rem;
+}
+.inv-card-cat {
+  font-size: .62rem;
+  font-weight: 500;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: .2rem;
+}
+.inv-card-nombre {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1rem;
+  color: var(--text);
+  line-height: 1.25;
+  margin-bottom: .15rem;
+}
+.inv-card-marca {
+  font-size: .74rem;
+  color: var(--text-muted);
+  margin-bottom: .2rem;
+}
+.inv-card-notas {
+  font-size: .7rem;
+  color: var(--text-muted);
+  margin-bottom: .4rem;
+  font-style: italic;
+}
+
+/* Footer: stock + acciones */
+.inv-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: .6rem;
+  gap: .4rem;
+}
+.inv-card-actions {
+  display: flex;
+  gap: .3rem;
+}
+
+/* Stock colores */
+.inv-stock-ok  { color: var(--text); }
+.inv-stock-low { color: #b45309; font-weight: 600; }
+.inv-stock-out { color: #dc2626; font-weight: 600; }
+
+/* Responsive */
+@media (max-width: 500px) {
+  .inv-grid {
+    grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+    gap: .75rem;
+  }
+}
