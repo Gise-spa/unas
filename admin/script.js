@@ -135,15 +135,7 @@ function renderInicio() {
   document.getElementById('stHoy').textContent  = turnos.filter(t => t.fecha === hoy).length;
   document.getElementById('stMes').textContent  = turnos.filter(t => (t.fecha||'').startsWith(mes)).length;
   document.getElementById('stInv').textContent  = inv.length;
-  const lowCount = inv.filter(p => Number(p.stock) <= 2).length;
-  document.getElementById('stLow').textContent  = lowCount;
-  // Hacer clickeable el stat de stock bajo
-  const statLowCard = document.getElementById('stLow').closest('.stat-card');
-  if (statLowCard && lowCount > 0) {
-    statLowCard.style.cursor = 'pointer';
-    statLowCard.title = 'Ver productos con stock bajo';
-    statLowCard.onclick = () => { irA('inventario'); setTimeout(filtrarStockBajo, 100); };
-  }
+  document.getElementById('stLow').textContent  = inv.filter(p => Number(p.stock) > 0 && Number(p.stock) <= 2).length;
 
   const hoyTurnos = turnos.filter(t => t.fecha === hoy).sort((a,b) => a.horario.localeCompare(b.horario));
   const listEl = document.getElementById('listHoy');
@@ -345,46 +337,23 @@ function renderInvTabs() {
 }
 function setInvCat(c) { invCatActiva = c === 'Todos' ? '' : c; renderInvTabs(); renderInventario(); }
 
-function filtrarStockBajo() {
-  // Limpiar filtro de categoría y buscar por stock bajo
-  invCatActiva = '';
-  window._filtroStockBajo = true;
-  renderInvTabs();
-  renderInventario();
-}
-
 function renderInventario() {
   renderInvTabs();
   const todos = getInventario();
   const q     = (document.getElementById('invBuscar')?.value || '').toLowerCase();
-  // Limpiar filtro stock bajo si cambió categoría o búsqueda
-  if (invCatActiva || q) window._filtroStockBajo = false;
-
   const lista = todos.filter(p => {
-    const matchCat  = !invCatActiva || p.categoria === invCatActiva;
-    const matchQ    = !q || (p.nombre||'').toLowerCase().includes(q) || (p.marca||'').toLowerCase().includes(q);
-    const matchLow  = !window._filtroStockBajo || Number(p.stock) <= 2;
-    return matchCat && matchQ && matchLow;
+    const matchCat = !invCatActiva || p.categoria === invCatActiva;
+    const matchQ   = !q || (p.nombre||'').toLowerCase().includes(q) || (p.marca||'').toLowerCase().includes(q);
+    return matchCat && matchQ;
   });
 
   const bajo = todos.filter(p => Number(p.stock) > 0 && Number(p.stock) <= 2);
-  const sinStock = todos.filter(p => Number(p.stock) <= 0);
   const alertEl = document.getElementById('stockAlerta');
   if (alertEl) {
-    const total = bajo.length + sinStock.length;
-    if (total > 0) {
-      alertEl.style.display = 'block';
-      document.getElementById('stockAlertaLista').innerHTML =
-        `<span style="font-size:.84rem;color:#92400e">
-          ${bajo.length ? `<strong>${bajo.length}</strong> con stock bajo` : ''}
-          ${bajo.length && sinStock.length ? ' · ' : ''}
-          ${sinStock.length ? `<strong>${sinStock.length}</strong> sin stock` : ''}
-          &nbsp;·&nbsp;
-          <a href="#" onclick="filtrarStockBajo();return false;" style="color:var(--accent);font-weight:500;text-decoration:underline">Ver detalle →</a>
-        </span>`;
-    } else {
-      alertEl.style.display = 'none';
-    }
+    alertEl.style.display = bajo.length ? 'block' : 'none';
+    document.getElementById('stockAlertaLista').innerHTML = bajo.map(p =>
+      `<span class="chip" style="background:rgba(245,158,11,.15);color:#92400e;border-color:transparent">${p.nombre} (${p.stock}u.)</span>`
+    ).join('');
   }
 
   const wrap = document.getElementById('invGrid');
@@ -528,9 +497,10 @@ function abrirModalProducto(id) {
   poblarCatSelect();
   document.getElementById('mIdx').value = id || '';
   document.getElementById('modalProdTitulo').textContent = id ? 'Editar producto' : 'Agregar producto';
-  document.getElementById('mFotoPreview').style.display = 'none';
-  document.getElementById('fotoLabel').style.display = 'block';
-  document.getElementById('fotoLabel').textContent = '📷 Tocá para subir una foto';
+  document.getElementById('fotoEmptyArea').style.display   = 'flex';
+  document.getElementById('fotoPreviewArea').style.display  = 'none';
+  document.getElementById('mFotoPreview').src = '';
+  document.getElementById('btnDetectarColor').style.display = 'none';
   window._fotoB64 = '';
 
   if (id) {
@@ -547,8 +517,9 @@ function abrirModalProducto(id) {
     const src = p.fotoUrl || p.foto || '';
     if (src && src !== '⏳') {
       document.getElementById('mFotoPreview').src = src;
-      document.getElementById('mFotoPreview').style.display = 'block';
-      document.getElementById('fotoLabel').textContent = '📷 Cambiar foto';
+      document.getElementById('fotoEmptyArea').style.display   = 'none';
+      document.getElementById('fotoPreviewArea').style.display = 'block';
+      document.getElementById('btnDetectarColor').style.display = 'inline-flex';
     }
   } else {
     document.getElementById('mNombre').value      = '';
@@ -590,8 +561,9 @@ function previewFoto(e) {
       canvas.getContext('2d').drawImage(img,0,0,w,h);
       window._fotoB64 = canvas.toDataURL('image/jpeg', .75);
       document.getElementById('mFotoPreview').src = window._fotoB64;
-      document.getElementById('mFotoPreview').style.display = 'block';
-      document.getElementById('fotoLabel').textContent = '📷 Cambiar foto';
+      document.getElementById('fotoEmptyArea').style.display   = 'none';
+      document.getElementById('fotoPreviewArea').style.display = 'block';
+      document.getElementById('btnDetectarColor').style.display = 'inline-flex';
     };
     img.src = ev.target.result;
   };
