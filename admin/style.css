@@ -914,11 +914,11 @@ tr:hover td { background: rgba(253,230,138,.06); }
 .inv-card-placeholder { display: flex; align-items: center; justify-content: center; }
 .inv-color-dot {
   position: absolute;
-  bottom: 8px; right: 8px;
-  width: 26px; height: 26px;
+  bottom: 10px; right: 10px;
+  width: 36px; height: 36px;
   border-radius: 50%;
-  border: 2.5px solid rgba(255,255,255,.85);
-  box-shadow: 0 1px 4px rgba(0,0,0,.25);
+  border: 3px solid rgba(255,255,255,.9);
+  box-shadow: 0 2px 6px rgba(0,0,0,.3);
   pointer-events: none;
 }
 .inv-vis-badge {
