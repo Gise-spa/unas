@@ -221,14 +221,7 @@
         placeholder="Buscar por nombre o marca…"
         style="width:100%;max-width:300px;margin-bottom:1rem"
         oninput="renderInventario()">
-      <div class="panel-card">
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Foto</th><th>Nombre</th><th>Marca</th><th>Categoría</th><th>Stock</th><th>Estado</th><th>Acciones</th></tr></thead>
-            <tbody id="invBody"></tbody>
-          </table>
-        </div>
-      </div>
+      <div id="invGrid" class="inv-grid"></div>
       <div style="display:flex;gap:.5rem;margin-top:1rem">
         <button class="btn btn-outline btn-sm" onclick="exportCSV()">⬇ CSV</button>
       </div>
