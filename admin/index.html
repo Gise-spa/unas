@@ -253,10 +253,20 @@
       <button class="modal-close" onclick="cerrarModal('modalProducto')">×</button>
     </div>
     <input type="hidden" id="mIdx">
-    <div class="foto-upload-area" onclick="document.getElementById('mFotoInput').click()">
-      <input type="file" id="mFotoInput" accept="image/*" onchange="previewFoto(event)">
-      <img id="mFotoPreview" class="foto-preview-img">
-      <p id="fotoLabel" style="font-size:.82rem;color:var(--text-muted)">📷 Tocá para subir una foto</p>
+    <div class="foto-modal-wrap">
+      <input type="file" id="mFotoInput" accept="image/*" onchange="previewFoto(event)" style="display:none">
+      <!-- Sin foto -->
+      <div class="foto-empty-area" id="fotoEmptyArea" onclick="document.getElementById('mFotoInput').click()">
+        <span style="font-size:2rem;opacity:.3">📷</span>
+        <p id="fotoLabel" style="font-size:.82rem;color:var(--text-muted);margin:.5rem 0 0">Tocá para subir una foto</p>
+      </div>
+      <!-- Con foto -->
+      <div class="foto-preview-area" id="fotoPreviewArea" style="display:none">
+        <img id="mFotoPreview" class="foto-modal-img">
+        <button type="button" class="foto-replace-btn" onclick="document.getElementById('mFotoInput').click()">
+          📷 Reemplazar foto
+        </button>
+      </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
       <div class="form-group" style="grid-column:1/-1">
