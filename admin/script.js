@@ -67,16 +67,13 @@ function initDrawer() {
   const btn     = document.getElementById('menuBtn');
   const drawer  = document.getElementById('adminDrawer');
   const overlay = document.getElementById('drawerOverlay');
-
   btn.addEventListener('click', () => {
     const isOpen = drawer.classList.contains('open');
     drawer.classList.toggle('open', !isOpen);
     overlay.classList.toggle('open', !isOpen);
     btn.classList.toggle('open', !isOpen);
   });
-
   overlay.addEventListener('click', cerrarDrawer);
-
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
       cerrarDrawer();
@@ -111,7 +108,6 @@ function renderSeccionActiva() {
   if (seccionActiva === 'categorias') renderCategorias();
 }
 
-// ── Badges ────────────────────────────────────────────────
 function actualizarBadges() {
   const pendientes = getTurnos().filter(t => t.estado === 'pendiente').length;
   const badge = document.getElementById('turnosBadge');
@@ -122,21 +118,20 @@ function actualizarBadges() {
 }
 
 // ════════════════════════════════════════════════════════
-//  INICIO — Dashboard
+//  INICIO
 // ════════════════════════════════════════════════════════
 function renderInicio() {
-  const turnos = getTurnos();
-  const inv    = getInventario();
-  const hoy    = todayStr();
-  const mes    = hoy.slice(0,7);
+  const turnos = getTurnos(), inv = getInventario();
+  const hoy = todayStr(), mes = hoy.slice(0,7);
 
   document.getElementById('stPend').textContent = turnos.filter(t => t.estado === 'pendiente').length;
   document.getElementById('stConf').textContent = turnos.filter(t => t.estado === 'confirmado').length;
   document.getElementById('stHoy').textContent  = turnos.filter(t => t.fecha === hoy).length;
   document.getElementById('stMes').textContent  = turnos.filter(t => (t.fecha||'').startsWith(mes)).length;
   document.getElementById('stInv').textContent  = inv.length;
+
   const lowCount = inv.filter(p => Number(p.stock) <= 2).length;
-  document.getElementById('stLow').textContent  = lowCount;
+  document.getElementById('stLow').textContent = lowCount;
   const statLowCard = document.getElementById('stLow')?.closest('.stat-card');
   if (statLowCard) {
     if (lowCount > 0) {
@@ -150,8 +145,7 @@ function renderInicio() {
   }
 
   const hoyTurnos = turnos.filter(t => t.fecha === hoy).sort((a,b) => a.horario.localeCompare(b.horario));
-  const listEl = document.getElementById('listHoy');
-  listEl.innerHTML = hoyTurnos.length
+  document.getElementById('listHoy').innerHTML = hoyTurnos.length
     ? hoyTurnos.map(t => `
         <li class="today-item">
           <span class="today-time">${t.horario}</span>
@@ -165,8 +159,7 @@ function renderInicio() {
 
   const pendTurnos = turnos.filter(t => t.estado === 'pendiente')
     .sort((a,b) => (a.fecha+a.horario).localeCompare(b.fecha+b.horario)).slice(0,5);
-  const pendList = document.getElementById('listPend');
-  pendList.innerHTML = pendTurnos.length
+  document.getElementById('listPend').innerHTML = pendTurnos.length
     ? pendTurnos.map(t => {
         const dt = new Date(t.fecha + 'T00:00:00');
         return `<li class="today-item">
@@ -180,10 +173,7 @@ function renderInicio() {
     : '<p class="today-empty">Sin turnos pendientes</p>';
 }
 
-function confirmarTurnoRapido(id) {
-  cambiarEstadoTurno(id, 'confirmado');
-  renderInicio();
-}
+function confirmarTurnoRapido(id) { cambiarEstadoTurno(id, 'confirmado'); renderInicio(); }
 
 // ════════════════════════════════════════════════════════
 //  TURNOS
@@ -193,19 +183,16 @@ function renderTurnos() {
   const todos  = getTurnos();
   const lista  = filtro ? todos.filter(t => t.estado === filtro) : todos;
   const sorted = [...lista].sort((a,b) => (a.fecha+a.horario).localeCompare(b.fecha+b.horario));
-
   const hoy = todayStr(), mes = hoy.slice(0,7);
   document.getElementById('tStPend').textContent = todos.filter(t=>t.estado==='pendiente').length;
   document.getElementById('tStConf').textContent = todos.filter(t=>t.estado==='confirmado').length;
   document.getElementById('tStHoy').textContent  = todos.filter(t=>t.fecha===hoy).length;
   document.getElementById('tStMes').textContent  = todos.filter(t=>(t.fecha||'').startsWith(mes)).length;
-
   const tbody = document.getElementById('turnosBody');
   if (!sorted.length) {
     tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">Sin turnos${filtro?' en este estado':''}.</td></tr>`;
     return;
   }
-
   tbody.innerHTML = sorted.map(t => {
     const dt   = new Date(t.fecha + 'T00:00:00');
     const dotC = { pendiente:'dot-pend', confirmado:'dot-conf', cancelado:'dot-canc' }[t.estado] || '';
@@ -213,10 +200,7 @@ function renderTurnos() {
     const waR  = waN ? `https://wa.me/${waN}?text=${encodeURIComponent(`Hola ${t.nombre}! Recordatorio: turno de ${t.servicio} hoy a las ${t.horario}hs.`)}` : '';
     return `<tr>
       <td data-label="Estado"><span class="dot ${dotC}"></span>${t.estado}</td>
-      <td data-label="Cliente">
-        <div style="font-weight:500">${t.nombre}</div>
-        <div style="font-size:.76rem;color:var(--text-muted)">${t.mail||''}</div>
-      </td>
+      <td data-label="Cliente"><div style="font-weight:500">${t.nombre}</div><div style="font-size:.76rem;color:var(--text-muted)">${t.mail||''}</div></td>
       <td data-label="Servicio">${t.servicio}</td>
       <td data-label="Fecha">${fmtDateHuman(dt)}</td>
       <td data-label="Horario">${t.horario} · ${t.duracion}min</td>
@@ -232,15 +216,13 @@ function renderTurnos() {
 }
 
 function cambiarEstadoTurno(id, estado) {
-  const arr = getTurnos();
-  const idx = arr.findIndex(t => String(t.id) === String(id));
+  const arr = getTurnos(), idx = arr.findIndex(t => String(t.id) === String(id));
   if (idx < 0) return;
   if (estado === 'cancelado') removeTakenSlot(arr[idx].fecha, arr[idx].horario);
   arr[idx].estado = estado;
   saveTurnos(arr);
   apiPost({ action: 'updateEstado', id, estado });
-  renderTurnos();
-  actualizarBadges();
+  renderTurnos(); actualizarBadges();
   showToast(estado === 'confirmado' ? '✓ Turno confirmado' : '✗ Turno cancelado');
 }
 
@@ -259,7 +241,6 @@ function renderAgenda() {
   agTemp = JSON.parse(JSON.stringify(getAgenda()));
   renderDias(); renderSlots(); renderDuraciones(); renderBloqueadas();
 }
-
 function renderDias() {
   document.getElementById('diasChips').innerHTML = DIAS_N.map((d,i) =>
     `<div class="chip ${agTemp.diasHabilitados.includes(i)?'on':''}" onclick="toggleDia(${i})">${d}</div>`
@@ -267,20 +248,17 @@ function renderDias() {
 }
 function toggleDia(i) {
   const arr = agTemp.diasHabilitados, idx = arr.indexOf(i);
-  if (idx >= 0) arr.splice(idx,1); else arr.push(i);
-  renderDias();
+  if (idx >= 0) arr.splice(idx,1); else arr.push(i); renderDias();
 }
 function guardarDias() {
   const ag = getAgenda(); ag.diasHabilitados = agTemp.diasHabilitados;
   DB.set('agenda_config', ag); showToast('✓ Días guardados');
 }
-
 function renderSlots() {
   document.getElementById('slotsChips').innerHTML = agTemp.slots.map(s =>
     `<div class="chip on-gold" style="display:flex;align-items:center;gap:.3rem">
       ${s}<span onclick="quitarSlot('${s}')" style="cursor:pointer;color:var(--text-muted);font-size:.9rem;line-height:1">×</span>
-    </div>`
-  ).join('');
+    </div>`).join('');
 }
 function agregarSlot() {
   const v = document.getElementById('nuevoSlot').value;
@@ -292,7 +270,6 @@ function guardarSlots() {
   const ag = getAgenda(); ag.slots = agTemp.slots;
   DB.set('agenda_config', ag); showToast('✓ Horarios guardados');
 }
-
 function renderDuraciones() {
   const svcs = agTemp.servicios || getDefaultServicios();
   const grupos = {};
@@ -315,7 +292,6 @@ function guardarDuraciones() {
   svcs.forEach(s => { const el = document.getElementById('dur_'+s.id); if (el) s.duracion = parseInt(el.value)||s.duracion; });
   ag.servicios = svcs; DB.set('agenda_config', ag); showToast('✓ Duraciones guardadas');
 }
-
 function bloquearFecha() {
   const v = document.getElementById('fechaBloqueo').value; if (!v) return;
   const ag = getAgenda();
@@ -350,15 +326,34 @@ function renderInvTabs() {
 function setInvCat(c) {
   invCatActiva = c === 'Todos' ? '' : c;
   window._filtroStockBajo = false;
-  renderInvTabs();
-  renderInventario();
+  renderInvTabs(); renderInventario();
 }
-
 function filtrarStockBajo() {
   invCatActiva = '';
   window._filtroStockBajo = true;
-  renderInvTabs();
-  renderInventario();
+  renderInvTabs(); renderInventario();
+}
+
+function actualizarAlertaStock() {
+  const todos    = getInventario();
+  const bajo     = todos.filter(p => Number(p.stock) > 0 && Number(p.stock) <= 2);
+  const sinStock = todos.filter(p => Number(p.stock) <= 0);
+  const alertEl  = document.getElementById('stockAlerta');
+  if (!alertEl) return;
+  const total = bajo.length + sinStock.length;
+  if (total > 0) {
+    alertEl.style.display = 'block';
+    const partes = [];
+    if (bajo.length)     partes.push(`<strong>${bajo.length}</strong> con stock bajo`);
+    if (sinStock.length) partes.push(`<strong>${sinStock.length}</strong> sin stock`);
+    document.getElementById('stockAlertaLista').innerHTML =
+      `<span style="font-size:.84rem">${partes.join(' · ')} &nbsp;·&nbsp;
+        <a href="#" onclick="filtrarStockBajo();return false;"
+          style="color:var(--accent);font-weight:500;text-decoration:underline">Ver detalle →</a>
+      </span>`;
+  } else {
+    alertEl.style.display = 'none';
+  }
 }
 
 function renderInventario() {
@@ -366,7 +361,6 @@ function renderInventario() {
   const todos = getInventario();
   const q     = (document.getElementById('invBuscar')?.value || '').toLowerCase();
   if (invCatActiva || q) window._filtroStockBajo = false;
-
   const lista = todos.filter(p => {
     const matchCat = !invCatActiva || p.categoria === invCatActiva;
     const matchQ   = !q || (p.nombre||'').toLowerCase().includes(q) || (p.marca||'').toLowerCase().includes(q);
@@ -374,25 +368,7 @@ function renderInventario() {
     return matchCat && matchQ && matchLow;
   });
 
-  const bajo     = todos.filter(p => Number(p.stock) > 0 && Number(p.stock) <= 2);
-  const sinStock = todos.filter(p => Number(p.stock) <= 0);
-  const alertEl  = document.getElementById('stockAlerta');
-  if (alertEl) {
-    const total = bajo.length + sinStock.length;
-    if (total > 0) {
-      alertEl.style.display = 'block';
-      const partes = [];
-      if (bajo.length)     partes.push(`<strong>${bajo.length}</strong> con stock bajo`);
-      if (sinStock.length) partes.push(`<strong>${sinStock.length}</strong> sin stock`);
-      document.getElementById('stockAlertaLista').innerHTML =
-        `<span style="font-size:.84rem">${partes.join(' · ')} &nbsp;·&nbsp;
-          <a href="#" onclick="filtrarStockBajo();return false;"
-            style="color:var(--accent);font-weight:500;text-decoration:underline">Ver detalle →</a>
-        </span>`;
-    } else {
-      alertEl.style.display = 'none';
-    }
-  }
+  actualizarAlertaStock();
 
   const wrap = document.getElementById('invGrid');
   if (!wrap) return;
@@ -440,8 +416,8 @@ function renderInventario() {
             <button class="qty-btn" onclick="ajustarStock('${p.id}',+1)">+</button>
           </div>
           <div class="inv-card-actions">
-            <button onclick="abrirModalProducto('${p.id}')" class="btn btn-sm" style="background:var(--bg-yellow);border:none;padding:.28rem .65rem">Editar</button>
-            <button onclick="confirmarEliminar('${p.id}')" class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#dc2626;border:none;padding:.28rem .65rem">✕</button>
+            <button onclick="abrirModalProducto('${p.id}')" class="btn btn-sm inv-btn-editar">Editar</button>
+            <button onclick="confirmarEliminar('${p.id}')" class="btn btn-sm inv-btn-eliminar">✕</button>
           </div>
         </div>
       </div>
@@ -456,7 +432,11 @@ function ajustarStock(id, delta) {
   saveInventario(arr);
   apiPost({ action: 'updateStock', id, stock: arr[idx].stock });
   const el = document.querySelector(`[data-qty-id="${id}"]`);
-  if (el) el.textContent = arr[idx].stock;
+  if (el) {
+    el.textContent = arr[idx].stock;
+    el.className = 'qty-num ' + (arr[idx].stock <= 0 ? 'inv-stock-out' : arr[idx].stock <= 2 ? 'inv-stock-low' : 'inv-stock-ok');
+  }
+  actualizarAlertaStock();
 }
 
 function toggleVis(id) {
@@ -473,24 +453,15 @@ function confirmarEliminar(id) {
   const p = getInventario().find(x => String(x.id) === String(id));
   if (!p) return;
   const tieneFoto = !!(p.fotoUrl && p.fotoUrl.includes('lh3.googleusercontent.com'));
-
-  // Mostrar modal con opciones según si tiene foto en Drive
-  const overlay = document.getElementById('modalEliminar');
-  if (overlay) {
-    document.getElementById('elimNombre').textContent  = p.nombre || 'este producto';
-    document.getElementById('elimFotoWrap').style.display = tieneFoto ? 'block' : 'none';
-    window._elimId      = id;
-    window._elimFotoUrl = p.fotoUrl || '';
-    overlay.classList.add('open');
-  } else {
-    // Fallback al confirm genérico si no existe el modal
-    mostrarConfirm({
-      icon: '🗑', titulo: 'Eliminar producto',
-      msg: `¿Eliminás "${p.nombre||'este producto'}"? No se puede deshacer.`,
-      btnTxt: 'Sí, eliminar', btnColor: 'rgba(239,68,68,.85)',
-      onOk: () => eliminarProducto(id, false),
-    });
-  }
+  mostrarConfirm({
+    icon: '🗑', titulo: 'Eliminar producto',
+    msg: `¿Eliminás "${p.nombre||'este producto'}"?`,
+    btnTxt: tieneFoto ? 'Eliminar + foto Drive' : 'Sí, eliminar',
+    btnColor: 'rgba(239,68,68,.85)',
+    onOk: () => eliminarProducto(id, tieneFoto),
+    btnSecTxt: tieneFoto ? 'Solo el registro' : null,
+    onSec: tieneFoto ? () => eliminarProducto(id, false) : null,
+  });
 }
 
 function eliminarProducto(id, borrarFoto) {
@@ -499,22 +470,13 @@ function eliminarProducto(id, borrarFoto) {
   if (!deleted.includes(String(id))) deleted.push(String(id));
   localStorage.setItem('deleted_ids', JSON.stringify(deleted));
   saveInventario(getInventario().filter(x => String(x.id) !== String(id)));
-
   if (borrarFoto && p?.fotoUrl) {
     apiPost({ action: 'eliminarConFoto', sheet: 'inventario', id, fotoUrl: p.fotoUrl });
   } else {
     apiPost({ action: 'deleteRow', sheet: 'inventario', id });
   }
-  renderInventario();
-  showToast('✓ Producto eliminado');
+  renderInventario(); showToast('✓ Producto eliminado');
 }
-
-function cerrarModalEliminar() {
-  document.getElementById('modalEliminar')?.classList.remove('open');
-  window._elimId = null; window._elimFotoUrl = '';
-}
-function confirmarEliminarSolo()     { cerrarModalEliminar(); eliminarProducto(window._elimId, false); }
-function confirmarEliminarConFoto()  { cerrarModalEliminar(); eliminarProducto(window._elimId, true);  }
 
 function exportCSV() {
   const h = ['Nombre','Marca','Categoría','Color','Stock','Estado','Visibilidad','Notas'];
@@ -530,16 +492,18 @@ function exportCSV() {
 
 // ── Modal producto ────────────────────────────────────────
 window._fotoB64 = '';
+window._fotoUrlActual = '';
 
 function abrirModalProducto(id) {
   poblarCatSelect();
   document.getElementById('mIdx').value = id || '';
   document.getElementById('modalProdTitulo').textContent = id ? 'Editar producto' : 'Agregar producto';
   document.getElementById('fotoEmptyArea').style.display   = 'flex';
-  document.getElementById('fotoPreviewArea').style.display  = 'none';
+  document.getElementById('fotoPreviewArea').style.display = 'none';
   document.getElementById('mFotoPreview').src = '';
   document.getElementById('btnDetectarColor').style.display = 'none';
   window._fotoB64 = '';
+  window._fotoUrlActual = '';
 
   if (id) {
     const p = getInventario().find(x => String(x.id) === String(id));
@@ -549,10 +513,13 @@ function abrirModalProducto(id) {
     document.getElementById('mCategoria').value   = p.categoria || getCategorias()[0];
     document.getElementById('mColor').value       = p.color     || '';
     document.getElementById('mColorPicker').value = p.color     || '#FBCFE8';
+    const dot = document.getElementById('colorPreviewDot');
+    if (dot) dot.style.background = p.color || '#FBCFE8';
     document.getElementById('mStock').value       = p.stock     ?? 1;
     document.getElementById('mNotas').value       = p.notas     || '';
     setVis(p.visibilidad || 'privado');
     const src = p.fotoUrl || p.foto || '';
+    window._fotoUrlActual = src;
     if (src && src !== '⏳') {
       document.getElementById('mFotoPreview').src = src;
       document.getElementById('fotoEmptyArea').style.display   = 'none';
@@ -564,8 +531,10 @@ function abrirModalProducto(id) {
     document.getElementById('mMarca').value       = '';
     document.getElementById('mColor').value       = '';
     document.getElementById('mColorPicker').value = '#FBCFE8';
-    document.getElementById('mStock').value       = 1;
-    document.getElementById('mNotas').value       = '';
+    const dot = document.getElementById('colorPreviewDot');
+    if (dot) dot.style.background = '#FBCFE8';
+    document.getElementById('mStock').value = 1;
+    document.getElementById('mNotas').value = '';
     setVis('privado');
   }
   abrirModal('modalProducto');
@@ -608,13 +577,40 @@ function previewFoto(e) {
   reader.readAsDataURL(file);
 }
 
+async function detectarColorGemini() {
+  const btn = document.getElementById('btnDetectarColor');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<span class="btn-spinner"></span> Detectando...';
+  btn.disabled = true;
+  try {
+    let payload;
+    if (window._fotoB64 && window._fotoB64.startsWith('data:')) {
+      payload = { action: 'detectarColor', b64: window._fotoB64 };
+    } else if (window._fotoUrlActual) {
+      payload = { action: 'detectarColor', url: window._fotoUrlActual };
+    } else {
+      showToast('⚠ No hay foto para analizar');
+      btn.innerHTML = orig; btn.disabled = false; return;
+    }
+    const r = await apiPost(payload);
+    if (r.ok && r.color) {
+      document.getElementById('mColor').value = r.color;
+      document.getElementById('mColorPicker').value = r.color;
+      const dot = document.getElementById('colorPreviewDot');
+      if (dot) dot.style.background = r.color;
+      showToast('🎨 Color detectado: ' + r.color);
+    } else {
+      showToast('⚠ ' + (r.error || 'No se pudo detectar el color'));
+    }
+  } catch(e) { showToast('⚠ Error al detectar color'); }
+  btn.innerHTML = orig; btn.disabled = false;
+}
+
 function guardarProducto() {
   const nombre = document.getElementById('mNombre').value.trim();
   if (!nombre) { showToast('⚠ El nombre es obligatorio'); return; }
-
-  const idActual = document.getElementById('mIdx').value;
+  const idActual  = document.getElementById('mIdx').value;
   const existente = idActual ? getInventario().find(p => String(p.id) === String(idActual)) : null;
-
   const producto = {
     id:          idActual || Date.now().toString(),
     nombre,
@@ -624,20 +620,16 @@ function guardarProducto() {
     stock:       Math.max(0, parseInt(document.getElementById('mStock').value)||0),
     notas:       document.getElementById('mNotas').value.trim(),
     visibilidad: document.getElementById('mVis').value,
-    // Preservar fotoUrl existente — solo se pisa si se sube foto nueva
     fotoUrl:     existente?.fotoUrl || '',
   };
-
   const arr = getInventario();
   const idx = arr.findIndex(p => String(p.id) === String(producto.id));
   if (idx >= 0) arr[idx] = { ...arr[idx], ...producto };
   else arr.push(producto);
   saveInventario(arr);
-
   cerrarModal('modalProducto');
   renderInventario();
   apiPost({ action: 'saveInventario', row: producto });
-
   if (window._fotoB64 && window._fotoB64.startsWith('data:')) {
     showToast('⏳ Subiendo foto...');
     apiPost({ action: 'uploadFoto', id: producto.id, b64: window._fotoB64, nombre: producto.id, categoria: producto.categoria })
@@ -668,7 +660,6 @@ function renderCategorias() {
         </div>`).join('')
     : '<p style="color:var(--text-muted);font-size:.84rem">Sin categorías.</p>';
 }
-
 function agregarCategoria() {
   const v = document.getElementById('nuevaCat').value.trim(); if (!v) return;
   const cats = getCategorias();
@@ -678,7 +669,6 @@ function agregarCategoria() {
   document.getElementById('nuevaCat').value = '';
   renderCategorias(); showToast('✓ Categoría agregada');
 }
-
 function editarCat(i) {
   const cats = getCategorias();
   mostrarInput({ titulo: 'Renombrar categoría', label: 'Nuevo nombre', valorActual: cats[i],
@@ -691,7 +681,6 @@ function editarCat(i) {
     }
   });
 }
-
 function pedirEliminarCat(i) {
   const cats = getCategorias();
   mostrarConfirm({ icon:'🏷', titulo:'Eliminar categoría',
@@ -709,16 +698,23 @@ function pedirEliminarCat(i) {
 function abrirModal(id)  { document.getElementById(id)?.classList.add('open'); }
 function cerrarModal(id) { document.getElementById(id)?.classList.remove('open'); }
 
-let _confirmOk = null;
-function mostrarConfirm({ icon='⚠️', titulo, msg, btnTxt='Confirmar', btnColor='var(--accent)', onOk }) {
+let _confirmOk = null, _confirmSec = null;
+function mostrarConfirm({ icon='⚠️', titulo, msg, btnTxt='Confirmar', btnColor='var(--accent)', onOk, btnSecTxt=null, onSec=null }) {
   document.getElementById('cfIcon').textContent   = icon;
   document.getElementById('cfTitulo').textContent = titulo;
   document.getElementById('cfMsg').textContent    = msg;
   document.getElementById('cfBtn').textContent    = btnTxt;
   document.getElementById('cfBtn').style.background = btnColor;
-  _confirmOk = onOk; abrirModal('modalConfirmar');
+  _confirmOk = onOk; _confirmSec = onSec;
+  const secBtn = document.getElementById('cfBtnSec');
+  if (secBtn) {
+    secBtn.textContent    = btnSecTxt || '';
+    secBtn.style.display  = btnSecTxt ? 'flex' : 'none';
+  }
+  abrirModal('modalConfirmar');
 }
 function confirmarOk()   { cerrarModal('modalConfirmar'); _confirmOk?.(); }
+function confirmarSec()  { cerrarModal('modalConfirmar'); _confirmSec?.(); }
 function cerrarConfirm() { cerrarModal('modalConfirmar'); }
 
 let _inputOk = null;
@@ -746,23 +742,16 @@ function limpiarCache() {
 //  INIT
 // ════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
-
-  // Login — async contra GAS
   document.getElementById('loginForm')?.addEventListener('submit', async e => {
     e.preventDefault();
     const u   = document.getElementById('loginUser').value.trim();
     const p   = document.getElementById('loginPass').value;
     const btn = e.target.querySelector('button[type="submit"]');
     const err = document.getElementById('loginError');
-
-    btn.disabled = true;
-    btn.textContent = 'Verificando...';
+    btn.disabled = true; btn.textContent = 'Verificando...';
     err.style.display = 'none';
-
     const result = await doLogin(u, p);
-    btn.disabled = false;
-    btn.textContent = 'Ingresar →';
-
+    btn.disabled = false; btn.textContent = 'Ingresar →';
     if (result.ok) {
       document.getElementById('loginPage').style.display = 'none';
       document.getElementById('adminPage').style.display = 'block';
@@ -779,25 +768,16 @@ document.addEventListener('DOMContentLoaded', () => {
     iniciarAdmin();
   }
 
-  ['modalProducto','modalConfirmar','modalInput'].forEach(id => {
-    document.getElementById(id)?.addEventListener('click', function(e) {
-      if (e.target === this) cerrarModal(id);
-    });
-  });
-
+  // Modales solo cierran con ×, NO al clickear afuera
   document.getElementById('inpVal')?.addEventListener('keydown', e => {
     if (e.key === 'Enter') confirmarInput();
   });
 });
 
 function iniciarAdmin() {
-  initDrawer();
-  irA('inicio');
-  actualizarBadges();
-  forzarSync(); // sync completo al entrar: turnos + inventario + categorías
+  initDrawer(); irA('inicio'); actualizarBadges(); forzarSync();
 }
 
-// Override doLogout — path correcto desde admin/
 function doLogout() {
   sessionStorage.removeItem(AUTH_KEY);
   sessionStorage.removeItem(AUTH_TOKEN);
