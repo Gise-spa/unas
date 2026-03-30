@@ -356,58 +356,49 @@ function renderInventario() {
     ).join('');
   }
 
-  const wrap = document.getElementById('invGrid');
-  if (!wrap) return;
-
+  const tbody = document.getElementById('invBody');
   if (!lista.length) {
-    wrap.innerHTML = `<div class="inv-empty">
-      <span style="font-size:2.5rem;opacity:.3">💅</span>
-      <p>${todos.length === 0 ? 'Todavía no cargaste productos.' : 'Sin resultados.'}</p>
-    </div>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted)">
+      ${todos.length===0?'Todavía no cargaste productos. Hacé click en \"+ Agregar\".':'Sin resultados.'}
+    </td></tr>`;
     return;
   }
 
-  wrap.innerHTML = lista.map(p => {
+  tbody.innerHTML = lista.map(p => {
     const stock = Number(p.stock) || 0;
     const src   = p.fotoUrl || p.foto || '';
-    const color = p.color || '#FBCFE8';
-    let stockClass = 'inv-stock-ok';
-    if (stock <= 0)      stockClass = 'inv-stock-out';
-    else if (stock <= 2) stockClass = 'inv-stock-low';
+    let dotC = 'dot-ok', estadoTxt = 'Ok';
+    if (stock <= 0)      { dotC = 'dot-out'; estadoTxt = 'Sin stock'; }
+    else if (stock <= 2) { dotC = 'dot-low'; estadoTxt = 'Stock bajo'; }
 
-    const fotoHtml = (src && src !== '⏳')
-      ? `<img class="inv-card-img" src="${src}" alt="${p.nombre}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
-      : '';
-    const placeholder = `<div class="inv-card-img inv-card-placeholder" style="background:${color};${(src&&src!=='⏳')?'display:none':''}">
-        <span style="font-size:2rem;opacity:.35">💅</span>
-      </div>`;
+    const fotoEl = (src && src !== '⏳')
+      ? `<img src="${src}" style="width:38px;height:38px;border-radius:6px;object-fit:cover;border:1px solid var(--border)" onerror="this.style.display='none'">`
+      : `<div style="width:38px;height:38px;border-radius:6px;background:${p.color||'var(--bg-pink)'};border:1px solid var(--border)"></div>`;
 
-    return `<div class="inv-card">
-      <div class="inv-card-foto">
-        ${fotoHtml}${placeholder}
-        <div class="inv-color-dot" style="background:${color}" title="${color}"></div>
-        <span class="inv-vis-badge ${p.visibilidad==='publico'?'pub':''}" onclick="toggleVis('${p.id}')">
-          ${p.visibilidad==='publico'?'👁':'🔒'}
-        </span>
-      </div>
-      <div class="inv-card-body">
-        <div class="inv-card-cat">${p.categoria||''}</div>
-        <div class="inv-card-nombre">${p.nombre}</div>
-        <div class="inv-card-marca">${p.marca||''}</div>
-        ${p.notas?`<div class="inv-card-notas">${p.notas}</div>`:''}
-        <div class="inv-card-footer">
-          <div class="qty-control">
-            <button class="qty-btn" onclick="ajustarStock('${p.id}',-1)">−</button>
-            <span class="qty-num ${stockClass}" data-qty-id="${p.id}">${stock}</span>
-            <button class="qty-btn" onclick="ajustarStock('${p.id}',+1)">+</button>
-          </div>
-          <div class="inv-card-actions">
-            <button onclick="abrirModalProducto('${p.id}')" class="btn btn-sm" style="background:var(--bg-yellow);border:none;padding:.28rem .65rem">Editar</button>
-            <button onclick="confirmarEliminar('${p.id}')" class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#dc2626;border:none;padding:.28rem .65rem">✕</button>
-          </div>
+    return `<tr>
+      <td data-label="Foto">${fotoEl}</td>
+      <td data-label="Nombre">
+        <div style="font-weight:500">${p.nombre}</div>
+        ${p.notas?`<div style="font-size:.73rem;color:var(--text-muted)">${p.notas}</div>`:''}
+      </td>
+      <td data-label="Marca">${p.marca||'—'}</td>
+      <td data-label="Categoría"><span class="chip" style="font-size:.7rem;padding:.15rem .6rem">${p.categoria||'—'}</span></td>
+      <td data-label="Stock">
+        <div class="qty-control">
+          <button class="qty-btn" onclick="ajustarStock('${p.id}',-1)">−</button>
+          <span class="qty-num" data-qty-id="${p.id}">${stock}</span>
+          <button class="qty-btn" onclick="ajustarStock('${p.id}',+1)">+</button>
         </div>
-      </div>
-    </div>`;
+      </td>
+      <td data-label="Estado"><span class="dot ${dotC}"></span>${estadoTxt}</td>
+      <td class="td-actions">
+        <span class="vis-btn ${p.visibilidad==='publico'?'pub':''}" onclick="toggleVis('${p.id}')">
+          ${p.visibilidad==='publico'?'👁 Público':'🔒 Privado'}
+        </span>
+        <button onclick="abrirModalProducto('${p.id}')" class="btn btn-sm" style="background:var(--bg-yellow);border:none;padding:.28rem .7rem">Editar</button>
+        <button onclick="confirmarEliminar('${p.id}')" class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#dc2626;border:none;padding:.28rem .7rem">Eliminar</button>
+      </td>
+    </tr>`;
   }).join('');
 }
 
@@ -433,21 +424,50 @@ function toggleVis(id) {
 
 function confirmarEliminar(id) {
   const p = getInventario().find(x => String(x.id) === String(id));
-  mostrarConfirm({
-    icon: '🗑', titulo: 'Eliminar producto',
-    msg: `¿Eliminás "${p?.nombre||'este producto'}"? No se puede deshacer.`,
-    btnTxt: 'Sí, eliminar', btnColor: 'rgba(239,68,68,.85)',
-    onOk: () => eliminarProducto(id),
-  });
+  if (!p) return;
+  const tieneFoto = !!(p.fotoUrl && p.fotoUrl.includes('lh3.googleusercontent.com'));
+
+  // Mostrar modal con opciones según si tiene foto en Drive
+  const overlay = document.getElementById('modalEliminar');
+  if (overlay) {
+    document.getElementById('elimNombre').textContent  = p.nombre || 'este producto';
+    document.getElementById('elimFotoWrap').style.display = tieneFoto ? 'block' : 'none';
+    window._elimId      = id;
+    window._elimFotoUrl = p.fotoUrl || '';
+    overlay.classList.add('open');
+  } else {
+    // Fallback al confirm genérico si no existe el modal
+    mostrarConfirm({
+      icon: '🗑', titulo: 'Eliminar producto',
+      msg: `¿Eliminás "${p.nombre||'este producto'}"? No se puede deshacer.`,
+      btnTxt: 'Sí, eliminar', btnColor: 'rgba(239,68,68,.85)',
+      onOk: () => eliminarProducto(id, false),
+    });
+  }
 }
-function eliminarProducto(id) {
+
+function eliminarProducto(id, borrarFoto) {
+  const p = getInventario().find(x => String(x.id) === String(id));
   const deleted = JSON.parse(localStorage.getItem('deleted_ids') || '[]');
   if (!deleted.includes(String(id))) deleted.push(String(id));
   localStorage.setItem('deleted_ids', JSON.stringify(deleted));
-  saveInventario(getInventario().filter(p => String(p.id) !== String(id)));
-  apiPost({ action: 'deleteRow', sheet: 'inventario', id });
-  renderInventario(); showToast('✓ Producto eliminado');
+  saveInventario(getInventario().filter(x => String(x.id) !== String(id)));
+
+  if (borrarFoto && p?.fotoUrl) {
+    apiPost({ action: 'eliminarConFoto', sheet: 'inventario', id, fotoUrl: p.fotoUrl });
+  } else {
+    apiPost({ action: 'deleteRow', sheet: 'inventario', id });
+  }
+  renderInventario();
+  showToast('✓ Producto eliminado');
 }
+
+function cerrarModalEliminar() {
+  document.getElementById('modalEliminar')?.classList.remove('open');
+  window._elimId = null; window._elimFotoUrl = '';
+}
+function confirmarEliminarSolo()     { cerrarModalEliminar(); eliminarProducto(window._elimId, false); }
+function confirmarEliminarConFoto()  { cerrarModalEliminar(); eliminarProducto(window._elimId, true);  }
 
 function exportCSV() {
   const h = ['Nombre','Marca','Categoría','Color','Stock','Estado','Visibilidad','Notas'];
@@ -507,10 +527,8 @@ function setVis(val) {
   const bp  = document.getElementById('visPrivado');
   const bpu = document.getElementById('visPublico');
   if (!bp || !bpu) return;
-  const on  = 'border:1.5px solid var(--accent);background:rgba(232,144,144,.1);color:var(--text);font-weight:500';
-  const off = 'border:1.5px solid var(--border);background:var(--bg);color:var(--text-muted);font-weight:400';
-  bp.style.cssText  = val === 'privado' ? on : off;
-  bpu.style.cssText = val === 'publico' ? on : off;
+  bp.classList.toggle('active-vis',  val === 'privado');
+  bpu.classList.toggle('active-vis', val === 'publico');
 }
 
 function poblarCatSelect() {
