@@ -6,10 +6,6 @@
   <title>Admin — Mi negocio</title>
   <link rel="stylesheet" href="../style.css" />
   <link rel="stylesheet" href="style.css" />
-  <style>
-    .btn-spinner { display:inline-block;width:12px;height:12px;border:2px solid rgba(232,144,144,.3);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0; }
-    @keyframes spin { to { transform:rotate(360deg); } }
-  </style>
 </head>
 <body>
 
@@ -214,7 +210,10 @@
           <h2 class="section-title" style="margin-bottom:.2rem">Inventario</h2>
           <p class="section-subtitle" style="margin-bottom:0">Productos con foto, stock y visibilidad</p>
         </div>
-        <button class="btn btn-primary" onclick="abrirModalProducto()">+ Agregar producto</button>
+        <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+          <button class="btn btn-outline" onclick="abrirModalPDF()">📄 Exportar PDF</button>
+          <button class="btn btn-primary" onclick="abrirModalProducto()">+ Agregar producto</button>
+        </div>
       </div>
       <div class="stock-alerta" id="stockAlerta">
         <p>⚠ Productos con stock bajo:</p>
@@ -287,18 +286,13 @@
       </div>
       <div class="form-group">
         <label>Color</label>
-        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+        <div style="display:flex;gap:.5rem;align-items:center">
           <input type="color" id="mColorPicker" value="#FBCFE8"
             style="width:38px;height:34px;border-radius:6px;border:1px solid var(--border);padding:2px;cursor:pointer"
-            oninput="document.getElementById('mColor').value=this.value;document.getElementById('colorPreviewDot').style.background=this.value">
-          <input type="text" id="mColor" placeholder="#FBCFE8" style="flex:1;min-width:80px"
-            oninput="if(this.value.length===7){document.getElementById('mColorPicker').value=this.value;document.getElementById('colorPreviewDot').style.background=this.value}">
-          <div id="colorPreviewDot" style="width:28px;height:28px;border-radius:50%;background:#FBCFE8;border:2px solid var(--border);flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.15)"></div>
+            oninput="document.getElementById('mColor').value=this.value">
+          <input type="text" id="mColor" placeholder="#FBCFE8"
+            oninput="if(this.value.length===7)document.getElementById('mColorPicker').value=this.value">
         </div>
-        <button type="button" id="btnDetectarColor" onclick="detectarColorGemini()"
-          style="display:none;margin-top:.5rem;align-items:center;gap:.4rem;padding:.45rem 1rem;border-radius:50px;border:1.5px solid var(--accent);background:rgba(232,144,144,.08);color:var(--accent);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:500;cursor:pointer;transition:all .2s">
-          🎨 Detectar color con IA
-        </button>
       </div>
       <div class="form-group">
         <label>Stock</label>
@@ -360,6 +354,42 @@
     <div style="display:flex;gap:.6rem">
       <button class="btn btn-primary" style="flex:1" onclick="confirmarInput()">Guardar</button>
       <button class="btn btn-outline" onclick="cerrarModal('modalInput')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PDF -->
+<div class="modal-overlay" id="modalPDF">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-header">
+      <h3>Exportar PDF de inventario</h3>
+      <button class="modal-close" onclick="cerrarModal('modalPDF')">×</button>
+    </div>
+    <p style="font-size:.84rem;color:var(--text-muted);margin-bottom:1.25rem">
+      El PDF se guarda en tu Drive en <strong>Gise Spa / Stock / Stock [Mes Año]</strong>
+    </p>
+    <div class="form-group">
+      <label>Filtro</label>
+      <div style="display:flex;flex-direction:column;gap:.5rem;margin-top:.4rem" id="pdfFiltroWrap">
+        <label style="display:flex;align-items:center;gap:.6rem;font-size:.88rem;cursor:pointer">
+          <input type="radio" name="pdfFiltro" value="" checked> Todos los productos
+        </label>
+        <label style="display:flex;align-items:center;gap:.6rem;font-size:.88rem;cursor:pointer">
+          <input type="radio" name="pdfFiltro" value="bajo"> Solo stock bajo / sin stock
+        </label>
+        <div style="margin-top:.25rem">
+          <label style="display:flex;align-items:center;gap:.6rem;font-size:.88rem;cursor:pointer">
+            <input type="radio" name="pdfFiltro" value="categoria"> Por categoría:
+          </label>
+          <select id="pdfCategoria" class="input-sm" style="margin-top:.4rem;width:100%"></select>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:.6rem;margin-top:1.25rem">
+      <button class="btn btn-primary" style="flex:1" id="btnGenerarPDF" onclick="generarPDF()">
+        📄 Generar PDF
+      </button>
+      <button class="btn btn-outline" onclick="cerrarModal('modalPDF')">Cancelar</button>
     </div>
   </div>
 </div>
