@@ -356,49 +356,58 @@ function renderInventario() {
     ).join('');
   }
 
-  const tbody = document.getElementById('invBody');
+  const wrap = document.getElementById('invGrid');
+  if (!wrap) return;
+
   if (!lista.length) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted)">
-      ${todos.length===0?'Todavía no cargaste productos. Hacé click en \"+ Agregar\".':'Sin resultados.'}
-    </td></tr>`;
+    wrap.innerHTML = `<div class="inv-empty">
+      <span style="font-size:2.5rem;opacity:.3">💅</span>
+      <p>${todos.length === 0 ? 'Todavía no cargaste productos.' : 'Sin resultados.'}</p>
+    </div>`;
     return;
   }
 
-  tbody.innerHTML = lista.map(p => {
+  wrap.innerHTML = lista.map(p => {
     const stock = Number(p.stock) || 0;
     const src   = p.fotoUrl || p.foto || '';
-    let dotC = 'dot-ok', estadoTxt = 'Ok';
-    if (stock <= 0)      { dotC = 'dot-out'; estadoTxt = 'Sin stock'; }
-    else if (stock <= 2) { dotC = 'dot-low'; estadoTxt = 'Stock bajo'; }
+    const color = p.color || '#FBCFE8';
+    let stockClass = 'inv-stock-ok';
+    if (stock <= 0)      stockClass = 'inv-stock-out';
+    else if (stock <= 2) stockClass = 'inv-stock-low';
 
-    const fotoEl = (src && src !== '⏳')
-      ? `<img src="${src}" style="width:38px;height:38px;border-radius:6px;object-fit:cover;border:1px solid var(--border)" onerror="this.style.display='none'">`
-      : `<div style="width:38px;height:38px;border-radius:6px;background:${p.color||'var(--bg-pink)'};border:1px solid var(--border)"></div>`;
+    const fotoHtml = (src && src !== '⏳')
+      ? `<img class="inv-card-img" src="${src}" alt="${p.nombre}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+      : '';
+    const placeholder = `<div class="inv-card-img inv-card-placeholder" style="background:${color};${(src&&src!=='⏳')?'display:none':''}">
+        <span style="font-size:2rem;opacity:.35">💅</span>
+      </div>`;
 
-    return `<tr>
-      <td data-label="Foto">${fotoEl}</td>
-      <td data-label="Nombre">
-        <div style="font-weight:500">${p.nombre}</div>
-        ${p.notas?`<div style="font-size:.73rem;color:var(--text-muted)">${p.notas}</div>`:''}
-      </td>
-      <td data-label="Marca">${p.marca||'—'}</td>
-      <td data-label="Categoría"><span class="chip" style="font-size:.7rem;padding:.15rem .6rem">${p.categoria||'—'}</span></td>
-      <td data-label="Stock">
-        <div class="qty-control">
-          <button class="qty-btn" onclick="ajustarStock('${p.id}',-1)">−</button>
-          <span class="qty-num" data-qty-id="${p.id}">${stock}</span>
-          <button class="qty-btn" onclick="ajustarStock('${p.id}',+1)">+</button>
-        </div>
-      </td>
-      <td data-label="Estado"><span class="dot ${dotC}"></span>${estadoTxt}</td>
-      <td class="td-actions">
-        <span class="vis-btn ${p.visibilidad==='publico'?'pub':''}" onclick="toggleVis('${p.id}')">
-          ${p.visibilidad==='publico'?'👁 Público':'🔒 Privado'}
+    return `<div class="inv-card">
+      <div class="inv-card-foto">
+        ${fotoHtml}${placeholder}
+        <div class="inv-color-dot" style="background:${color}" title="${color}"></div>
+        <span class="inv-vis-badge ${p.visibilidad==='publico'?'pub':''}" onclick="toggleVis('${p.id}')">
+          ${p.visibilidad==='publico'?'👁':'🔒'}
         </span>
-        <button onclick="abrirModalProducto('${p.id}')" class="btn btn-sm" style="background:var(--bg-yellow);border:none;padding:.28rem .7rem">Editar</button>
-        <button onclick="confirmarEliminar('${p.id}')" class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#dc2626;border:none;padding:.28rem .7rem">Eliminar</button>
-      </td>
-    </tr>`;
+      </div>
+      <div class="inv-card-body">
+        <div class="inv-card-cat">${p.categoria||''}</div>
+        <div class="inv-card-nombre">${p.nombre}</div>
+        <div class="inv-card-marca">${p.marca||''}</div>
+        ${p.notas?`<div class="inv-card-notas">${p.notas}</div>`:''}
+        <div class="inv-card-footer">
+          <div class="qty-control">
+            <button class="qty-btn" onclick="ajustarStock('${p.id}',-1)">−</button>
+            <span class="qty-num ${stockClass}" data-qty-id="${p.id}">${stock}</span>
+            <button class="qty-btn" onclick="ajustarStock('${p.id}',+1)">+</button>
+          </div>
+          <div class="inv-card-actions">
+            <button onclick="abrirModalProducto('${p.id}')" class="btn btn-sm" style="background:var(--bg-yellow);border:none;padding:.28rem .65rem">Editar</button>
+            <button onclick="confirmarEliminar('${p.id}')" class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#dc2626;border:none;padding:.28rem .65rem">✕</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
   }).join('');
 }
 
