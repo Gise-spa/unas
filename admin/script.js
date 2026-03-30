@@ -135,7 +135,19 @@ function renderInicio() {
   document.getElementById('stHoy').textContent  = turnos.filter(t => t.fecha === hoy).length;
   document.getElementById('stMes').textContent  = turnos.filter(t => (t.fecha||'').startsWith(mes)).length;
   document.getElementById('stInv').textContent  = inv.length;
-  document.getElementById('stLow').textContent  = inv.filter(p => Number(p.stock) > 0 && Number(p.stock) <= 2).length;
+  const lowCount = inv.filter(p => Number(p.stock) <= 2).length;
+  document.getElementById('stLow').textContent  = lowCount;
+  const statLowCard = document.getElementById('stLow')?.closest('.stat-card');
+  if (statLowCard) {
+    if (lowCount > 0) {
+      statLowCard.style.cursor = 'pointer';
+      statLowCard.title = 'Ver productos con stock bajo';
+      statLowCard.onclick = () => { irA('inventario'); setTimeout(filtrarStockBajo, 150); };
+    } else {
+      statLowCard.style.cursor = 'default';
+      statLowCard.onclick = null;
+    }
+  }
 
   const hoyTurnos = turnos.filter(t => t.fecha === hoy).sort((a,b) => a.horario.localeCompare(b.horario));
   const listEl = document.getElementById('listHoy');
@@ -335,25 +347,51 @@ function renderInvTabs() {
     `<div class="chip ${(invCatActiva===c||(!invCatActiva&&c==='Todos'))?'on-gold':''} scrollable" onclick="setInvCat('${c}')">${c}</div>`
   ).join('');
 }
-function setInvCat(c) { invCatActiva = c === 'Todos' ? '' : c; renderInvTabs(); renderInventario(); }
+function setInvCat(c) {
+  invCatActiva = c === 'Todos' ? '' : c;
+  window._filtroStockBajo = false;
+  renderInvTabs();
+  renderInventario();
+}
+
+function filtrarStockBajo() {
+  invCatActiva = '';
+  window._filtroStockBajo = true;
+  renderInvTabs();
+  renderInventario();
+}
 
 function renderInventario() {
   renderInvTabs();
   const todos = getInventario();
   const q     = (document.getElementById('invBuscar')?.value || '').toLowerCase();
+  if (invCatActiva || q) window._filtroStockBajo = false;
+
   const lista = todos.filter(p => {
     const matchCat = !invCatActiva || p.categoria === invCatActiva;
     const matchQ   = !q || (p.nombre||'').toLowerCase().includes(q) || (p.marca||'').toLowerCase().includes(q);
-    return matchCat && matchQ;
+    const matchLow = !window._filtroStockBajo || Number(p.stock) <= 2;
+    return matchCat && matchQ && matchLow;
   });
 
-  const bajo = todos.filter(p => Number(p.stock) > 0 && Number(p.stock) <= 2);
-  const alertEl = document.getElementById('stockAlerta');
+  const bajo     = todos.filter(p => Number(p.stock) > 0 && Number(p.stock) <= 2);
+  const sinStock = todos.filter(p => Number(p.stock) <= 0);
+  const alertEl  = document.getElementById('stockAlerta');
   if (alertEl) {
-    alertEl.style.display = bajo.length ? 'block' : 'none';
-    document.getElementById('stockAlertaLista').innerHTML = bajo.map(p =>
-      `<span class="chip" style="background:rgba(245,158,11,.15);color:#92400e;border-color:transparent">${p.nombre} (${p.stock}u.)</span>`
-    ).join('');
+    const total = bajo.length + sinStock.length;
+    if (total > 0) {
+      alertEl.style.display = 'block';
+      const partes = [];
+      if (bajo.length)     partes.push(`<strong>${bajo.length}</strong> con stock bajo`);
+      if (sinStock.length) partes.push(`<strong>${sinStock.length}</strong> sin stock`);
+      document.getElementById('stockAlertaLista').innerHTML =
+        `<span style="font-size:.84rem">${partes.join(' · ')} &nbsp;·&nbsp;
+          <a href="#" onclick="filtrarStockBajo();return false;"
+            style="color:var(--accent);font-weight:500;text-decoration:underline">Ver detalle →</a>
+        </span>`;
+    } else {
+      alertEl.style.display = 'none';
+    }
   }
 
   const wrap = document.getElementById('invGrid');
