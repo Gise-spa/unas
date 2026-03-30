@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Mi negocio</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+
+<!-- ══ LOGIN ══════════════════════════════════════════════ -->
+<div id="loginPage">
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo">✦ <span>Panel</span> Admin</div>
+      <p class="login-sub">Acceso privado</p>
+      <div class="login-error" id="loginError">Usuario o contraseña incorrectos</div>
+      <form id="loginForm" autocomplete="off">
+        <div class="form-group" style="text-align:left">
+          <label>Usuario</label>
+          <input type="text" id="loginUser" placeholder="Tu usuario" autocomplete="username">
+        </div>
+        <div class="form-group" style="text-align:left">
+          <label>Contraseña</label>
+          <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:.5rem">Ingresar →</button>
+      </form>
+      <p style="margin-top:1.25rem;font-size:.78rem">
+        <a href="../index.html" style="color:var(--text-muted)">← Volver al sitio</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ADMIN PAGE ══════════════════════════════════════════ -->
+<div id="adminPage" class="admin-page" style="display:none">
+
+  <!-- Top bar -->
+  <header class="admin-topbar">
+    <div class="topbar-left">
+      <button class="menu-btn" id="menuBtn" aria-label="Menú">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="topbar-logo">✦ <span>Admin</span></div>
+    </div>
+    <div class="topbar-right">
+      <button class="theme-btn" aria-label="Cambiar tema"></button>
+      <button class="btn btn-outline btn-sm" onclick="forzarSync()">↻ Sync</button>
+      <button class="btn btn-ghost btn-sm" onclick="limpiarCache()" style="font-size:.76rem">🗑 Caché</button>
+      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Salir</button>
+    </div>
+  </header>
+
+  <!-- Drawer overlay -->
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+
+  <!-- Drawer lateral -->
+  <nav class="admin-drawer" id="adminDrawer">
+    <div class="drawer-section">
+      <div class="drawer-label">General</div>
+      <div class="drawer-item active" data-sec="inicio" onclick="irA('inicio')">
+        <span class="di-icon">🏠</span> Inicio
+      </div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-label">Gestión</div>
+      <div class="drawer-item" data-sec="turnos" onclick="irA('turnos')">
+        <span class="di-icon">📅</span> Turnos
+        <span class="di-badge" id="turnosBadge" style="display:none"></span>
+      </div>
+      <div class="drawer-item" data-sec="agenda" onclick="irA('agenda')">
+        <span class="di-icon">🗓</span> Mi Agenda
+      </div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-label">Inventario</div>
+      <div class="drawer-item" data-sec="inventario" onclick="irA('inventario')">
+        <span class="di-icon">💅</span> Productos
+      </div>
+      <div class="drawer-item" data-sec="categorias" onclick="irA('categorias')">
+        <span class="di-icon">🏷</span> Categorías
+      </div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-label">Próximamente</div>
+      <div class="drawer-item future"><span class="di-icon">💰</span> Precios<span class="coming">pronto</span></div>
+      <div class="drawer-item future"><span class="di-icon">📸</span> Galería<span class="coming">pronto</span></div>
+      <div class="drawer-item future"><span class="di-icon">📝</span> Blog<span class="coming">pronto</span></div>
+      <div class="drawer-item future"><span class="di-icon">⚙️</span> Configuración<span class="coming">pronto</span></div>
+    </div>
+    <div style="padding:1.25rem;margin-top:auto">
+      <a href="../index.html" target="_blank" class="btn btn-outline btn-sm" style="width:100%;justify-content:center">Ver sitio →</a>
+    </div>
+  </nav>
+
+  <!-- Contenido principal -->
+  <main class="admin-main">
+
+    <!-- INICIO -->
+    <div class="admin-section active" id="sec-inicio">
+      <h2 class="section-title">Buen día 👋</h2>
+      <p class="section-subtitle">Resumen de tu agenda</p>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-num" id="stPend" style="color:var(--gold)">—</div><div class="stat-label">Pendientes</div></div>
+        <div class="stat-card"><div class="stat-num" id="stConf" style="color:#22c55e">—</div><div class="stat-label">Confirmados</div></div>
+        <div class="stat-card"><div class="stat-num" id="stHoy" style="color:var(--accent)">—</div><div class="stat-label">Hoy</div></div>
+        <div class="stat-card"><div class="stat-num" id="stMes">—</div><div class="stat-label">Este mes</div></div>
+      </div>
+      <div class="dashboard-grid">
+        <div class="panel-card">
+          <div class="panel-card-header"><h3>Turnos de hoy</h3></div>
+          <div class="panel-card-body"><ul class="today-list" id="listHoy"></ul></div>
+        </div>
+        <div class="panel-card">
+          <div class="panel-card-header">
+            <h3>Pendientes de confirmar</h3>
+            <button class="btn btn-outline btn-sm" onclick="irA('turnos')">Ver todos →</button>
+          </div>
+          <div class="panel-card-body"><ul class="today-list" id="listPend"></ul></div>
+        </div>
+      </div>
+      <div class="stats-grid" style="margin-top:1.25rem">
+        <div class="stat-card"><div class="stat-num" id="stInv" style="color:var(--accent)">—</div><div class="stat-label">Productos</div></div>
+        <div class="stat-card"><div class="stat-num" id="stLow" style="color:#f59e0b">—</div><div class="stat-label">Stock bajo</div></div>
+      </div>
+    </div>
+
+    <!-- TURNOS -->
+    <div class="admin-section" id="sec-turnos">
+      <h2 class="section-title">Turnos</h2>
+      <p class="section-subtitle">Gestioná las reservas de tus clientes</p>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-num" id="tStPend" style="color:var(--gold)">—</div><div class="stat-label">Pendientes</div></div>
+        <div class="stat-card"><div class="stat-num" id="tStConf" style="color:#22c55e">—</div><div class="stat-label">Confirmados</div></div>
+        <div class="stat-card"><div class="stat-num" id="tStHoy" style="color:var(--accent)">—</div><div class="stat-label">Hoy</div></div>
+        <div class="stat-card"><div class="stat-num" id="tStMes">—</div><div class="stat-label">Este mes</div></div>
+      </div>
+      <div class="panel-card">
+        <div class="panel-card-header">
+          <h3>Reservas</h3>
+          <div class="panel-card-header-actions">
+            <select class="input-sm" id="turnoFiltro" onchange="renderTurnos()">
+              <option value="">Todos</option>
+              <option value="pendiente">Pendientes</option>
+              <option value="confirmado">Confirmados</option>
+              <option value="cancelado">Cancelados</option>
+            </select>
+            <button class="btn btn-outline btn-sm" onclick="renderTurnos()">↺</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Estado</th><th>Cliente</th><th>Servicio</th><th>Fecha</th><th>Horario</th><th>Acciones</th></tr></thead>
+            <tbody id="turnosBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- AGENDA -->
+    <div class="admin-section" id="sec-agenda">
+      <h2 class="section-title">Mi Agenda</h2>
+      <p class="section-subtitle">Configurá tu disponibilidad</p>
+      <div class="panel-card" style="margin-bottom:1.25rem">
+        <div class="panel-card-header"><h3>Días habilitados</h3></div>
+        <div class="panel-card-body">
+          <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem">Días de la semana en que atendés.</p>
+          <div class="chip-grid" id="diasChips"></div>
+          <button class="btn btn-primary btn-sm" style="margin-top:1rem" onclick="guardarDias()">Guardar días</button>
+        </div>
+      </div>
+      <div class="panel-card" style="margin-bottom:1.25rem">
+        <div class="panel-card-header"><h3>Horarios disponibles</h3></div>
+        <div class="panel-card-body">
+          <div class="chip-grid scrollable" id="slotsChips" style="margin-bottom:1rem"></div>
+          <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap">
+            <input type="time" id="nuevoSlot" class="input-sm">
+            <button class="btn btn-outline btn-sm" onclick="agregarSlot()">+ Agregar</button>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="guardarSlots()">Guardar horarios</button>
+        </div>
+      </div>
+      <div class="panel-card" style="margin-bottom:1.25rem">
+        <div class="panel-card-header"><h3>Duración por servicio</h3></div>
+        <div class="panel-card-body">
+          <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem">Los cambios se reflejan en el sitio automáticamente.</p>
+          <div id="duracionesWrap"></div>
+          <button class="btn btn-primary btn-sm" style="margin-top:1rem" onclick="guardarDuraciones()">Guardar duraciones</button>
+        </div>
+      </div>
+      <div class="panel-card">
+        <div class="panel-card-header"><h3>Bloquear fechas</h3></div>
+        <div class="panel-card-body">
+          <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem">Feriados, vacaciones o días que no atendés.</p>
+          <div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap">
+            <input type="date" id="fechaBloqueo" class="input-sm">
+            <button class="btn btn-outline btn-sm" onclick="bloquearFecha()">Bloquear</button>
+          </div>
+          <div class="chip-grid" id="fechasBloqueadas"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INVENTARIO -->
+    <div class="admin-section" id="sec-inventario">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+        <div>
+          <h2 class="section-title" style="margin-bottom:.2rem">Inventario</h2>
+          <p class="section-subtitle" style="margin-bottom:0">Productos con foto, stock y visibilidad</p>
+        </div>
+        <button class="btn btn-primary" onclick="abrirModalProducto()">+ Agregar producto</button>
+      </div>
+      <div class="stock-alerta" id="stockAlerta">
+        <p>⚠ Productos con stock bajo:</p>
+        <div class="stock-alerta-lista" id="stockAlertaLista"></div>
+      </div>
+      <div class="chip-grid scrollable" id="invTabs" style="margin-bottom:1rem"></div>
+      <input type="text" class="input-sm" id="invBuscar"
+        placeholder="Buscar por nombre o marca…"
+        style="width:100%;max-width:300px;margin-bottom:1rem"
+        oninput="renderInventario()">
+      <div class="panel-card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Foto</th><th>Nombre</th><th>Marca</th><th>Categoría</th><th>Stock</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="invBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div style="display:flex;gap:.5rem;margin-top:1rem">
+        <button class="btn btn-outline btn-sm" onclick="exportCSV()">⬇ CSV</button>
+      </div>
+    </div>
+
+    <!-- CATEGORÍAS -->
+    <div class="admin-section" id="sec-categorias">
+      <h2 class="section-title">Categorías</h2>
+      <p class="section-subtitle">Agregá, renombrá o eliminá categorías del inventario</p>
+      <div class="panel-card">
+        <div class="panel-card-body">
+          <div id="catLista" style="margin-bottom:1.25rem"></div>
+          <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+            <input type="text" id="nuevaCat" class="input-sm" placeholder="Nueva categoría…" style="max-width:220px">
+            <button class="btn btn-primary btn-sm" onclick="agregarCategoria()">+ Agregar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL PRODUCTO -->
+<div class="modal-overlay" id="modalProducto">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 id="modalProdTitulo">Agregar producto</h3>
+      <button class="modal-close" onclick="cerrarModal('modalProducto')">×</button>
+    </div>
+    <input type="hidden" id="mIdx">
+    <div class="foto-upload-area" onclick="document.getElementById('mFotoInput').click()">
+      <input type="file" id="mFotoInput" accept="image/*" onchange="previewFoto(event)">
+      <img id="mFotoPreview" class="foto-preview-img">
+      <p id="fotoLabel" style="font-size:.82rem;color:var(--text-muted)">📷 Tocá para subir una foto</p>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Nombre</label>
+        <input type="text" id="mNombre" placeholder="Ej: Rosa Nude 001">
+      </div>
+      <div class="form-group">
+        <label>Marca</label>
+        <input type="text" id="mMarca" placeholder="Ej: OPI">
+      </div>
+      <div class="form-group">
+        <label>Categoría</label>
+        <select id="mCategoria"></select>
+      </div>
+      <div class="form-group">
+        <label>Color</label>
+        <div style="display:flex;gap:.5rem;align-items:center">
+          <input type="color" id="mColorPicker" value="#FBCFE8"
+            style="width:38px;height:34px;border-radius:6px;border:1px solid var(--border);padding:2px;cursor:pointer"
+            oninput="document.getElementById('mColor').value=this.value">
+          <input type="text" id="mColor" placeholder="#FBCFE8"
+            oninput="if(this.value.length===7)document.getElementById('mColorPicker').value=this.value">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Stock</label>
+        <input type="number" id="mStock" min="0" value="1">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Notas (opcional)</label>
+        <input type="text" id="mNotas" placeholder="Ej: edición limitada…">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Visibilidad</label>
+        <div style="display:flex;gap:.5rem;margin-top:.3rem">
+          <button type="button" id="visPrivado" onclick="setVis('privado')"
+            style="flex:1;padding:.6rem;border-radius:var(--radius-md);font-family:'DM Sans',sans-serif;font-size:.84rem;cursor:pointer;transition:all .2s;border:1.5px solid var(--accent);background:rgba(232,144,144,.1);color:var(--text);font-weight:500">
+            🔒 Privado
+          </button>
+          <button type="button" id="visPublico" onclick="setVis('publico')"
+            style="flex:1;padding:.6rem;border-radius:var(--radius-md);font-family:'DM Sans',sans-serif;font-size:.84rem;cursor:pointer;transition:all .2s;border:1.5px solid var(--border);background:var(--bg);color:var(--text-muted)">
+            👁 Público
+          </button>
+        </div>
+        <input type="hidden" id="mVis" value="privado">
+      </div>
+    </div>
+    <div style="display:flex;gap:.6rem;margin-top:.75rem">
+      <button class="btn btn-primary" style="flex:1" onclick="guardarProducto()">Guardar</button>
+      <button class="btn btn-outline" onclick="cerrarModal('modalProducto')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR -->
+<div class="modal-overlay" id="modalConfirmar">
+  <div class="modal-box" style="max-width:360px">
+    <div class="confirm-box">
+      <span class="confirm-icon" id="cfIcon">⚠️</span>
+      <h3 id="cfTitulo">¿Estás segura?</h3>
+      <p id="cfMsg"></p>
+      <div class="confirm-btns">
+        <button class="btn btn-outline" style="flex:1" onclick="cerrarConfirm()">Cancelar</button>
+        <button class="btn btn-primary" style="flex:1" id="cfBtn" onclick="confirmarOk()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL INPUT -->
+<div class="modal-overlay" id="modalInput">
+  <div class="modal-box" style="max-width:360px">
+    <div class="modal-header">
+      <h3 id="inpTitulo">Renombrar</h3>
+      <button class="modal-close" onclick="cerrarModal('modalInput')">×</button>
+    </div>
+    <div class="form-group">
+      <label id="inpLabel">Nuevo nombre</label>
+      <input type="text" id="inpVal">
+    </div>
+    <div style="display:flex;gap:.6rem">
+      <button class="btn btn-primary" style="flex:1" onclick="confirmarInput()">Guardar</button>
+      <button class="btn btn-outline" onclick="cerrarModal('modalInput')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/main.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
