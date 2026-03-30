@@ -113,14 +113,14 @@
     }
     .producto-foto {
       width: 100%;
-      aspect-ratio: 1;
+      aspect-ratio: 3/4;
       object-fit: cover;
       display: block;
       background: var(--bg-pink);
     }
     .producto-foto-placeholder {
       width: 100%;
-      aspect-ratio: 1;
+      aspect-ratio: 3/4;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -155,12 +155,24 @@
       padding: .7rem 1rem;
       border-top: 1px solid var(--border);
     }
+    .producto-foto-wrap {
+      position: relative;
+    }
     .color-dot {
       width: 18px; height: 18px;
       border-radius: 50%;
-      border: 1.5px solid var(--border);
+      border: 1.5px solid rgba(255,255,255,.7);
+      box-shadow: 0 1px 4px rgba(0,0,0,.18);
       display: inline-block;
       flex-shrink: 0;
+    }
+    .color-dot-overlay {
+      position: absolute;
+      bottom: 8px; right: 8px;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.85);
+      box-shadow: 0 1px 5px rgba(0,0,0,.22);
     }
     .stock-badge {
       font-size: .72rem;
@@ -372,10 +384,20 @@ function renderProductos(lista) {
       stockHtml = `<span class="stock-badge" style="background:rgba(34,197,94,.1);color:#16a34a">Disponible</span>`;
     }
 
+    const colorOverlay = p.color
+      ? `<span class="color-dot-overlay" style="background:${p.color}" title="${p.color}"></span>`
+      : '';
+
     const fotoHtml = p.fotoUrl
-      ? `<img class="producto-foto" src="${p.fotoUrl}" alt="${p.nombre}" loading="lazy">`
-      : `<div class="producto-foto-placeholder" style="background:${p.color || 'var(--bg-pink)'}">
-           <span style="font-size:3rem;opacity:.3">💅</span>
+      ? `<div class="producto-foto-wrap">
+           <img class="producto-foto" src="${p.fotoUrl}" alt="${p.nombre}" loading="lazy">
+           ${colorOverlay}
+         </div>`
+      : `<div class="producto-foto-wrap">
+           <div class="producto-foto-placeholder" style="background:${p.color || 'var(--bg-pink)'}">
+             <span style="font-size:3rem;opacity:.3">💅</span>
+           </div>
+           ${colorOverlay}
          </div>`;
 
     return `
@@ -387,9 +409,6 @@ function renderProductos(lista) {
           <div class="producto-marca">${p.marca || ''}</div>
         </div>
         <div class="producto-footer">
-          ${p.color
-            ? `<span class="color-dot" style="background:${p.color}" title="${p.color}"></span>`
-            : '<span></span>'}
           ${stockHtml}
         </div>
       </article>`;
