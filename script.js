@@ -1,10 +1,10 @@
 /* ============================================================
-   main.js — Lógica compartida entre todas las páginas
+   script.js — Lógica compartida entre todas las páginas
    ============================================================ */
 
 // ── Dark mode ──────────────────────────────────────────────
-const html      = document.documentElement;
-const themeBtn  = document.querySelector('.theme-btn');
+const html     = document.documentElement;
+const themeBtn = document.querySelector('.theme-btn');
 
 const savedTheme = localStorage.getItem('theme') || 'light';
 html.setAttribute('data-theme', savedTheme);
@@ -61,29 +61,39 @@ function showToast(msg, duration = 3000) {
   setTimeout(() => t.classList.remove('show'), duration);
 }
 
-// ── Auth ───────────────────────────────────────────────────
-// ⚠️ Cambiá estas credenciales antes de publicar
-const ADMIN_USER = 'Gise';
-const ADMIN_PASS = 'gise.spa';
+// ── Auth — validada en el GAS, sin credenciales en el front ─
 const AUTH_KEY   = 'nails_auth';
+const AUTH_TOKEN = 'nails_token';
 
 function isLoggedIn()   { return sessionStorage.getItem(AUTH_KEY) === '1'; }
-function doLogin(u, p)  {
-  if (u === ADMIN_USER && p === ADMIN_PASS) {
-    sessionStorage.setItem(AUTH_KEY, '1');
-    return true;
+function getAuthToken() { return sessionStorage.getItem(AUTH_TOKEN) || ''; }
+
+async function doLogin(u, p) {
+  try {
+    const url  = API_URL + '?action=login&user=' + encodeURIComponent(u) + '&pass=' + encodeURIComponent(p);
+    const res  = await fetch(url);
+    const json = await res.json();
+    if (json.ok) {
+      sessionStorage.setItem(AUTH_KEY, '1');
+      sessionStorage.setItem(AUTH_TOKEN, json.token || '');
+      return { ok: true };
+    }
+    return { ok: false, error: json.error || 'Usuario o contraseña incorrectos' };
+  } catch(e) {
+    return { ok: false, error: 'Sin conexión con el servidor' };
   }
-  return false;
 }
+
 function doLogout() {
   sessionStorage.removeItem(AUTH_KEY);
+  sessionStorage.removeItem(AUTH_TOKEN);
   location.href = 'index.html';
 }
 
 // ── Utilidades de fecha ────────────────────────────────────
-const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
-               'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const DIAS  = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const MESES     = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                   'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DIAS      = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const DIAS_FULL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 
 function fmtDate(dt) {
@@ -99,12 +109,12 @@ function fmtDateHuman(dt) {
 
 function todayStr() { return fmtDate(new Date()); }
 
-// ── Generar .ics para iPhone ───────────────────────────────
-function generateICS({ fecha, horario, duracion, servicio, nombre, telefono }) {
+// ── Generar .ics para turnos ───────────────────────────────
+function generateICS({ fecha, horario, duracion, servicio, nombre }) {
   const [y, mo, d] = fecha.split('-').map(Number);
-  const [hh, mm]  = horario.split(':').map(Number);
+  const [hh, mm]   = horario.split(':').map(Number);
   const start = new Date(y, mo - 1, d, hh, mm);
-  const end   = new Date(start.getTime() + duracion * 60000);
+  const end   = new Date(start.getTime() + (duracion || 60) * 60000);
 
   const fmt = dt =>
     String(dt.getFullYear()) +
@@ -115,12 +125,12 @@ function generateICS({ fecha, horario, duracion, servicio, nombre, telefono }) {
 
   return [
     'BEGIN:VCALENDAR', 'VERSION:2.0',
-    'PRODID:-//Nails//Turnos//ES',
+    'PRODID:-//Gise Spa//Turnos//ES',
     'BEGIN:VEVENT',
     `DTSTART:${fmt(start)}`,
     `DTEND:${fmt(end)}`,
     `SUMMARY:${servicio}`,
-    `DESCRIPTION:Turno de ${nombre}${telefono ? ' · ' + telefono : ''}`,
+    `DESCRIPTION:Turno de ${nombre}`,
     'BEGIN:VALARM',
     'TRIGGER:-PT60M',
     'ACTION:DISPLAY',
@@ -155,8 +165,8 @@ const DB = {
 // ── Agenda config ──────────────────────────────────────────
 function getAgenda() {
   return DB.get('agenda_config') || {
-    diasHabilitados: [1, 2, 3, 4, 5, 6], // lun-sáb
-    slots:  ['09:00','10:00','11:00','12:00','14:00','15:00','16:00','17:00','18:00'],
+    diasHabilitados: [1, 2, 3, 4, 5, 6],
+    slots: ['09:00','10:00','11:00','12:00','14:00','15:00','16:00','17:00','18:00'],
     diasBloqueados: [],
     servicios: getDefaultServicios(),
   };
@@ -164,16 +174,16 @@ function getAgenda() {
 
 function getDefaultServicios() {
   return [
-    { id: 's01', nombre: 'Manos — Común',                grupo: 'Manos',    duracion: 45  },
-    { id: 's02', nombre: 'Manos — Semi con retiro',      grupo: 'Manos',    duracion: 75  },
-    { id: 's03', nombre: 'Manos — Semi sin retiro',      grupo: 'Manos',    duracion: 60  },
-    { id: 's04', nombre: 'Manos — Soft gel',             grupo: 'Manos',    duracion: 90  },
-    { id: 's05', nombre: 'Pies — Esmaltado común',       grupo: 'Pies',     duracion: 45  },
-    { id: 's06', nombre: 'Pies — Esmaltado semi',        grupo: 'Pies',     duracion: 60  },
-    { id: 's07', nombre: 'Pies — Sin esmaltado',         grupo: 'Pies',     duracion: 40  },
-    { id: 's08', nombre: 'Pedicura',                     grupo: 'Pedicura', duracion: 60  },
-    { id: 's09', nombre: 'Pedicura — Esmalte común',     grupo: 'Pedicura', duracion: 75  },
-    { id: 's10', nombre: 'Pedicura — Esmalte semi',      grupo: 'Pedicura', duracion: 90  },
+    { id: 's01', nombre: 'Manos — Común',            grupo: 'Manos',    duracion: 45 },
+    { id: 's02', nombre: 'Manos — Semi con retiro',  grupo: 'Manos',    duracion: 75 },
+    { id: 's03', nombre: 'Manos — Semi sin retiro',  grupo: 'Manos',    duracion: 60 },
+    { id: 's04', nombre: 'Manos — Soft gel',         grupo: 'Manos',    duracion: 90 },
+    { id: 's05', nombre: 'Pies — Esmaltado común',   grupo: 'Pies',     duracion: 45 },
+    { id: 's06', nombre: 'Pies — Esmaltado semi',    grupo: 'Pies',     duracion: 60 },
+    { id: 's07', nombre: 'Pies — Sin esmaltado',     grupo: 'Pies',     duracion: 40 },
+    { id: 's08', nombre: 'Pedicura',                 grupo: 'Pedicura', duracion: 60 },
+    { id: 's09', nombre: 'Pedicura — Esmalte común', grupo: 'Pedicura', duracion: 75 },
+    { id: 's10', nombre: 'Pedicura — Esmalte semi',  grupo: 'Pedicura', duracion: 90 },
   ];
 }
 
@@ -191,8 +201,8 @@ function removeTakenSlot(fecha, slot) {
 }
 
 // ── Turnos ─────────────────────────────────────────────────
-function getTurnos()      { return DB.get('turnos') || []; }
-function saveTurnos(arr)  { DB.set('turnos', arr); }
+function getTurnos()     { return DB.get('turnos') || []; }
+function saveTurnos(arr) { DB.set('turnos', arr); }
 
 // ── Inventario ─────────────────────────────────────────────
 function getInventario()     { return DB.get('inventario') || []; }
