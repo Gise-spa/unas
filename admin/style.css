@@ -874,3 +874,67 @@ tr:hover td { background: rgba(253,230,138,.06); }
   transition: background .2s;
 }
 .foto-replace-btn:hover { background: rgba(0,0,0,.75); }
+
+/* ══════════════════════════════════════════════════════
+   DARK MODE — fixes inventario
+   ══════════════════════════════════════════════════════ */
+
+/* Botón Editar en tarjeta — visible en dark */
+[data-theme="dark"] .inv-card-actions .btn-sm:first-child {
+  background: rgba(212,160,23,.2) !important;
+  color: #F5D06A !important;
+  border: 1px solid rgba(212,160,23,.35) !important;
+}
+[data-theme="dark"] .inv-card-actions .btn-sm:first-child:hover {
+  background: rgba(212,160,23,.35) !important;
+}
+
+/* Botón eliminar (✕) dark */
+[data-theme="dark"] .inv-card-actions .btn-sm:last-child {
+  background: rgba(239,68,68,.15) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(239,68,68,.25) !important;
+}
+
+/* Stock numbers dark */
+[data-theme="dark"] .inv-stock-ok  { color: var(--text-mid); }
+[data-theme="dark"] .inv-stock-low { color: #FBBF24; }
+[data-theme="dark"] .inv-stock-out { color: #f87171; }
+
+/* qty-control dark */
+[data-theme="dark"] .qty-btn {
+  background: var(--bg) !important;
+  border-color: var(--border) !important;
+  color: var(--text-mid) !important;
+}
+[data-theme="dark"] .qty-btn:hover {
+  background: var(--border) !important;
+}
+
+/* inv-card dark */
+[data-theme="dark"] .inv-card {
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+[data-theme="dark"] .inv-card:hover {
+  box-shadow: 0 4px 20px rgba(232,144,144,.12);
+}
+
+/* inv-card-cat dark */
+[data-theme="dark"] .inv-card-cat  { color: #D4A017; }
+[data-theme="dark"] .inv-card-nombre { color: var(--text); }
+[data-theme="dark"] .inv-card-marca  { color: var(--text-muted); }
+[data-theme="dark"] .inv-card-notas  { color: var(--text-muted); }
+
+/* Badge vis dark */
+[data-theme="dark"] .inv-vis-badge     { background: rgba(0,0,0,.6); }
+[data-theme="dark"] .inv-vis-badge.pub { background: rgba(34,197,94,.6); }
+
+/* Alerta stock dark */
+[data-theme="dark"] .stock-alerta {
+  background: rgba(180,83,9,.15);
+  border-color: rgba(180,83,9,.3);
+  color: #FBBF24;
+}
+[data-theme="dark"] .stock-alerta strong { color: #FDE68A; }
+[data-theme="dark"] .stock-alerta a      { color: #FBCFE8 !important; }
