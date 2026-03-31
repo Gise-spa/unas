@@ -299,13 +299,10 @@ let catActiva = '';
 async function cargarProductos() {
   try {
     // Intentar desde API primero
-    const res  = await fetch(API_URL + '?sheet=inventario');
+    const res  = await fetch(API_URL + '?action=getInventarioPublico');
     const json = await res.json();
     const data = json.data || [];
-    // Solo mostrar los públicos
-    todosLosProductos = data.filter(p =>
-      String(p.visibilidad).toLowerCase() === 'publico'
-    );
+    todosLosProductos = data;
   } catch(e) {
     // Fallback a localStorage si la API falla
     todosLosProductos = getInventario().filter(p => p.visibilidad === 'publico');
