@@ -687,7 +687,7 @@ tr:hover td { background: rgba(253,230,138,.06); }
 .inv-card-foto {
   position: relative;
   width: 100%;
-  aspect-ratio: 3/4;
+  aspect-ratio: 1;
   overflow: hidden;
   background: var(--bg-pink);
 }
@@ -906,7 +906,7 @@ tr:hover td { background: rgba(253,230,138,.06); }
 .inv-card-foto {
   position: relative;
   width: 100%;
-  aspect-ratio: 3/4;
+  aspect-ratio: 1;
   overflow: hidden;
   background: var(--bg-pink);
 }
@@ -1088,4 +1088,41 @@ tr:hover td { background: rgba(253,230,138,.06); }
 #pdfFiltroWrap label {
   color: var(--text);
   cursor: pointer;
+}
+
+/* ── Filtro de visibilidad ─────────────────────────────── */
+.vis-filtro-wrap {
+  display: flex;
+  gap: .35rem;
+  flex-wrap: wrap;
+}
+.vis-filtro-btn {
+  padding: .35rem .85rem;
+  border-radius: 50px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: .78rem;
+  cursor: pointer;
+  transition: all .18s;
+  white-space: nowrap;
+}
+.vis-filtro-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.vis-filtro-btn.active {
+  background: var(--bg-yellow);
+  border-color: var(--gold);
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* ── Precio en tarjeta inventario ──────────────────────── */
+.inv-card-precio {
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-top: .2rem;
 }
