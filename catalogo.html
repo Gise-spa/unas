@@ -421,6 +421,7 @@
       <div class="detalle-nombre" id="detalleNombre"></div>
       <div class="detalle-marca" id="detalleMarca"></div>
       <div class="detalle-codigo" id="detalleCodigo"></div>
+      <div class="detalle-precio" id="detallePrecio" style="display:none"></div>
     </div>
     <div class="detalle-footer">
       <div class="cantidad-wrap">
@@ -612,6 +613,13 @@ function abrirDetalle(id) {
   document.getElementById("detalleNombre").textContent = p.nombre    || "—";
   document.getElementById("detalleMarca").textContent  = p.marca     || "";
   document.getElementById("detalleCodigo").textContent = p.notas     ? "Cód: " + p.notas : "";
+  const precioEl = document.getElementById("detallePrecio");
+  if (p.precioVenta && p.precioVisible === "si") {
+    precioEl.textContent = "$" + Number(p.precioVenta).toLocaleString("es-AR");
+    precioEl.style.display = "block";
+  } else {
+    precioEl.style.display = "none";
+  }
 
   document.getElementById("detalleOverlay").classList.add("open");
   document.body.style.overflow = "hidden";
