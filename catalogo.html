@@ -220,6 +220,55 @@
       .buscar-wrap input { width: 100%; }
       .buscar-wrap input:focus { width: 100%; }
     }
+    /* ── Modal detalle producto ── */
+    .detalle-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(61,32,32,.45);
+      backdrop-filter: blur(4px);
+      z-index: 900;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .detalle-overlay.open { display: flex; }
+    .detalle-modal {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      width: 100%;
+      max-width: 420px;
+      max-height: 90vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .detalle-foto-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 3/4;
+      background: var(--bg-pink);
+      flex-shrink: 0;
+    }
+    .detalle-foto { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .detalle-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 5rem; opacity: .3; }
+    .detalle-color-dot { position: absolute; bottom: 10px; right: 10px; width: 26px; height: 26px; border-radius: 50%; border: 2.5px solid rgba(255,255,255,.9); box-shadow: 0 1px 5px rgba(0,0,0,.25); }
+    .detalle-cerrar { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,.45); color: #fff; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .detalle-body { padding: 1.25rem 1.25rem .5rem; }
+    .detalle-cat { font-size: .68rem; font-weight: 500; letter-spacing: .09em; text-transform: uppercase; color: var(--gold); margin-bottom: .3rem; }
+    .detalle-nombre { font-family: 'Cormorant Garamond', serif; font-size: 1.45rem; color: var(--text); margin-bottom: .15rem; }
+    .detalle-marca { font-size: .82rem; color: var(--text-muted); margin-bottom: .5rem; }
+    .detalle-codigo { font-size: .75rem; color: var(--text-muted); background: var(--bg); border-radius: 6px; padding: .2rem .6rem; display: inline-block; margin-bottom: 1rem; }
+    .detalle-footer { padding: 1rem 1.25rem 1.5rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: .85rem; }
+    .cantidad-wrap { display: flex; align-items: center; gap: .75rem; }
+    .cantidad-label { font-size: .82rem; color: var(--text-muted); }
+    .cantidad-ctrl { display: flex; align-items: center; gap: .5rem; background: var(--bg); border: 1px solid var(--border); border-radius: 50px; padding: .2rem .5rem; }
+    .cantidad-btn { background: none; border: none; color: var(--accent); font-size: 1.2rem; font-weight: 700; cursor: pointer; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background .15s; }
+    .cantidad-btn:hover { background: var(--bg-pink); }
+    .cantidad-num { min-width: 24px; text-align: center; font-weight: 600; font-size: .95rem; color: var(--text); }
+    .btn-whatsapp { display: flex; align-items: center; justify-content: center; gap: .5rem; background: #25D366; color: #fff; border: none; border-radius: 50px; padding: .75rem 1.5rem; font-family: 'DM Sans', sans-serif; font-size: .92rem; font-weight: 600; cursor: pointer; transition: background .18s, transform .15s; width: 100%; }
+    .btn-whatsapp:hover { background: #1ebe5d; transform: translateY(-1px); }
   </style>
 </head>
 <body>
@@ -287,6 +336,35 @@
     <span>Hecho con 💛</span>
   </div>
 </footer>
+
+<!-- Modal detalle producto -->
+<div class="detalle-overlay" id="detalleOverlay" onclick="cerrarDetalle(event)">
+  <div class="detalle-modal" id="detalleModal">
+    <div class="detalle-foto-wrap" id="detalleFotoWrap">
+      <button class="detalle-cerrar" onclick="cerrarDetalleDirecto()">✕</button>
+    </div>
+    <div class="detalle-body">
+      <div class="detalle-cat" id="detalleCat"></div>
+      <div class="detalle-nombre" id="detalleNombre"></div>
+      <div class="detalle-marca" id="detalleMarca"></div>
+      <div class="detalle-codigo" id="detalleCodigo"></div>
+    </div>
+    <div class="detalle-footer">
+      <div class="cantidad-wrap">
+        <span class="cantidad-label">Cantidad:</span>
+        <div class="cantidad-ctrl">
+          <button class="cantidad-btn" onclick="cambiarCantidad(-1)">−</button>
+          <span class="cantidad-num" id="cantidadNum">1</span>
+          <button class="cantidad-btn" onclick="cambiarCantidad(1)">+</button>
+        </div>
+      </div>
+      <button class="btn-whatsapp" id="btnWhatsapp" onclick="consultarWhatsapp()">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.554 4.103 1.523 5.824L.057 23.882a.5.5 0 0 0 .61.637l6.265-1.643A11.94 11.94 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.797 9.797 0 0 1-5.001-1.374l-.358-.213-3.722.976.993-3.63-.233-.374A9.818 9.818 0 0 1 2.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/></svg>
+        Consultar por WhatsApp
+      </button>
+    </div>
+  </div>
+</div>
 
 <script src="script.js"></script>
 <script>
@@ -398,7 +476,7 @@ function renderProductos(lista) {
          </div>`;
 
     return `
-      <article class="producto-card reveal">
+      <article class="producto-card reveal" onclick="abrirDetalle('${p.id}')" style="cursor:pointer">
         ${fotoHtml}
         <div class="producto-body">
           <div class="producto-cat">${p.categoria || ''}</div>
@@ -419,6 +497,81 @@ function renderProductos(lista) {
 
 // ── Init ───────────────────────────────────────────────────
 cargarProductos();
+
+// ── Modal detalle ──────────────────────────────────────────
+const WA_NUMBER = "5491163322427";
+let productoActual = null;
+let cantidadActual = 1;
+
+function abrirDetalle(id) {
+  const p = todosLosProductos.find(x => String(x.id) === String(id));
+  if (!p) return;
+  productoActual = p;
+  cantidadActual = 1;
+  document.getElementById("cantidadNum").textContent = 1;
+
+  // Foto
+  const wrap = document.getElementById("detalleFotoWrap");
+  const viejasImg = wrap.querySelectorAll("img, .detalle-placeholder, .detalle-color-dot");
+  viejasImg.forEach(el => el.remove());
+  if (p.fotoUrl) {
+    const img = document.createElement("img");
+    img.className = "detalle-foto";
+    img.src = p.fotoUrl;
+    img.alt = p.nombre;
+    wrap.appendChild(img);
+  } else {
+    const ph = document.createElement("div");
+    ph.className = "detalle-placeholder";
+    ph.textContent = "💅";
+    wrap.appendChild(ph);
+  }
+  if (p.color) {
+    const dot = document.createElement("span");
+    dot.className = "detalle-color-dot";
+    dot.style.background = p.color;
+    wrap.appendChild(dot);
+  }
+
+  // Textos
+  document.getElementById("detalleCat").textContent    = p.categoria || "";
+  document.getElementById("detalleNombre").textContent = p.nombre    || "—";
+  document.getElementById("detalleMarca").textContent  = p.marca     || "";
+  document.getElementById("detalleCodigo").textContent = p.notas     ? "Cód: " + p.notas : "";
+
+  document.getElementById("detalleOverlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function cerrarDetalleDirecto() {
+  document.getElementById("detalleOverlay").classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+function cerrarDetalle(e) {
+  if (e.target === document.getElementById("detalleOverlay")) cerrarDetalleDirecto();
+}
+
+function cambiarCantidad(delta) {
+  cantidadActual = Math.max(1, cantidadActual + delta);
+  document.getElementById("cantidadNum").textContent = cantidadActual;
+}
+
+function consultarWhatsapp() {
+  if (!productoActual) return;
+  const p    = productoActual;
+  const cod  = p.notas  || p.id  || "-";
+  const nom  = p.nombre || "-";
+  const cant = cantidadActual;
+  const msg  = `Hola Gise! Me interesa este producto 💅
+
+📦 Código: ${cod}
+🎨 Nombre: ${nom}
+🔢 Cantidad: ${cant}
+
+¿Está disponible?`;
+  window.open("https://wa.me/" + WA_NUMBER + "?text=" + encodeURIComponent(msg), "_blank");
+}
 </script>
 </body>
 </html>
