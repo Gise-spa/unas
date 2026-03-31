@@ -239,34 +239,58 @@
       box-shadow: var(--shadow-md);
       width: 100%;
       max-width: 420px;
-      max-height: 90vh;
-      overflow-y: auto;
+      max-height: 92vh;
+      overflow: hidden;
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
     }
+    /* En desktop: foto a la izquierda, info a la derecha */
     .detalle-foto-wrap {
       position: relative;
-      width: 100%;
-      aspect-ratio: 3/4;
-      background: var(--bg-pink);
+      width: 45%;
       flex-shrink: 0;
+      background: var(--bg-pink);
     }
     .detalle-foto { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .detalle-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 5rem; opacity: .3; }
+    .detalle-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 4rem; opacity: .3; }
     .detalle-color-dot { position: absolute; bottom: 10px; right: 10px; width: 26px; height: 26px; border-radius: 50%; border: 2.5px solid rgba(255,255,255,.9); box-shadow: 0 1px 5px rgba(0,0,0,.25); }
     .detalle-cerrar { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,.45); color: #fff; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    .detalle-body { padding: 1.25rem 1.25rem .5rem; }
-    .detalle-cat { font-size: .68rem; font-weight: 500; letter-spacing: .09em; text-transform: uppercase; color: var(--gold); margin-bottom: .3rem; }
-    .detalle-nombre { font-family: 'Cormorant Garamond', serif; font-size: 1.45rem; color: var(--text); margin-bottom: .15rem; }
-    .detalle-marca { font-size: .82rem; color: var(--text-muted); margin-bottom: .5rem; }
-    .detalle-codigo { font-size: .75rem; color: var(--text-muted); background: var(--bg); border-radius: 6px; padding: .2rem .6rem; display: inline-block; margin-bottom: 1rem; }
-    .detalle-footer { padding: 1rem 1.25rem 1.5rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: .85rem; }
-    .cantidad-wrap { display: flex; align-items: center; gap: .75rem; }
-    .cantidad-label { font-size: .82rem; color: var(--text-muted); }
-    .cantidad-ctrl { display: flex; align-items: center; gap: .5rem; background: var(--bg); border: 1px solid var(--border); border-radius: 50px; padding: .2rem .5rem; }
-    .cantidad-btn { background: none; border: none; color: var(--accent); font-size: 1.2rem; font-weight: 700; cursor: pointer; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background .15s; }
+    .detalle-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .detalle-body { padding: 1.1rem 1.1rem .4rem; flex: 1; }
+    .detalle-cat { font-size: .65rem; font-weight: 500; letter-spacing: .09em; text-transform: uppercase; color: var(--gold); margin-bottom: .25rem; }
+    .detalle-nombre { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; color: var(--text); margin-bottom: .1rem; line-height: 1.2; }
+    .detalle-marca { font-size: .78rem; color: var(--text-muted); margin-bottom: .4rem; }
+    .detalle-codigo { font-size: .72rem; color: var(--text-muted); background: var(--bg); border-radius: 6px; padding: .18rem .55rem; display: inline-block; margin-bottom: .5rem; }
+    .detalle-footer { padding: .75rem 1.1rem 1.1rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: .65rem; }
+    .cantidad-wrap { display: flex; align-items: center; gap: .65rem; }
+    .cantidad-label { font-size: .78rem; color: var(--text-muted); }
+    .cantidad-ctrl { display: flex; align-items: center; gap: .4rem; background: var(--bg); border: 1px solid var(--border); border-radius: 50px; padding: .15rem .4rem; }
+    .cantidad-btn { background: none; border: none; color: var(--accent); font-size: 1.1rem; font-weight: 700; cursor: pointer; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background .15s; }
     .cantidad-btn:hover { background: var(--bg-pink); }
-    .cantidad-num { min-width: 24px; text-align: center; font-weight: 600; font-size: .95rem; color: var(--text); }
+    .cantidad-num { min-width: 22px; text-align: center; font-weight: 600; font-size: .9rem; color: var(--text); }
+
+    /* Móvil: layout vertical con foto recortada arriba */
+    @media (max-width: 500px) {
+      .detalle-overlay { padding: .75rem; }
+      .detalle-modal {
+        flex-direction: column;
+        max-height: 88vh;
+        max-width: 100%;
+      }
+      .detalle-foto-wrap {
+        width: 100%;
+        height: 38vh;
+        flex-shrink: 0;
+      }
+      .detalle-body { padding: .85rem .9rem .3rem; }
+      .detalle-nombre { font-size: 1.15rem; }
+      .detalle-footer { padding: .6rem .9rem .9rem; gap: .55rem; }
+    }
     .btn-whatsapp {
       display: inline-flex;
       align-items: center;
@@ -367,6 +391,7 @@
     <div class="detalle-foto-wrap" id="detalleFotoWrap">
       <button class="detalle-cerrar" onclick="cerrarDetalleDirecto()">✕</button>
     </div>
+    <div class="detalle-info">
     <div class="detalle-body">
       <div class="detalle-cat" id="detalleCat"></div>
       <div class="detalle-nombre" id="detalleNombre"></div>
