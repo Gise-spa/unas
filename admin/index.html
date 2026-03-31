@@ -231,9 +231,6 @@
         </div>
       </div>
       <div id="invGrid" class="inv-grid"></div>
-      <div style="display:flex;gap:.5rem;margin-top:1rem">
-        <button class="btn btn-outline btn-sm" onclick="exportCSV()">⬇ CSV</button>
-      </div>
     </div>
 
     <!-- CATEGORÍAS -->
@@ -427,6 +424,34 @@
         📄 Generar PDF
       </button>
       <button class="btn btn-outline" onclick="cerrarModal('modalPDF')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL CAMBIAR TURNO -->
+<div class="modal-overlay" id="modalCambiarTurno">
+  <div class="modal-box" style="max-width:380px">
+    <div class="modal-header">
+      <h3>Cambiar fecha y horario</h3>
+      <button class="modal-close" onclick="cerrarModal('modalCambiarTurno')">×</button>
+    </div>
+    <input type="hidden" id="ctId">
+    <p id="ctInfo" style="font-size:.84rem;color:var(--text-muted);margin-bottom:1rem"></p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+      <div class="form-group">
+        <label>Nueva fecha</label>
+        <input type="date" id="ctFecha" class="input-sm" style="width:100%">
+      </div>
+      <div class="form-group">
+        <label>Nuevo horario</label>
+        <select id="ctHorario" class="input-sm" style="width:100%"></select>
+      </div>
+    </div>
+    <p style="font-size:.76rem;color:var(--text-muted);margin:.25rem 0 1rem">⚠ Solo podés cambiar turnos sin seña abonada.</p>
+    <div style="display:flex;gap:.6rem">
+      <button class="btn btn-primary" style="flex:1" onclick="confirmarCambioTurno()">Guardar cambio</button>
+      <button class="btn btn-outline" onclick="cerrarModal('modalCambiarTurno')">Cancelar</button>
     </div>
   </div>
 </div>
