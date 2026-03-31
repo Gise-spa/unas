@@ -579,7 +579,7 @@ function abrirModalProducto(id) {
     document.getElementById('mNotas').value             = p.notas        || '';
     document.getElementById('mPrecioCosto').value        = p.precioCosto  || '';
     document.getElementById('mPrecioVenta').value        = p.precioVenta  || '';
-    document.getElementById('mPrecioVisible').checked   = p.precioVisible === 'si';
+    setPrecioVis(p.precioVisible === 'si' ? 'si' : 'no');
     setVis(p.visibilidad || 'privado');
     const src = p.fotoUrl || p.foto || '';
     window._fotoUrlActual = src;
@@ -600,7 +600,7 @@ function abrirModalProducto(id) {
     document.getElementById('mNotas').value          = '';
     document.getElementById('mPrecioCosto').value    = '';
     document.getElementById('mPrecioVenta').value    = '';
-    document.getElementById('mPrecioVisible').checked = false;
+    setPrecioVis('no');
     setVis('privado');
   }
   abrirModal('modalProducto');
@@ -613,6 +613,15 @@ function setVis(val) {
   if (!bp || !bpu) return;
   bp.classList.toggle('active-vis',  val === 'privado');
   bpu.classList.toggle('active-vis', val === 'publico');
+}
+
+function setPrecioVis(val) {
+  document.getElementById('mPrecioVisible').value = val;
+  const boculto  = document.getElementById('precioOculto');
+  const bpublico = document.getElementById('precioPublico');
+  if (!boculto || !bpublico) return;
+  boculto.classList.toggle('active-vis',  val === 'no');
+  bpublico.classList.toggle('active-vis', val === 'si');
 }
 
 function poblarCatSelect() {
@@ -710,7 +719,7 @@ function guardarProducto() {
     visibilidad:   document.getElementById('mVis').value,
     precioCosto:   document.getElementById('mPrecioCosto').value.trim(),
     precioVenta:   document.getElementById('mPrecioVenta').value.trim(),
-    precioVisible: document.getElementById('mPrecioVisible').checked ? 'si' : 'no',
+    precioVisible: document.getElementById('mPrecioVisible').value,
     fotoUrl:       existente?.fotoUrl || '',
   };
   const arr = getInventario();
