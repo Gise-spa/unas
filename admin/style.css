@@ -816,18 +816,7 @@ tr:hover td { background: rgba(253,230,138,.06); }
   background: var(--bg);
   color: var(--text-muted);
 }
-#visPrivado.active-vis, #precioOculto.active-vis {
-  background: rgba(232,144,144,.18);
-  color: var(--accent);
-  border-color: var(--accent);
-  font-weight: 600;
-}
-#visPublico.active-vis, #precioPublico.active-vis {
-  background: rgba(34,197,94,.13);
-  color: #16a34a;
-  border-color: #16a34a;
-  font-weight: 600;
-}
+
 
 /* ── Modal foto — vista grande ──────────────────────────── */
 .foto-modal-wrap {
@@ -1038,8 +1027,7 @@ tr:hover td { background: rgba(253,230,138,.06); }
   font-weight: 500;
   background: var(--bg); color: var(--text-muted);
 }
-#visPrivado.active-vis, #precioOculto.active-vis { background: rgba(232,144,144,.18); color: var(--accent); border-color: var(--accent); font-weight: 600; }
-#visPublico.active-vis, #precioPublico.active-vis { background: rgba(34,197,94,.13); color: #16a34a; border-color: #16a34a; font-weight: 600; }
+
 
 /* Modal foto */
 .foto-modal-wrap {
@@ -1129,4 +1117,37 @@ tr:hover td { background: rgba(253,230,138,.06); }
   font-weight: 600;
   color: var(--accent);
   margin-top: .2rem;
+}
+
+/* ── Botones toggle visibilidad / precio ───────────────── */
+.toggle-vis-btn {
+  flex: 1;
+  padding: .6rem;
+  border-radius: var(--radius-md);
+  font-family: 'DM Sans', sans-serif;
+  font-size: .84rem;
+  cursor: pointer;
+  transition: all .2s;
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  color: var(--text-muted);
+  font-weight: 400;
+}
+.toggle-vis-btn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+#visPrivado.active-vis,
+#precioOculto.active-vis {
+  background: rgba(232,144,144,.15);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+#visPublico.active-vis,
+#precioPublico.active-vis {
+  background: rgba(34,197,94,.12);
+  border-color: #16a34a;
+  color: #16a34a;
+  font-weight: 600;
 }
