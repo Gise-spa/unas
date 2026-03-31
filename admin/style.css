@@ -816,13 +816,17 @@ tr:hover td { background: rgba(253,230,138,.06); }
   background: var(--bg);
   color: var(--text-muted);
 }
-#visPrivado.active-vis {
+#visPrivado.active-vis, #precioOculto.active-vis {
   background: rgba(232,144,144,.18);
   color: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
 }
-#visPublico.active-vis {
+#visPublico.active-vis, #precioPublico.active-vis {
   background: rgba(34,197,94,.13);
   color: #16a34a;
+  border-color: #16a34a;
+  font-weight: 600;
 }
 
 /* ── Modal foto — vista grande ──────────────────────────── */
@@ -1034,8 +1038,8 @@ tr:hover td { background: rgba(253,230,138,.06); }
   font-weight: 500;
   background: var(--bg); color: var(--text-muted);
 }
-#visPrivado.active-vis { background: rgba(232,144,144,.18); color: var(--accent); }
-#visPublico.active-vis { background: rgba(34,197,94,.13); color: #16a34a; }
+#visPrivado.active-vis, #precioOculto.active-vis { background: rgba(232,144,144,.18); color: var(--accent); border-color: var(--accent); font-weight: 600; }
+#visPublico.active-vis, #precioPublico.active-vis { background: rgba(34,197,94,.13); color: #16a34a; border-color: #16a34a; font-weight: 600; }
 
 /* Modal foto */
 .foto-modal-wrap {
