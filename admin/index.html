@@ -332,12 +332,10 @@
           </div>
         </div>
         <div style="display:flex;gap:.5rem;margin-top:.6rem">
-          <button type="button" id="precioOculto" onclick="setPrecioVis('no')"
-            style="flex:1;padding:.55rem;border-radius:var(--radius-md);font-family:'DM Sans',sans-serif;font-size:.8rem;cursor:pointer;transition:all .2s;border:1.5px solid var(--border);background:var(--bg);color:var(--text-muted)">
+          <button type="button" id="precioOculto" class="toggle-vis-btn" onclick="setPrecioVis('no')">
             Precio oculto
           </button>
-          <button type="button" id="precioPublico" onclick="setPrecioVis('si')"
-            style="flex:1;padding:.55rem;border-radius:var(--radius-md);font-family:'DM Sans',sans-serif;font-size:.8rem;cursor:pointer;transition:all .2s;border:1.5px solid var(--border);background:var(--bg);color:var(--text-muted)">
+          <button type="button" id="precioPublico" class="toggle-vis-btn" onclick="setPrecioVis('si')">
             Mostrar en catálogo
           </button>
         </div>
@@ -346,12 +344,10 @@
       <div class="form-group" style="grid-column:1/-1">
         <label>Visibilidad</label>
         <div style="display:flex;gap:.5rem;margin-top:.3rem">
-          <button type="button" id="visPrivado" onclick="setVis('privado')"
-            style="flex:1;padding:.6rem;border-radius:var(--radius-md);font-family:'DM Sans',sans-serif;font-size:.84rem;cursor:pointer;transition:all .2s;border:1.5px solid var(--accent);background:rgba(232,144,144,.1);color:var(--text);font-weight:500">
+          <button type="button" id="visPrivado" class="toggle-vis-btn" onclick="setVis('privado')">
             🔒 Privado
           </button>
-          <button type="button" id="visPublico" onclick="setVis('publico')"
-            style="flex:1;padding:.6rem;border-radius:var(--radius-md);font-family:'DM Sans',sans-serif;font-size:.84rem;cursor:pointer;transition:all .2s;border:1.5px solid var(--border);background:var(--bg);color:var(--text-muted)">
+          <button type="button" id="visPublico" class="toggle-vis-btn" onclick="setVis('publico')">
             👁 Público
           </button>
         </div>
