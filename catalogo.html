@@ -98,6 +98,12 @@
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
       gap: 1.25rem;
     }
+    @media (max-width: 540px) {
+      .productos-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: .75rem;
+      }
+    }
 
     /* Card producto */
     .producto-card {
@@ -220,6 +226,14 @@
       .buscar-wrap input { width: 100%; }
       .buscar-wrap input:focus { width: 100%; }
     }
+    @media (max-width: 540px) {
+      .producto-footer { padding: .5rem .6rem; }
+      .ver-mas-hint { font-size: .65rem; padding: .22rem .55rem; }
+      .producto-body { padding: .6rem .6rem .3rem; }
+      .producto-nombre { font-size: .92rem; }
+      .producto-marca { font-size: .72rem; }
+      .stock-badge { font-size: .65rem; padding: .14rem .45rem; }
+    }
     /* ── Modal detalle producto ── */
     .detalle-overlay {
       display: none;
@@ -313,10 +327,19 @@
     .btn-whatsapp svg { width: 15px; height: 15px; fill: #fff; flex-shrink: 0; }
     .ver-mas-hint {
       font-size: .72rem;
+      font-weight: 600;
       color: var(--accent);
-      text-align: right;
-      padding: .3rem .5rem 0;
-      opacity: .85;
+      background: var(--bg-pink);
+      border: 1px solid var(--accent);
+      border-radius: 50px;
+      padding: .28rem .75rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .15s, color .15s;
+    }
+    .producto-card:hover .ver-mas-hint {
+      background: var(--accent);
+      color: #fff;
     }
   </style>
 </head>
