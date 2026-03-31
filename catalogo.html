@@ -243,6 +243,7 @@
       overflow: hidden;
       display: flex;
       flex-direction: row;
+      position: relative;
     }
     /* En desktop: foto a la izquierda, info a la derecha */
     .detalle-foto-wrap {
@@ -388,8 +389,8 @@
 <!-- Modal detalle producto -->
 <div class="detalle-overlay" id="detalleOverlay" onclick="cerrarDetalle(event)">
   <div class="detalle-modal" id="detalleModal">
+    <button class="detalle-cerrar" onclick="cerrarDetalleDirecto()">✕</button>
     <div class="detalle-foto-wrap" id="detalleFotoWrap">
-      <button class="detalle-cerrar" onclick="cerrarDetalleDirecto()">✕</button>
     </div>
     <div class="detalle-info">
     <div class="detalle-body">
