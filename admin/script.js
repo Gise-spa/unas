@@ -315,7 +315,17 @@ function renderBloqueadas() {
 // ════════════════════════════════════════════════════════
 //  INVENTARIO
 // ════════════════════════════════════════════════════════
-let invCatActiva = '';
+let invCatActiva  = '';
+let invVisFiltro  = ''; // '' = todos, 'publico', 'privado'
+
+function setVisFiltro(vis) {
+  invVisFiltro = vis;
+  document.querySelectorAll('.vis-filtro-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.vis === vis);
+  });
+  window._filtroStockBajo = false;
+  renderInventario();
+}
 
 function renderInvTabs() {
   const cats = ['Todos', ...getCategorias()];
@@ -363,9 +373,10 @@ function renderInventario() {
   if (invCatActiva || q) window._filtroStockBajo = false;
   const lista = todos.filter(p => {
     const matchCat = !invCatActiva || p.categoria === invCatActiva;
-    const matchQ   = !q || (p.nombre||'').toLowerCase().includes(q) || (p.marca||'').toLowerCase().includes(q);
+    const matchQ   = !q || (p.nombre||'').toLowerCase().includes(q) || (p.marca||'').toLowerCase().includes(q) || (p.notas||'').toLowerCase().includes(q);
     const matchLow = !window._filtroStockBajo || Number(p.stock) <= 2;
-    return matchCat && matchQ && matchLow;
+    const matchVis = !invVisFiltro || (p.visibilidad || 'privado') === invVisFiltro;
+    return matchCat && matchQ && matchLow && matchVis;
   });
 
   actualizarAlertaStock();
@@ -408,7 +419,8 @@ function renderInventario() {
         <div class="inv-card-cat">${p.categoria||''}</div>
         <div class="inv-card-nombre">${p.nombre}</div>
         <div class="inv-card-marca">${p.marca||''}</div>
-        ${p.notas?`<div class="inv-card-notas">${p.notas}</div>`:''}
+        ${p.notas ? `<div class="inv-card-notas">Cód: ${p.notas}</div>` : ''}
+        ${(p.precioVenta && p.precioVisible === 'si') ? `<div class="inv-card-precio">$${Number(p.precioVenta).toLocaleString('es-AR')}</div>` : ''}
         <div class="inv-card-footer">
           <div class="qty-control">
             <button class="qty-btn" onclick="ajustarStock('${p.id}',-1)">−</button>
@@ -527,11 +539,11 @@ async function generarPDF() {
 }
 
 function exportCSV() {
-  const h = ['Nombre','Marca','Categoría','Color','Stock','Estado','Visibilidad','Notas'];
+  const h = ['Nombre','Marca','Categoría','Color','Stock','Estado','Visibilidad','Código','Precio Costo','Precio Venta','Precio Visible'];
   const rows = getInventario().map(p => [
     p.nombre||'', p.marca||'', p.categoria||'', p.color||'', p.stock||0,
     Number(p.stock)<=0?'Sin stock':Number(p.stock)<=2?'Stock bajo':'Ok',
-    p.visibilidad||'privado', p.notas||'',
+    p.visibilidad||'privado', p.notas||'', p.precioCosto||'', p.precioVenta||'', p.precioVisible||'no',
   ]);
   const csv = [h,...rows].map(r => r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})), download: 'inventario.csv' });
@@ -564,7 +576,10 @@ function abrirModalProducto(id) {
     const dot = document.getElementById('colorPreviewDot');
     if (dot) dot.style.background = p.color || '#FBCFE8';
     document.getElementById('mStock').value       = p.stock     ?? 1;
-    document.getElementById('mNotas').value       = p.notas     || '';
+    document.getElementById('mNotas').value             = p.notas        || '';
+    document.getElementById('mPrecioCosto').value        = p.precioCosto  || '';
+    document.getElementById('mPrecioVenta').value        = p.precioVenta  || '';
+    document.getElementById('mPrecioVisible').checked   = p.precioVisible === 'si';
     setVis(p.visibilidad || 'privado');
     const src = p.fotoUrl || p.foto || '';
     window._fotoUrlActual = src;
@@ -582,7 +597,10 @@ function abrirModalProducto(id) {
     const dot = document.getElementById('colorPreviewDot');
     if (dot) dot.style.background = '#FBCFE8';
     document.getElementById('mStock').value = 1;
-    document.getElementById('mNotas').value = '';
+    document.getElementById('mNotas').value          = '';
+    document.getElementById('mPrecioCosto').value    = '';
+    document.getElementById('mPrecioVenta').value    = '';
+    document.getElementById('mPrecioVisible').checked = false;
     setVis('privado');
   }
   abrirModal('modalProducto');
@@ -682,15 +700,18 @@ function guardarProducto() {
   const idActual  = document.getElementById('mIdx').value;
   const existente = idActual ? getInventario().find(p => String(p.id) === String(idActual)) : null;
   const producto = {
-    id:          idActual || Date.now().toString(),
+    id:            idActual || Date.now().toString(),
     nombre,
-    marca:       document.getElementById('mMarca').value.trim(),
-    categoria:   document.getElementById('mCategoria').value,
-    color:       document.getElementById('mColor').value.trim() || document.getElementById('mColorPicker').value,
-    stock:       Math.max(0, parseInt(document.getElementById('mStock').value)||0),
-    notas:       document.getElementById('mNotas').value.trim(),
-    visibilidad: document.getElementById('mVis').value,
-    fotoUrl:     existente?.fotoUrl || '',
+    marca:         document.getElementById('mMarca').value.trim(),
+    categoria:     document.getElementById('mCategoria').value,
+    color:         document.getElementById('mColor').value.trim() || document.getElementById('mColorPicker').value,
+    stock:         Math.max(0, parseInt(document.getElementById('mStock').value)||0),
+    notas:         document.getElementById('mNotas').value.trim(),
+    visibilidad:   document.getElementById('mVis').value,
+    precioCosto:   document.getElementById('mPrecioCosto').value.trim(),
+    precioVenta:   document.getElementById('mPrecioVenta').value.trim(),
+    precioVisible: document.getElementById('mPrecioVisible').checked ? 'si' : 'no',
+    fotoUrl:       existente?.fotoUrl || '',
   };
   const arr = getInventario();
   const idx = arr.findIndex(p => String(p.id) === String(producto.id));
