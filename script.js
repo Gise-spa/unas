@@ -2,6 +2,8 @@
    script.js — Lógica compartida entre todas las páginas
    ============================================================ */
 
+const API_URL = 'https://script.google.com/macros/s/AKfycbx7Q7Qpw3TQ2Pv8CYLLlc7qXoDZpz0kWLUaJB0c1wK0cwPfb2nPHb6QbQhWvSDadrJ6/exec';
+
 // ── Dark mode ──────────────────────────────────────────────
 const html     = document.documentElement;
 const themeBtn = document.querySelector('.theme-btn');
