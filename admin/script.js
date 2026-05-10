@@ -3,7 +3,7 @@
 //  Requiere ../script.js cargado antes
 // ============================================================
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbx7Q7Qpw3TQ2Pv8CYLLlc7qXoDZpz0kWLUaJB0c1wK0cwPfb2nPHb6QbQhWvSDadrJ6/exec';
+// API_URL heredada de ../script.js
 
 // ── API helpers ───────────────────────────────────────────
 async function apiPost(data) {
@@ -457,7 +457,7 @@ function renderInventario() {
   if (invCatActiva || q) window._filtroStockBajo = false;
   const lista = todos.filter(p => {
     const matchCat = !invCatActiva || p.categoria === invCatActiva;
-    const matchQ   = !q || (p.nombre||'').toLowerCase().includes(q) || (p.marca||'').toLowerCase().includes(q) || (p.notas||'').toLowerCase().includes(q);
+    const matchQ   = !q || String(p.nombre||'').toLowerCase().includes(q) || String(p.marca||'').toLowerCase().includes(q) || String(p.notas||'').toLowerCase().includes(q);
     const matchLow = !window._filtroStockBajo || Number(p.stock) <= 2;
     const matchVis = !invVisFiltro || (p.visibilidad || 'privado') === invVisFiltro;
     return matchCat && matchQ && matchLow && matchVis;
