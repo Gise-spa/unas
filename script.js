@@ -3,7 +3,7 @@
 //  Requiere ../script.js cargado antes
 // ============================================================
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbx7Q7Qpw3TQ2Pv8CYLLlc7qXoDZpz0kWLUaJB0c1wK0cwPfb2nPHb6QbQhWvSDadrJ6/exec';
+// API_URL heredada de ../script.js
 
 // ── API helpers ───────────────────────────────────────────
 async function apiPost(data) {
