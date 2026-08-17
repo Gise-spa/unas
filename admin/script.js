@@ -953,6 +953,9 @@ function iniciarAdmin() {
 }
 
 function doLogout() {
+  // apiPost toma el token de sessionStorage — hay que avisar al servidor
+  // ANTES de limpiarlo, o el logout le llegaría con el token ya vacío.
+  if (getAuthToken()) apiPost({ action: 'logout' });
   sessionStorage.removeItem(AUTH_KEY);
   sessionStorage.removeItem(AUTH_TOKEN);
   location.href = '../index.html';
