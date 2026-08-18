@@ -17,26 +17,11 @@ themeBtn?.addEventListener('click', () => {
   localStorage.setItem('theme', next);
 });
 
-// ── Nav hamburger ──────────────────────────────────────────
-const hamburger = document.querySelector('.hamburger');
-const navLinks  = document.querySelector('.nav-links');
-
-hamburger?.addEventListener('click', () => {
-  navLinks.classList.toggle('open');
-});
-
-navLinks?.querySelectorAll('a').forEach(a =>
-  a.addEventListener('click', () => navLinks.classList.remove('open'))
-);
-
-// ── Marcar link activo ─────────────────────────────────────
-const page = location.pathname.split('/').pop() || 'index.html';
-document.querySelectorAll('.nav-links a').forEach(a => {
-  const href = a.getAttribute('href');
-  if (href === page || (page === '' && href === 'index.html')) {
-    a.classList.add('active');
-  }
-});
+// Nota: el toggle de hamburguesa/menú y el "marcar link activo" del sitio
+// público ahora los maneja shared/js/nav.js, porque ese es el archivo que
+// crea esos elementos dinámicamente (antes no existían al correr este
+// script). El theme-btn de acá abajo sigue siendo válido para admin/,
+// que tiene su propio botón estático en el HTML.
 
 // ── Scroll reveal ──────────────────────────────────────────
 const revealObserver = new IntersectionObserver(entries => {
@@ -187,19 +172,6 @@ function getDefaultServicios() {
     { id: 's09', nombre: 'Pedicura — Esmalte común', grupo: 'Pedicura', duracion: 75 },
     { id: 's10', nombre: 'Pedicura — Esmalte semi',  grupo: 'Pedicura', duracion: 90 },
   ];
-}
-
-function getTakenSlots() { return DB.get('taken_slots') || {}; }
-function addTakenSlot(fecha, slot) {
-  const taken = getTakenSlots();
-  if (!taken[fecha]) taken[fecha] = [];
-  if (!taken[fecha].includes(slot)) taken[fecha].push(slot);
-  DB.set('taken_slots', taken);
-}
-function removeTakenSlot(fecha, slot) {
-  const taken = getTakenSlots();
-  if (taken[fecha]) taken[fecha] = taken[fecha].filter(s => s !== slot);
-  DB.set('taken_slots', taken);
 }
 
 // ── Turnos ─────────────────────────────────────────────────
