@@ -41,10 +41,11 @@ async function syncTurnos() {
 async function forzarSync() {
   showToast('↻ Sincronizando...');
   try {
-    const [t, i, cats] = await Promise.all([
+    const [t, i, cats, cfg] = await Promise.all([
       apiGet('getTurnos'),
       apiGet('getInventario'),
       apiGet('getCategorias'),
+      apiGet('getConfiguracion'),
     ]);
     if (t.length) saveTurnos(t);
     if (i.length) {
@@ -52,6 +53,9 @@ async function forzarSync() {
       saveInventario(i.filter(p => !deleted.includes(String(p.id))));
     }
     if (cats.length) saveCategorias(cats);
+    // getConfiguracion devuelve un objeto (no un array); apiGet solo hace
+    // fallback a [] cuando json.data es falsy (todavía no hay nada guardado).
+    if (cfg && !Array.isArray(cfg)) DB.set('agenda_config', cfg);
     renderSeccionActiva();
     actualizarBadges();
     showToast('✓ Sincronizado');
@@ -219,7 +223,6 @@ function cambiarEstadoTurno(id, estado) {
   const arr = getTurnos(), idx = arr.findIndex(t => String(t.id) === String(id));
   if (idx < 0) return;
   if (estado === 'cancelado') {
-    removeTakenSlot(arr[idx].fecha, arr[idx].horario);
     // Si tiene eventId, borrarlo del Calendar
     if (arr[idx].calEventId) {
       apiPost({ action: 'eliminarEventoCalendario', eventId: arr[idx].calEventId });
@@ -266,7 +269,6 @@ function eliminarTurno(id) {
   const arr = getTurnos();
   const t   = arr.find(x => String(x.id) === String(id));
   if (!t) return;
-  removeTakenSlot(t.fecha, t.horario);
   if (t.calEventId) apiPost({ action: 'eliminarEventoCalendario', eventId: t.calEventId });
   saveTurnos(arr.filter(x => String(x.id) !== String(id)));
   apiPost({ action: 'deleteRow', sheet: 'turnos', id });
@@ -298,9 +300,6 @@ function confirmarCambioTurno() {
   const arr = getTurnos(), idx = arr.findIndex(x => String(x.id) === String(id));
   if (idx < 0) return;
   const t = arr[idx];
-  // Liberar slot viejo, tomar nuevo
-  removeTakenSlot(t.fecha, t.horario);
-  addTakenSlot(fecha, horario);
   arr[idx].fecha   = fecha;
   arr[idx].horario = horario;
   saveTurnos(arr);
@@ -336,7 +335,9 @@ function toggleDia(i) {
 }
 function guardarDias() {
   const ag = getAgenda(); ag.diasHabilitados = agTemp.diasHabilitados;
-  DB.set('agenda_config', ag); showToast('✓ Días guardados');
+  DB.set('agenda_config', ag);
+  apiPost({ action: 'saveConfiguracion', config: ag });
+  showToast('✓ Días guardados');
 }
 function renderSlots() {
   document.getElementById('slotsChips').innerHTML = agTemp.slots.map(s =>
@@ -352,7 +353,9 @@ function agregarSlot() {
 function quitarSlot(s) { agTemp.slots = agTemp.slots.filter(x => x !== s); renderSlots(); }
 function guardarSlots() {
   const ag = getAgenda(); ag.slots = agTemp.slots;
-  DB.set('agenda_config', ag); showToast('✓ Horarios guardados');
+  DB.set('agenda_config', ag);
+  apiPost({ action: 'saveConfiguracion', config: ag });
+  showToast('✓ Horarios guardados');
 }
 function renderDuraciones() {
   const svcs = agTemp.servicios || getDefaultServicios();
@@ -374,17 +377,24 @@ function renderDuraciones() {
 function guardarDuraciones() {
   const ag = getAgenda(), svcs = ag.servicios || getDefaultServicios();
   svcs.forEach(s => { const el = document.getElementById('dur_'+s.id); if (el) s.duracion = parseInt(el.value)||s.duracion; });
-  ag.servicios = svcs; DB.set('agenda_config', ag); showToast('✓ Duraciones guardadas');
+  ag.servicios = svcs;
+  DB.set('agenda_config', ag);
+  apiPost({ action: 'saveConfiguracion', config: ag });
+  showToast('✓ Duraciones guardadas');
 }
 function bloquearFecha() {
   const v = document.getElementById('fechaBloqueo').value; if (!v) return;
   const ag = getAgenda();
   if (!ag.diasBloqueados.includes(v)) ag.diasBloqueados.push(v);
-  DB.set('agenda_config', ag); agTemp = JSON.parse(JSON.stringify(ag)); renderBloqueadas(); showToast('✓ Fecha bloqueada');
+  DB.set('agenda_config', ag);
+  apiPost({ action: 'saveConfiguracion', config: ag });
+  agTemp = JSON.parse(JSON.stringify(ag)); renderBloqueadas(); showToast('✓ Fecha bloqueada');
 }
 function desbloquearFecha(v) {
   const ag = getAgenda(); ag.diasBloqueados = ag.diasBloqueados.filter(d => d !== v);
-  DB.set('agenda_config', ag); agTemp = JSON.parse(JSON.stringify(ag)); renderBloqueadas();
+  DB.set('agenda_config', ag);
+  apiPost({ action: 'saveConfiguracion', config: ag });
+  agTemp = JSON.parse(JSON.stringify(ag)); renderBloqueadas();
 }
 function renderBloqueadas() {
   const ag = getAgenda();
