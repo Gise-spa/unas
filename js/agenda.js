@@ -8,6 +8,16 @@
    Requiere: script.js cargado ANTES (usa API_URL, DB, getAgenda).
    ============================================================ */
 
+// ── Interruptor de transición Calendly → sistema propio ─────
+// Mientras Calendly siga siendo el sistema real de reservas, esto
+// se mantiene en false: el motor de disponibilidad/Turnos.gs sigue
+// activo y se puede probar igual, pero el sitio NO recibe reservas
+// reales — muestra el link de Calendly en su lugar.
+//   false → sitio propio NO recibe reservas reales (estado actual)
+//   true  → sitio propio habilitado para recibir reservas
+const RESERVAS_HABILITADAS = false;
+const CALENDLY_FALLBACK_URL = 'https://calendly.com/estetica-avanzada-abc/60min';
+
 // ── HTTP helpers ───────────────────────────────────────────
 // GET: funciona cross-origin sin problema (no dispara preflight).
 async function apiGet(action, params) {
