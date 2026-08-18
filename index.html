@@ -593,7 +593,7 @@
       <h2>Reservá tu turno</h2>
     </div>
 
-    <div class="booking-container reveal">
+    <div class="booking-container reveal" id="bookingContainer">
 
       <!-- Progress -->
       <div class="booking-progress">
@@ -722,6 +722,18 @@
 
       </div><!-- /booking-body -->
     </div><!-- /booking-container -->
+
+    <!-- Fallback mientras Calendly sigue siendo el sistema real de reservas.
+         Lo muestra/oculta js/agenda.js según RESERVAS_HABILITADAS. -->
+    <div class="booking-container reveal" id="turnosFallback" style="display:none; text-align:center; padding:3rem 1.5rem">
+      <h3 class="booking-panel-title">Reservá tu turno</h3>
+      <p class="booking-panel-sub" style="margin-bottom:1.5rem">
+        Por el momento, los turnos se reservan a través de Calendly.
+      </p>
+      <a class="btn btn-primary" id="turnosFallbackLink" href="#" target="_blank" rel="noopener">
+        Reservar por Calendly →
+      </a>
+    </div>
   </div>
 </section>
 
@@ -1078,9 +1090,21 @@ function renderServiciosLista() {
 //  INIT
 // ════════════════════════════════════════════════════════════
 (async function initTurnos() {
+  renderServiciosLista(); // informativo, no depende de RESERVAS_HABILITADAS
+
+  if (!RESERVAS_HABILITADAS) {
+    // Calendly sigue siendo el sistema real — no se muestra el flujo de
+    // reserva pública. El motor de disponibilidad (fetchDisponibilidad,
+    // Turnos.gs, etc.) sigue intacto y se puede seguir probando aparte.
+    document.getElementById('bookingContainer').style.display = 'none';
+    const fallback = document.getElementById('turnosFallback');
+    document.getElementById('turnosFallbackLink').href = CALENDLY_FALLBACK_URL;
+    fallback.style.display = 'block';
+    return;
+  }
+
   await fetchConfiguracion(); // trae agenda_config real del backend (o cache si falla)
   await renderCal();          // ya pide disponibilidad del mes visible adentro
-  renderServiciosLista();
 })();
 </script>
 </body>
