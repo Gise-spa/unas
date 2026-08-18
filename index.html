@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Turnos — Nails</title>
   <meta name="description" content="Reservá tu turno de manicura y pedicura online. Confirmación inmediata." />
+  <link rel="stylesheet" href="shared/css/tokens.css" />
   <link rel="stylesheet" href="style.css" />
   <style>
 
@@ -521,22 +522,8 @@
 <body>
 
 <!-- ══ NAV ══════════════════════════════════════════════════ -->
-<nav class="nav">
-  <a href="index.html" class="nav-logo">✦ <span>mi negocio</span></a>
-  <ul class="nav-links">
-    <li><a href="#inicio">Inicio</a></li>
-    <li><a href="#servicios">Servicios</a></li>
-    <li><a href="catalogo.html">Catálogo</a></li>
-    <li><a href="#turnos">Turnos</a></li>
-    <li><a href="admin/" class="nav-admin">Admin</a></li>
-  </ul>
-  <div class="nav-right">
-    <button class="theme-btn" aria-label="Cambiar tema"></button>
-    <button class="hamburger" aria-label="Menú">
-      <span></span><span></span><span></span>
-    </button>
-  </div>
-</nav>
+<!-- La arma shared/js/nav.js (identidad + links centralizados) -->
+<div id="site-nav"></div>
 
 <!-- ══ HERO ══════════════════════════════════════════════════ -->
 <section class="hero" id="inicio">
@@ -739,45 +726,14 @@
 </section>
 
 <!-- ══ FOOTER ════════════════════════════════════════════════ -->
-<footer class="footer">
-  <div class="footer-inner">
-    <div class="footer-logo">✦ <span>mi negocio</span></div>
-    <ul class="footer-links">
-      <li><a href="#inicio">Inicio</a></li>
-      <li><a href="#servicios">Servicios</a></li>
-      <li><a href="catalogo.html">Catálogo</a></li>
-      <li><a href="#turnos">Turnos</a></li>
-      <li><a href="admin/">Admin</a></li>
-    </ul>
-  </div>
-  <div class="footer-copy">
-    <span>© 2025 · Todos los derechos reservados</span>
-    <span>Hecho con 💛</span>
-  </div>
-</footer>
+<!-- La arma shared/js/nav.js -->
+<div id="site-footer"></div>
 
 <script src="script.js"></script>
+<script src="shared/js/identity.js"></script>
+<script src="shared/js/nav.js"></script>
+<script src="js/agenda.js"></script>
 <script>
-// ════════════════════════════════════════════════════════════
-//  CONFIGURACIÓN API
-// ════════════════════════════════════════════════════════════
-const API_URL = 'https://script.google.com/macros/s/AKfycbx7Q7Qpw3TQ2Pv8CYLLlc7qXoDZpz0kWLUaJB0c1wK0cwPfb2nPHb6QbQhWvSDadrJ6/exec';
-
-async function apiPost(data) {
-  try {
-    await fetch(API_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(data),
-    });
-    return { ok: true };
-  } catch(e) {
-    console.warn('API error:', e);
-    return { error: e.message };
-  }
-}
-
 // ════════════════════════════════════════════════════════════
 //  ESTADO DE LA RESERVA
 // ════════════════════════════════════════════════════════════
@@ -829,12 +785,24 @@ function changeMonth(dir) {
   renderCal();
 }
 
-function renderCal() {
+// Rango de disponibilidad a pedir: todo el mes visible (con margen de
+// un día a cada lado por huso horario). Se vuelve a pedir cada vez que
+// se cambia de mes o justo antes de confirmar — nunca se confía en un
+// fetch viejo para decidir si un horario está libre.
+async function refrescarDisponibilidadMes() {
+  const desde = fmtDate(new Date(calYear, calMonth, 1));
+  const hasta = fmtDate(new Date(calYear, calMonth + 1, 0));
+  await fetchDisponibilidad(desde, hasta);
+}
+
+async function renderCal() {
+  document.getElementById('calGrid').innerHTML = '<p class="slots-empty">Cargando disponibilidad…</p>';
+  await refrescarDisponibilidadMes();
+
   const agenda = getAgenda();
   const today  = new Date(); today.setHours(0,0,0,0);
   const first  = new Date(calYear, calMonth, 1);
   const last   = new Date(calYear, calMonth + 1, 0);
-  const taken  = getTakenSlots();
 
   document.getElementById('calTitle').textContent =
     MESES[calMonth] + ' ' + calYear;
@@ -853,7 +821,7 @@ function renderCal() {
     const isSel    = booking.fecha === key;
 
     const slots     = agenda.slots;
-    const takenDay  = taken[key] || [];
+    const takenDay  = getHorariosOcupados(key);
     const hasSlots  = !disabled && slots.some(s => !takenDay.includes(s));
 
     let cls = 'cal-day';
@@ -868,17 +836,20 @@ function renderCal() {
   document.getElementById('calGrid').innerHTML = html;
 }
 
-function selectDate(key) {
+async function selectDate(key) {
   booking.fecha = key;
   booking.slot  = null;
   document.getElementById('btnP1').disabled = true;
+  renderSlots(key); // refresca disponibilidad puntual de ese día antes de pintar
   renderCal();
-  renderSlots(key);
 }
 
-function renderSlots(key) {
+async function renderSlots(key) {
+  document.getElementById('slotsWrap').innerHTML = '<p class="slots-empty">Cargando horarios…</p>';
+  await fetchDisponibilidad(key, key); // chequeo puntual y fresco del día elegido
+
   const agenda = getAgenda();
-  const taken  = (getTakenSlots()[key] || []);
+  const taken  = getHorariosOcupados(key);
   const slots  = agenda.slots;
   const dt     = new Date(key + 'T00:00:00');
 
@@ -999,7 +970,7 @@ function renderConfirm() {
 // ════════════════════════════════════════════════════════════
 //  CONFIRMAR TURNO
 // ════════════════════════════════════════════════════════════
-function confirmarTurno() {
+async function confirmarTurno() {
   const btn = document.getElementById('btnConfirmar');
   btn.innerHTML = '<span class="loader"></span>';
   btn.disabled  = true;
@@ -1015,17 +986,33 @@ function confirmarTurno() {
     tel:      booking.tel,
     nota:     booking.nota,
     estado:   'pendiente',
+    origen:   'web',
     creadoEn: new Date().toISOString(),
   };
 
-  // Guardar turno en localStorage
+  // El backend es quien decide de verdad — revalida conflicto con LockService
+  // antes de guardar. Recién con su respuesta sabemos si el turno quedó.
+  const r = await confirmarTurnoBackend(turno);
+
+  if (!r || r.error || r.ok === false) {
+    btn.innerHTML = 'Confirmar turno';
+    btn.disabled  = false;
+
+    if (r && r.code === 'SLOT_TAKEN') {
+      showToast('⚠ Ese horario se acaba de ocupar. Elegí otro.');
+      booking.slot = null;
+      document.getElementById('btnP1').disabled = true;
+      await renderSlots(booking.fecha); // refresca con la disponibilidad real
+      goPanel(1);
+    } else {
+      showToast('⚠ No pudimos confirmar el turno. Probá de nuevo.');
+    }
+    return;
+  }
+
+  // Guardar cache local solo para UI (historial visual), nunca como fuente
+  // de disponibilidad — eso ya lo decidió el backend arriba.
   DB.push('turnos', turno);
-
-  // Bloquear el slot
-  addTakenSlot(turno.fecha, turno.horario);
-
-  // Guardar en Google Sheet
-  apiPost({ action: 'saveTurno', row: turno });
 
   // Mensaje de éxito
   const dt = new Date(turno.fecha + 'T00:00:00');
@@ -1036,14 +1023,12 @@ function confirmarTurno() {
   // Guardar para el .ics
   window._lastTurno = turno;
 
-  setTimeout(() => {
-    goPanel(5);
-    // Marcar steps como done
-    ['ps-1','ps-2','ps-3','ps-4'].forEach(id => {
-      document.getElementById(id)?.classList.add('done');
-      document.getElementById(id)?.classList.remove('active');
-    });
-  }, 600);
+  goPanel(5);
+  // Marcar steps como done
+  ['ps-1','ps-2','ps-3','ps-4'].forEach(id => {
+    document.getElementById(id)?.classList.add('done');
+    document.getElementById(id)?.classList.remove('active');
+  });
 }
 
 function downloadTurnoICS() {
@@ -1092,8 +1077,11 @@ function renderServiciosLista() {
 // ════════════════════════════════════════════════════════════
 //  INIT
 // ════════════════════════════════════════════════════════════
-renderCal();
-renderServiciosLista();
+(async function initTurnos() {
+  await fetchConfiguracion(); // trae agenda_config real del backend (o cache si falla)
+  await renderCal();          // ya pide disponibilidad del mes visible adentro
+  renderServiciosLista();
+})();
 </script>
 </body>
 </html>
