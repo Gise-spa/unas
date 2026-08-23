@@ -2,7 +2,7 @@
 <html lang="es" data-theme="light">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Admin — Eva Spa</title>
   <link rel="stylesheet" href="../shared/css/tokens.css" />
   <link rel="stylesheet" href="../style.css" />
@@ -104,29 +104,33 @@
     <!-- INICIO -->
     <div class="admin-section active" id="sec-inicio">
       <h2 class="section-title">Buen día 👋</h2>
-      <p class="section-subtitle">Resumen de tu agenda</p>
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-num" id="stPend" style="color:var(--gold)">—</div><div class="stat-label">Pendientes</div></div>
-        <div class="stat-card"><div class="stat-num" id="stConf" style="color:#22c55e">—</div><div class="stat-label">Confirmados</div></div>
-        <div class="stat-card"><div class="stat-num" id="stHoy" style="color:var(--accent)">—</div><div class="stat-label">Hoy</div></div>
-        <div class="stat-card"><div class="stat-num" id="stMes">—</div><div class="stat-label">Este mes</div></div>
+      <p class="section-subtitle">Así está Eva Spa hoy</p>
+
+      <!-- 1. Caja (rellenado por caja.js → renderCajaInicio) -->
+      <div id="inicioCajaCard"></div>
+
+      <!-- 2. Próximo turno -->
+      <div class="panel-card">
+        <div class="panel-card-header"><h3>Próximo turno</h3></div>
+        <div class="panel-card-body" id="proximoTurno"></div>
       </div>
-      <div class="dashboard-grid">
-        <div class="panel-card">
-          <div class="panel-card-header"><h3>Turnos de hoy</h3></div>
-          <div class="panel-card-body"><ul class="today-list" id="listHoy"></ul></div>
+
+      <!-- 3. Turnos de hoy -->
+      <div class="panel-card">
+        <div class="panel-card-header">
+          <h3>Turnos de hoy</h3>
+          <button class="btn btn-outline btn-sm" onclick="irA('turnos')">Ver todos →</button>
         </div>
-        <div class="panel-card">
-          <div class="panel-card-header">
-            <h3>Pendientes de confirmar</h3>
-            <button class="btn btn-outline btn-sm" onclick="irA('turnos')">Ver todos →</button>
-          </div>
-          <div class="panel-card-body"><ul class="today-list" id="listPend"></ul></div>
-        </div>
+        <div class="panel-card-body"><ul class="today-list" id="listHoy"></ul></div>
       </div>
-      <div class="stats-grid" style="margin-top:1.25rem">
-        <div class="stat-card"><div class="stat-num" id="stInv" style="color:var(--accent)">—</div><div class="stat-label">Productos</div></div>
-        <div class="stat-card"><div class="stat-num" id="stLow" style="color:#f59e0b">—</div><div class="stat-label">Stock bajo</div></div>
+
+      <!-- 4. Alertas -->
+      <div class="panel-card" id="alertasCard" style="display:none">
+        <div class="panel-card-header"><h3>Pendientes de confirmar</h3></div>
+        <div class="panel-card-body">
+          <ul class="today-list" id="listPend"></ul>
+          <div id="stockAlertLine" style="display:none;margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--border);font-size:.84rem;display:flex;align-items:center;justify-content:space-between;gap:.6rem"></div>
+        </div>
       </div>
     </div>
 
@@ -300,6 +304,22 @@
     </div>
 
   </main>
+
+  <!-- Navegación inferior fija (mobile) -->
+  <nav class="admin-bottom-nav" id="adminBottomNav">
+    <button class="bn-item" data-sec="inicio" onclick="irA('inicio')">
+      <span class="bn-icon">🏠</span><span class="bn-label">Inicio</span>
+    </button>
+    <button class="bn-item" data-sec="caja" onclick="irA('caja')">
+      <span class="bn-icon">💰</span><span class="bn-label">Caja</span>
+    </button>
+    <button class="bn-item" data-sec="turnos" onclick="irA('turnos')">
+      <span class="bn-icon">📅</span><span class="bn-label">Turnos</span>
+    </button>
+    <button class="bn-item" id="bnMas">
+      <span class="bn-icon">☰</span><span class="bn-label">Más</span>
+    </button>
+  </nav>
 </div>
 
 <!-- MODAL MOVIMIENTO DE CAJA -->
@@ -626,6 +646,7 @@
   </div>
 </div>
 
+<script src="../shared/js/identity.js"></script>
 <script src="../script.js"></script>
 <script src="script.js"></script>
 <script src="js/caja.js"></script>
