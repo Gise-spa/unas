@@ -74,6 +74,9 @@
       <div class="drawer-item" data-sec="agenda" onclick="irA('agenda')">
         <span class="di-icon">🗓</span> Mi Agenda
       </div>
+      <div class="drawer-item" data-sec="caja" onclick="irA('caja')">
+        <span class="di-icon">💰</span> Caja
+      </div>
     </div>
     <div class="drawer-section">
       <div class="drawer-label">Inventario</div>
@@ -249,7 +252,173 @@
       </div>
     </div>
 
+    <!-- CAJA -->
+    <div class="admin-section" id="sec-caja">
+      <h2 class="section-title">Caja</h2>
+      <p class="section-subtitle">Cobros, gastos y cierre del día</p>
+
+      <!-- Caja cerrada -->
+      <div id="cajaCerradaWrap" style="display:none">
+        <div class="panel-card">
+          <div class="panel-card-body" style="text-align:center;padding:2.5rem 1.5rem">
+            <p style="font-size:.86rem;color:var(--text-muted);margin-bottom:1.25rem">No hay una caja abierta.</p>
+            <button class="btn btn-primary" onclick="mostrarFormAbrirCaja()" style="padding:.9rem 2rem;font-size:.95rem">Abrir caja</button>
+            <div id="formAbrirCaja" style="display:none;margin-top:1.5rem;max-width:280px;margin-left:auto;margin-right:auto;text-align:left">
+              <div class="form-group">
+                <label>Saldo inicial (efectivo)</label>
+                <input type="number" id="cajaSaldoInicial" min="0" step="0.01" placeholder="0.00">
+              </div>
+              <button class="btn btn-primary" style="width:100%;margin-top:.5rem" onclick="confirmarAbrirCaja()">Confirmar apertura</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Caja abierta -->
+      <div id="cajaAbiertaWrap" style="display:none">
+        <div class="panel-card">
+          <div class="panel-card-body" id="cajaEstadoInfo" style="font-size:.86rem;color:var(--text-muted)"></div>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-num" id="cjIngresos" style="color:#22c55e">—</div><div class="stat-label">Ingresos hoy</div></div>
+          <div class="stat-card"><div class="stat-num" id="cjEgresos" style="color:#dc2626">—</div><div class="stat-label">Egresos hoy</div></div>
+          <div class="stat-card"><div class="stat-num" id="cjEsperado" style="color:var(--accent)">—</div><div class="stat-label">Efectivo esperado</div></div>
+        </div>
+        <div class="panel-card">
+          <div class="panel-card-header"><h3>Por método / cuenta</h3></div>
+          <div class="panel-card-body" id="cajaDesglose"></div>
+        </div>
+        <div class="panel-card">
+          <div class="panel-card-header"><h3>Movimientos</h3></div>
+          <div class="panel-card-body"><ul class="today-list" id="cajaMovimientosList"></ul></div>
+        </div>
+        <button class="caja-fab" onclick="abrirModalMovimiento()" title="Nuevo movimiento">+</button>
+        <div class="caja-cerrar-sticky">
+          <button class="btn btn-primary" style="width:100%" onclick="abrirModalCierreCaja()">Cerrar caja</button>
+        </div>
+      </div>
+    </div>
+
   </main>
+</div>
+
+<!-- MODAL MOVIMIENTO DE CAJA -->
+<div class="modal-overlay" id="modalMovimientoCaja">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-header">
+      <h3>Nuevo movimiento</h3>
+      <button class="modal-close" onclick="cerrarModal('modalMovimientoCaja')">×</button>
+    </div>
+    <div class="form-group">
+      <label>Tipo</label>
+      <div style="display:flex;gap:.5rem;margin-top:.3rem">
+        <button type="button" id="mvTipoIngreso" class="toggle-vis-btn active-vis" onclick="setMovTipo('ingreso')">↑ Ingreso</button>
+        <button type="button" id="mvTipoEgreso" class="toggle-vis-btn" onclick="setMovTipo('egreso')">↓ Egreso</button>
+      </div>
+      <input type="hidden" id="mvTipo" value="ingreso">
+    </div>
+    <div class="form-group">
+      <label>Importe</label>
+      <input type="number" id="mvImporte" min="0" step="0.01" placeholder="0.00">
+    </div>
+    <div class="form-group">
+      <label>Método de pago</label>
+      <div class="chip-grid" id="mvMetodoChips"></div>
+      <input type="hidden" id="mvMetodo" value="">
+    </div>
+    <div class="form-group" id="mvCuentaWrap" style="display:none">
+      <label>Cuenta destino</label>
+      <input type="text" id="mvCuenta" placeholder="Ej: Banco, Mercado Pago">
+    </div>
+    <div class="form-group">
+      <label>Concepto</label>
+      <input type="text" id="mvConcepto" placeholder="Ej: Compra de esmaltes">
+    </div>
+    <div style="display:flex;gap:.6rem;margin-top:.75rem">
+      <button class="btn btn-primary" style="flex:1" onclick="confirmarMovimientoCaja()">Confirmar</button>
+      <button class="btn btn-outline" onclick="cerrarModal('modalMovimientoCaja')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL COBRAR TURNO -->
+<div class="modal-overlay" id="modalCobrar">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header">
+      <h3>Cobrar turno</h3>
+      <button class="modal-close" onclick="cerrarModal('modalCobrar')">×</button>
+    </div>
+    <input type="hidden" id="cbTurnoId">
+    <input type="hidden" id="cbClienteId">
+    <p id="cbServicioInfo" style="font-size:.84rem;color:var(--text-muted);margin-bottom:1rem"></p>
+    <div class="form-group">
+      <label>Cliente</label>
+      <input type="text" id="cbNombre" placeholder="Nombre">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+      <div class="form-group">
+        <label>Teléfono</label>
+        <input type="text" id="cbTelefono" placeholder="Opcional">
+      </div>
+      <div class="form-group">
+        <label>Mail</label>
+        <input type="email" id="cbMail" placeholder="Opcional">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Importe</label>
+      <input type="number" id="cbImporte" min="0" step="0.01" placeholder="0.00">
+    </div>
+    <div class="form-group">
+      <label>Método de pago</label>
+      <div class="chip-grid" id="cbMetodoChips"></div>
+      <input type="hidden" id="cbMetodo" value="">
+    </div>
+    <div class="form-group" id="cbCuentaWrap" style="display:none">
+      <label>Cuenta destino</label>
+      <input type="text" id="cbCuenta" placeholder="Ej: Banco, Mercado Pago">
+    </div>
+    <div class="form-group">
+      <label>Concepto</label>
+      <input type="text" id="cbConcepto">
+    </div>
+    <div style="display:flex;gap:.6rem;margin-top:.75rem">
+      <button class="btn btn-primary" style="flex:1" onclick="confirmarCobro()">Confirmar cobro</button>
+      <button class="btn btn-outline" onclick="cerrarModal('modalCobrar')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CIERRE DE CAJA -->
+<div class="modal-overlay" id="modalCierreCaja">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header">
+      <h3>Cerrar caja</h3>
+      <button class="modal-close" onclick="cerrarModal('modalCierreCaja')">×</button>
+    </div>
+    <input type="hidden" id="czSesionId">
+    <div class="form-group">
+      <label>Efectivo esperado</label>
+      <div id="czEsperado" style="font-size:1.3rem;font-family:'Cormorant Garamond',serif">—</div>
+    </div>
+    <div class="form-group">
+      <label>Efectivo contado</label>
+      <input type="number" id="czContado" min="0" step="0.01" placeholder="0.00" oninput="actualizarDiferenciaCierre()">
+    </div>
+    <div class="form-group">
+      <label>Diferencia</label>
+      <div id="czDiferencia" style="font-size:1.1rem">—</div>
+    </div>
+    <div class="panel-card" style="margin:1rem 0">
+      <div class="panel-card-header"><h3 style="font-size:.95rem">Por método / cuenta</h3></div>
+      <div class="panel-card-body" id="czDesglose" style="padding:1rem 1.25rem"></div>
+    </div>
+    <div style="font-size:.86rem;line-height:1.8" id="czTotales"></div>
+    <div style="display:flex;gap:.6rem;margin-top:1rem">
+      <button class="btn btn-primary" style="flex:1" onclick="pedirConfirmarCierre()">Confirmar cierre</button>
+      <button class="btn btn-outline" onclick="cerrarModal('modalCierreCaja')">Cancelar</button>
+    </div>
+  </div>
 </div>
 
 <!-- MODAL PRODUCTO -->
@@ -459,5 +628,6 @@
 
 <script src="../script.js"></script>
 <script src="script.js"></script>
+<script src="js/caja.js"></script>
 </body>
 </html>
