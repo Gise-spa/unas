@@ -1216,6 +1216,79 @@ tr:hover td { background: rgba(253,230,138,.06); }
   font-weight: 600;
   flex-shrink: 0;
 }
+
+/* ── Caja: tarjeta destacada en Inicio ── */
+.caja-hero-card {
+  border-radius: var(--radius-md);
+  padding: 1.25rem 1.4rem;
+  margin-bottom: 1rem;
+  color: #fff;
+}
+.caja-hero-cerrada { background: linear-gradient(135deg, #6b7280, #4b5563); }
+.caja-hero-abierta { background: linear-gradient(135deg, #16a34a, #15803d); }
+.caja-hero-top { display: flex; align-items: center; gap: .5rem; margin-bottom: .9rem; }
+.caja-hero-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(255,255,255,.25);
+}
+.caja-hero-estado { font-size: 1.05rem; font-weight: 600; }
+.caja-hero-datos { display: flex; gap: 1.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.caja-hero-datos span { display: block; font-size: .74rem; opacity: .85; margin-bottom: 2px; }
+.caja-hero-datos strong { font-size: 1.15rem; font-family: 'Cormorant Garamond', serif; }
+.caja-hero-btn {
+  background: rgba(255,255,255,.18);
+  border: 1px solid rgba(255,255,255,.4);
+  color: #fff;
+  width: 100%;
+  padding: .75rem;
+  font-size: .92rem;
+  font-weight: 600;
+}
+.caja-hero-btn:hover { background: rgba(255,255,255,.28); }
+
+/* ── Navegación inferior fija (mobile) ────────────────────
+   Oculta por default (desktop sigue usando el drawer/topbar
+   como única navegación); aparece solo bajo el breakpoint
+   mobile ya establecido en el resto del admin (768px). ──── */
+.admin-bottom-nav { display: none; }
+.bn-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: none;
+  border: none;
+  padding: .4rem 0 .25rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.bn-icon { font-size: 1.35rem; line-height: 1; }
+.bn-label { font-size: .64rem; font-weight: 500; }
+.bn-item.active { color: var(--accent); }
+.bn-item.active .bn-icon { transform: scale(1.08); }
+
 @media (max-width: 768px) {
-  .caja-fab { bottom: 4.75rem; }
+  .caja-fab { bottom: calc(60px + env(safe-area-inset-bottom) + .9rem); }
+
+  .admin-bottom-nav {
+    display: flex;
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    height: 60px;
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+    z-index: 300;
+  }
+  /* Deja lugar para que la barra inferior no tape el final del contenido
+     ni el botón sticky "Cerrar caja" */
+  .admin-main { padding-bottom: calc(60px + env(safe-area-inset-bottom) + 1rem); }
+  .caja-cerrar-sticky { bottom: calc(60px + env(safe-area-inset-bottom)); }
 }
