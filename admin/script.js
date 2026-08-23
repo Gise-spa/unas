@@ -3,6 +3,16 @@
 //  Requiere ../script.js cargado antes
 // ============================================================
 
+// ── Identidad (shared/js/identity.js, cargado antes) ───────
+// Reemplaza el texto fijo de logo por IDENTITY — así el admin deja
+// de tener el nombre del comercio hardcodeado en 2 lugares propios.
+(function aplicarIdentidad() {
+  if (typeof IDENTITY === 'undefined') return;
+  document.querySelectorAll('.topbar-logo, .login-logo').forEach(el => {
+    el.innerHTML = `${IDENTITY.simbolo} <span>${IDENTITY.nombre}</span>`;
+  });
+})();
+
 // API_URL heredada de ../script.js
 
 // ── API helpers ───────────────────────────────────────────
@@ -72,12 +82,15 @@ function initDrawer() {
   const btn     = document.getElementById('menuBtn');
   const drawer  = document.getElementById('adminDrawer');
   const overlay = document.getElementById('drawerOverlay');
-  btn.addEventListener('click', () => {
+  const bnMas   = document.getElementById('bnMas');
+  const toggleDrawer = () => {
     const isOpen = drawer.classList.contains('open');
     drawer.classList.toggle('open', !isOpen);
     overlay.classList.toggle('open', !isOpen);
     btn.classList.toggle('open', !isOpen);
-  });
+  };
+  btn.addEventListener('click', toggleDrawer);
+  bnMas?.addEventListener('click', toggleDrawer);
   overlay.addEventListener('click', cerrarDrawer);
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
@@ -101,6 +114,12 @@ function irA(seccion) {
   document.getElementById('sec-' + seccion)?.classList.add('active');
   document.querySelectorAll('.drawer-item').forEach(i => i.classList.remove('active'));
   document.querySelectorAll(`.drawer-item[data-sec="${seccion}"]`).forEach(i => i.classList.add('active'));
+  // Barra inferior: resalta el ítem si tiene lugar propio (Inicio/Caja/Turnos);
+  // si la sección se ve solo desde el drawer (Agenda/Inventario/Categorías),
+  // resalta "Más", que es por donde se llegó.
+  document.querySelectorAll('.bn-item').forEach(b => b.classList.remove('active'));
+  const bnMatch = document.querySelector(`.bn-item[data-sec="${seccion}"]`);
+  (bnMatch || document.getElementById('bnMas'))?.classList.add('active');
   cerrarDrawer();
   renderSeccionActiva();
 }
@@ -128,28 +147,31 @@ function actualizarBadges() {
 // ════════════════════════════════════════════════════════
 function renderInicio() {
   const turnos = getTurnos(), inv = getInventario();
-  const hoy = todayStr(), mes = hoy.slice(0,7);
+  const hoy = todayStr(), ahora = new Date().toTimeString().slice(0,5);
 
-  document.getElementById('stPend').textContent = turnos.filter(t => t.estado === 'pendiente').length;
-  document.getElementById('stConf').textContent = turnos.filter(t => t.estado === 'confirmado').length;
-  document.getElementById('stHoy').textContent  = turnos.filter(t => t.fecha === hoy).length;
-  document.getElementById('stMes').textContent  = turnos.filter(t => (t.fecha||'').startsWith(mes)).length;
-  document.getElementById('stInv').textContent  = inv.length;
+  // 1. Caja — delegado a caja.js (es su dominio, no duplicar lógica acá)
+  if (typeof renderCajaInicio === 'function') renderCajaInicio();
 
-  const lowCount = inv.filter(p => Number(p.stock) <= 2).length;
-  document.getElementById('stLow').textContent = lowCount;
-  const statLowCard = document.getElementById('stLow')?.closest('.stat-card');
-  if (statLowCard) {
-    if (lowCount > 0) {
-      statLowCard.style.cursor = 'pointer';
-      statLowCard.title = 'Ver productos con stock bajo';
-      statLowCard.onclick = () => { irA('inventario'); setTimeout(filtrarStockBajo, 150); };
-    } else {
-      statLowCard.style.cursor = 'default';
-      statLowCard.onclick = null;
-    }
+  // 2. Próximo turno — el que sigue hoy desde ahora; si no queda ninguno
+  // hoy, el próximo en una fecha futura. Nunca uno cancelado.
+  const activos = turnos.filter(t => t.estado !== 'cancelado');
+  let proximo = activos
+    .filter(t => t.fecha === hoy && t.horario >= ahora)
+    .sort((a,b) => a.horario.localeCompare(b.horario))[0];
+  if (!proximo) {
+    proximo = activos
+      .filter(t => t.fecha > hoy)
+      .sort((a,b) => (a.fecha + a.horario).localeCompare(b.fecha + b.horario))[0];
+  }
+  const proxEl = document.getElementById('proximoTurno');
+  if (proxEl) {
+    proxEl.innerHTML = proximo
+      ? `<div style="font-weight:500">${proximo.nombre} — ${proximo.servicio}</div>
+         <div style="font-size:.8rem;color:var(--text-muted)">${proximo.fecha === hoy ? 'Hoy' : fmtDateHuman(new Date(proximo.fecha + 'T00:00:00'))} · ${proximo.horario}</div>`
+      : '<p class="today-empty">Sin turnos próximos</p>';
   }
 
+  // 3. Turnos de hoy
   const hoyTurnos = turnos.filter(t => t.fecha === hoy).sort((a,b) => a.horario.localeCompare(b.horario));
   document.getElementById('listHoy').innerHTML = hoyTurnos.length
     ? hoyTurnos.map(t => `
@@ -164,8 +186,13 @@ function renderInicio() {
         </li>`).join('')
     : '<p class="today-empty">Sin turnos para hoy</p>';
 
+  // 4. Alertas — turnos pendientes de confirmar + stock bajo (solo si hay algo)
   const pendTurnos = turnos.filter(t => t.estado === 'pendiente')
     .sort((a,b) => (a.fecha+a.horario).localeCompare(b.fecha+b.horario)).slice(0,5);
+  const lowCount = inv.filter(p => Number(p.stock) <= 2).length;
+
+  document.getElementById('alertasCard').style.display = (pendTurnos.length || lowCount) ? '' : 'none';
+
   document.getElementById('listPend').innerHTML = pendTurnos.length
     ? pendTurnos.map(t => {
         const dt = new Date(t.fecha + 'T00:00:00');
@@ -178,6 +205,15 @@ function renderInicio() {
         </li>`;
       }).join('')
     : '<p class="today-empty">Sin turnos pendientes</p>';
+
+  const stockLine = document.getElementById('stockAlertLine');
+  if (stockLine) {
+    stockLine.style.display = lowCount ? 'flex' : 'none';
+    stockLine.innerHTML = lowCount
+      ? `<span>⚠ ${lowCount} producto${lowCount > 1 ? 's' : ''} con stock bajo</span>
+         <button class="btn btn-outline btn-sm" onclick="irA('inventario'); setTimeout(filtrarStockBajo, 150);">Ver →</button>`
+      : '';
+  }
 }
 
 function confirmarTurnoRapido(id) { cambiarEstadoTurno(id, 'confirmado'); renderInicio(); }
