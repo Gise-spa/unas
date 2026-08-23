@@ -103,6 +103,41 @@ async function renderCaja() {
   _renderCajaUI();
 }
 
+// Tarjeta destacada de Caja en Inicio — usa el mismo cache que renderCaja(),
+// no dispara su propio fetch (Inicio no necesita datos más frescos que los
+// que ya trajo el último forzarSync()/renderCaja()).
+function renderCajaInicio() {
+  const cont = document.getElementById('inicioCajaCard');
+  if (!cont) return;
+  const sesion = getCajaSesion();
+
+  if (!sesion) {
+    cont.innerHTML = `
+      <div class="caja-hero-card caja-hero-cerrada">
+        <div class="caja-hero-top">
+          <span class="caja-hero-dot"></span>
+          <span class="caja-hero-estado">Caja cerrada</span>
+        </div>
+        <button class="btn btn-primary caja-hero-btn" onclick="irA('caja'); setTimeout(mostrarFormAbrirCaja, 150);">Abrir caja</button>
+      </div>`;
+    return;
+  }
+
+  const totales = getCajaTotales();
+  cont.innerHTML = `
+    <div class="caja-hero-card caja-hero-abierta">
+      <div class="caja-hero-top">
+        <span class="caja-hero-dot"></span>
+        <span class="caja-hero-estado">Caja abierta</span>
+      </div>
+      <div class="caja-hero-datos">
+        <div><span>Ingresos hoy</span><strong>${fmtMoneda(totales ? totales.totalIngresos : 0)}</strong></div>
+        <div><span>Efectivo esperado</span><strong>${fmtMoneda(totales ? totales.efectivoEsperado : 0)}</strong></div>
+      </div>
+      <button class="btn btn-primary caja-hero-btn" onclick="irA('caja')">Ir a Caja</button>
+    </div>`;
+}
+
 function _renderCajaUI() {
   const sesion = getCajaSesion();
   const wrapCerrada = document.getElementById('cajaCerradaWrap');
