@@ -56,6 +56,7 @@ async function forzarSync() {
     // getConfiguracion devuelve un objeto (no un array); apiGet solo hace
     // fallback a [] cuando json.data es falsy (todavía no hay nada guardado).
     if (cfg && !Array.isArray(cfg)) DB.set('agenda_config', cfg);
+    if (typeof syncCaja === 'function') await syncCaja();
     renderSeccionActiva();
     actualizarBadges();
     showToast('✓ Sincronizado');
@@ -110,6 +111,7 @@ function renderSeccionActiva() {
   if (seccionActiva === 'agenda')     renderAgenda();
   if (seccionActiva === 'inventario') renderInventario();
   if (seccionActiva === 'categorias') renderCategorias();
+  if (seccionActiva === 'caja')       renderCaja();
 }
 
 function actualizarBadges() {
@@ -158,6 +160,7 @@ function renderInicio() {
             <div style="font-size:.76rem;color:var(--text-muted)">${t.servicio}</div>
           </div>
           <span class="dot dot-${t.estado==='confirmado'?'conf':t.estado==='cancelado'?'canc':'pend'}" style="margin-left:auto"></span>
+          ${typeof botonCobrarHTML === 'function' ? botonCobrarHTML(t) : ''}
         </li>`).join('')
     : '<p class="today-empty">Sin turnos para hoy</p>';
 
@@ -213,6 +216,7 @@ function renderTurnos() {
           <button onclick="cambiarEstadoTurno('${t.id}','cancelado')"  class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#dc2626;border:none;padding:.28rem .7rem">✗ Cancelar</button>`:''}
         ${t.estado!=='cancelado'&&!tieneSena?`
           <button onclick="abrirCambiarTurno('${t.id}')" class="btn btn-sm" style="background:none;border:1px solid var(--border);color:var(--text-muted);padding:.28rem .7rem">↺ Cambiar</button>`:''}
+        ${t.fecha===hoy && typeof botonCobrarHTML === 'function' ? botonCobrarHTML(t) : ''}
         <button onclick="pedirEliminarTurno('${t.id}')" class="btn btn-sm" style="background:rgba(239,68,68,.08);color:#dc2626;border:none;padding:.28rem .7rem">🗑</button>
       </td>
     </tr>`;
