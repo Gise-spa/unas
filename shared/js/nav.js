@@ -91,5 +91,18 @@ function renderFooter() {
     '</footer>';
 }
 
+// El nombre del comercio en <title> vivía hardcodeado por página (una
+// de ellas todavía decía "Nails", nombre viejo) — se corrige acá, en
+// el único lugar que ya centraliza identidad para el sitio público.
+// Espera el formato "Página — Nombre"; si no lo encuentra, no toca nada.
+function actualizarTituloDesdeIdentity() {
+  if (typeof IDENTITY === 'undefined' || !IDENTITY.nombre) return;
+  var partes = document.title.split('—');
+  if (partes.length === 2) {
+    document.title = partes[0].trim() + ' — ' + IDENTITY.nombre;
+  }
+}
+
+actualizarTituloDesdeIdentity();
 renderNav();
 renderFooter();
