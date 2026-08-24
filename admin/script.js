@@ -116,6 +116,33 @@ function cerrarDrawer() {
   document.getElementById('menuBtn').classList.remove('open');
 }
 
+// ── "+" central de la barra inferior — action sheet ─────────
+function abrirActionSheet() {
+  document.getElementById('actionSheet').classList.add('open');
+}
+function cerrarActionSheet() {
+  document.getElementById('actionSheet').classList.remove('open');
+}
+function accionRapida(tipo) {
+  cerrarActionSheet();
+  if (tipo === 'cobrar') {
+    irA('caja');
+    if (getCajaSesion()) {
+      setTimeout(() => abrirModalMovimiento(), 150);
+    } else {
+      showToast('Primero tenés que abrir la caja');
+    }
+  } else if (tipo === 'turno') {
+    // Todavía no existe un flujo de carga manual de turno (hoy
+    // los turnos entran solo por Calendly) — por ahora lleva a
+    // la sección de Turnos. Queda pendiente para una próxima etapa.
+    irA('turnos');
+  } else if (tipo === 'producto') {
+    irA('inventario');
+    setTimeout(() => abrirModalProducto(), 150);
+  }
+}
+
 function irA(seccion) {
   seccionActiva = seccion;
   document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
