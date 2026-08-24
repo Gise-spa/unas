@@ -75,6 +75,18 @@ function renderFooter() {
     return '<li><a href="' + l.href + '">' + l.label + '</a></li>';
   }).join('');
 
+  var contacto = (typeof IDENTITY !== 'undefined' && IDENTITY.contacto) || {};
+  var socialItems = [];
+  if (contacto.whatsapp) {
+    socialItems.push('<a href="https://wa.me/' + contacto.whatsapp + '" target="_blank" rel="noopener" class="footer-social-link" aria-label="WhatsApp">📱</a>');
+  }
+  if (contacto.instagram) {
+    socialItems.push('<a href="https://instagram.com/' + contacto.instagram + '" target="_blank" rel="noopener" class="footer-social-link" aria-label="Instagram">📷</a>');
+  }
+  var socialHtml = socialItems.length
+    ? '<div class="footer-social">' + socialItems.join('') + '</div>'
+    : '';
+
   cont.innerHTML =
     '<footer class="footer">' +
       '<div class="footer-inner">' +
@@ -83,12 +95,27 @@ function renderFooter() {
           links +
           '<li><a href="admin/">Admin</a></li>' +
         '</ul>' +
+        socialHtml +
       '</div>' +
       '<div class="footer-copy">' +
         '<span>© ' + new Date().getFullYear() + ' · Todos los derechos reservados</span>' +
         '<span>Hecho con 💛</span>' +
       '</div>' +
     '</footer>';
+
+  // Botón flotante de WhatsApp — aparece en todas las páginas públicas
+  // solo si hay un número cargado en IDENTITY.contacto.whatsapp.
+  if (contacto.whatsapp && !document.getElementById('waFloat')) {
+    var wa = document.createElement('a');
+    wa.id = 'waFloat';
+    wa.className = 'wa-float';
+    wa.href = 'https://wa.me/' + contacto.whatsapp;
+    wa.target = '_blank';
+    wa.rel = 'noopener';
+    wa.setAttribute('aria-label', 'Escribir por WhatsApp');
+    wa.textContent = '📱';
+    document.body.appendChild(wa);
+  }
 }
 
 // El nombre del comercio en <title> vivía hardcodeado por página (una
