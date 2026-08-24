@@ -83,9 +83,6 @@
       <div class="drawer-item" data-sec="inventario" onclick="irA('inventario')">
         <span class="di-icon">💅</span> Productos
       </div>
-      <div class="drawer-item" data-sec="categorias" onclick="irA('categorias')">
-        <span class="di-icon">🏷</span> Categorías
-      </div>
     </div>
     <div class="drawer-section">
       <div class="drawer-label">Próximamente</div>
@@ -208,6 +205,7 @@
           <p class="section-subtitle" style="margin-bottom:0">Productos con foto, stock y visibilidad</p>
         </div>
         <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+          <button class="btn btn-outline" onclick="abrirModalCategorias()">🏷 Categorías</button>
           <button class="btn btn-outline" onclick="abrirModalPDF()">📄 Exportar PDF</button>
           <button class="btn btn-primary" onclick="abrirModalProducto()">+ Agregar producto</button>
         </div>
@@ -229,21 +227,6 @@
         </div>
       </div>
       <div id="invGrid" class="inv-grid"></div>
-    </div>
-
-    <!-- CATEGORÍAS -->
-    <div class="admin-section" id="sec-categorias">
-      <h2 class="section-title">Categorías</h2>
-      <p class="section-subtitle">Agregá, renombrá o eliminá categorías del inventario</p>
-      <div class="panel-card">
-        <div class="panel-card-body">
-          <div id="catLista" style="margin-bottom:1.25rem"></div>
-          <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
-            <input type="text" id="nuevaCat" class="input-sm" placeholder="Nueva categoría…" style="max-width:220px">
-            <button class="btn btn-primary btn-sm" onclick="agregarCategoria()">+ Agregar</button>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- CAJA -->
@@ -604,6 +587,25 @@
         📄 Generar PDF
       </button>
       <button class="btn btn-outline" onclick="cerrarModal('modalPDF')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL CATEGORÍAS -->
+<div class="modal-overlay" id="modalCategorias">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-header">
+      <h3>Categorías</h3>
+      <button class="modal-close" onclick="cerrarModal('modalCategorias')">×</button>
+    </div>
+    <p style="font-size:.84rem;color:var(--text-muted);margin-bottom:1.1rem">
+      Agregá, renombrá o eliminá categorías del inventario
+    </p>
+    <div id="catLista" style="margin-bottom:1.25rem"></div>
+    <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+      <input type="text" id="nuevaCat" class="input-sm" placeholder="Nueva categoría…" style="flex:1;min-width:150px">
+      <button class="btn btn-primary btn-sm" onclick="agregarCategoria()">+ Agregar</button>
     </div>
   </div>
 </div>
