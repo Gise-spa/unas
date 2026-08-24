@@ -273,29 +273,57 @@
 }
 .panel-card-body { padding: 1.25rem; }
 
-/* ── Tabla ── */
-.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
-th {
-  text-align: left;
-  padding: .7rem 1rem;
-  font-size: .67rem;
+/* ── Turnos: tarjetas nativas (mismo diseño en mobile y desktop) ── */
+.turnos-list { display: flex; flex-direction: column; gap: .9rem; padding: 0 1.25rem 1.25rem; }
+.turno-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.1rem;
+}
+.turno-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: .75rem;
+  margin-bottom: .65rem;
+}
+.turno-estado {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .78rem;
   font-weight: 500;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  border-bottom: 1px solid var(--border);
-  background: var(--bg);
+  text-transform: capitalize;
+  padding-top: .2rem;
+}
+.turno-fecha {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.05rem;
+  color: var(--text);
+  text-align: right;
   white-space: nowrap;
 }
-td {
-  padding: .8rem 1rem;
-  border-bottom: 1px solid var(--border);
-  color: var(--text);
-  vertical-align: middle;
+.turno-fecha small {
+  display: block;
+  font-family: 'DM Sans', sans-serif;
+  font-size: .72rem;
+  color: var(--text-muted);
+  font-weight: 400;
 }
-tr:last-child td { border-bottom: none; }
-tr:hover td { background: rgba(253,230,138,.06); }
+.turno-cliente { font-weight: 500; font-size: .95rem; }
+.turno-servicio { font-size: .82rem; color: var(--text-mid); margin-top: .1rem; }
+.turno-mail { font-size: .72rem; color: var(--text-muted); margin-top: .2rem; }
+.badge-sena { font-size: .7rem; background: var(--bg-yellow); border-radius: 4px; padding: 1px 5px; }
+.turno-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  margin-top: .8rem;
+  padding-top: .8rem;
+  border-top: 1px solid var(--border);
+}
+.turnos-empty { text-align: center; padding: 2rem 1.25rem; color: var(--text-muted); }
 
 /* ── Input inline ── */
 .input-sm {
@@ -563,46 +591,10 @@ tr:hover td { background: rgba(253,230,138,.06); }
   /* Dashboard grid 1 col */
   .dashboard-grid { grid-template-columns: 1fr; }
 
-  /* Tabla → tarjetas */
-  .table-wrap { overflow-x: hidden; }
-  table  { width: 100%; }
-  thead  { display: none; }
-  tbody tr {
-    display: block;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    margin-bottom: 1rem;
-    padding: 1rem;
-    background: var(--bg-card);
-  }
-  tbody td {
-    display: flex;
-    align-items: flex-start;
-    gap: .6rem;
-    padding: .35rem 0;
-    border: none;
-    font-size: .85rem;
-    line-height: 1.5;
-  }
-  tbody td::before {
-    content: attr(data-label);
-    font-size: .67rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    color: var(--text-muted);
-    min-width: 76px;
-    padding-top: 2px;
-    flex-shrink: 0;
-  }
-  tbody td.td-actions {
-    flex-wrap: wrap;
-    gap: .4rem;
-    padding-top: .65rem;
-    margin-top: .45rem;
-    border-top: 1px solid var(--border);
-  }
-  tbody td.td-actions::before { display: none; }
+  /* Turnos: un poco más compactas en mobile */
+  .turnos-list { padding: 0 1rem 1rem; gap: .75rem; }
+  .turno-card  { padding: .85rem .95rem; }
+  .turno-fecha { font-size: .95rem; }
 
   /* Modal desde abajo */
   .modal-overlay {
