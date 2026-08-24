@@ -20,6 +20,10 @@ var IDENTITY = {
   logoUrl: null,
   favicon: null, // ej. 'assets/favicon.png' — no implementado todavía
   contacto: {
-    // completar cuando esté disponible: whatsapp, instagram, etc.
+    // Completar cuando estén disponibles. Mientras un campo quede vacío
+    // ('' o ausente), el ícono/botón correspondiente no se muestra en
+    // ningún lado — no rompe nada mientras tanto.
+    whatsapp:  '', // solo números, con código de país, ej: '5491122334455'
+    instagram: '', // usuario sin @, ej: 'evaspa.unas'
   },
 };
