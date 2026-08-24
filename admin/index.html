@@ -144,7 +144,7 @@
       <div class="panel-card">
         <div class="panel-card-header">
           <h3>Reservas</h3>
-          <button class="btn btn-outline btn-sm" onclick="renderTurnos()">↺</button>
+          <button class="btn btn-outline btn-sm" onclick="sincronizarTurnos()">↺</button>
         </div>
         <div class="panel-card-body" style="padding-bottom:0">
           <div class="chip-grid scrollable" id="turnosChips" style="margin-bottom:1.1rem"></div>
@@ -309,6 +309,12 @@
         <button type="button" id="mvTipoEgreso" class="toggle-vis-btn" onclick="setMovTipo('egreso')">↓ Egreso</button>
       </div>
       <input type="hidden" id="mvTipo" value="ingreso">
+    </div>
+    <div class="form-group" id="mvClienteWrap">
+      <label>Cliente (opcional)</label>
+      <input type="text" id="mvClienteNombre" list="mvClientesList" placeholder="Buscar por nombre…" oninput="mvBuscarCliente()">
+      <datalist id="mvClientesList"></datalist>
+      <input type="hidden" id="mvClienteId" value="">
     </div>
     <div class="form-group">
       <label>Importe</label>
