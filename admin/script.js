@@ -257,11 +257,21 @@ function confirmarTurnoRapido(id) { cambiarEstadoTurno(id, 'confirmado'); render
 // ════════════════════════════════════════════════════════
 let turnoFiltroActivo = '';
 
+let turnoFechaActiva = todayStr();
+
+function esTurnoPasado(t, hoy, ahora) {
+  return t.estado !== 'cancelado' && (t.fecha + t.horario) < (hoy + ahora);
+}
+function estadoEfectivoTurno(t, hoy, ahora) {
+  return esTurnoPasado(t, hoy, ahora) ? 'finalizado' : t.estado;
+}
+
 function renderTurnoChips() {
   const opciones = [
     { v: '', label: 'Todos' },
     { v: 'pendiente', label: 'Pendientes' },
     { v: 'confirmado', label: 'Confirmados' },
+    { v: 'finalizado', label: 'Finalizados' },
     { v: 'cancelado', label: 'Cancelados' }
   ];
   document.getElementById('turnosChips').innerHTML = opciones.map(o =>
@@ -273,32 +283,46 @@ function setTurnoFiltro(v) {
   renderTurnos();
 }
 
+function renderTurnosDateNav() {
+  const hoy = todayStr();
+  const dt  = new Date(turnoFechaActiva + 'T00:00:00');
+  const label = turnoFechaActiva === hoy ? 'Hoy' : fmtDateHuman(dt);
+  document.getElementById('tdnFecha').innerHTML =
+    `${label}${turnoFechaActiva !== hoy ? `<small>${fmtDateHuman(dt)}</small>` : ''}`;
+}
+function moverFechaTurnos(delta) {
+  const dt = new Date(turnoFechaActiva + 'T00:00:00');
+  dt.setDate(dt.getDate() + delta);
+  turnoFechaActiva = fmtDate(dt);
+  renderTurnos();
+}
+function irAHoyTurnos() {
+  turnoFechaActiva = todayStr();
+  renderTurnos();
+}
+
 function renderTurnos() {
   renderTurnoChips();
+  renderTurnosDateNav();
   const filtro = turnoFiltroActivo;
-  const todos  = getTurnos();
-  const lista  = filtro ? todos.filter(t => t.estado === filtro) : todos;
+  const hoy = todayStr(), ahora = new Date().toTimeString().slice(0,5);
+  const todos  = getTurnos().filter(t => t.fecha === turnoFechaActiva);
+  const lista  = filtro ? todos.filter(t => estadoEfectivoTurno(t, hoy, ahora) === filtro) : todos;
   const sorted = [...lista].sort((a,b) => (a.fecha+a.horario).localeCompare(b.fecha+b.horario));
-  const hoy = todayStr(), mes = hoy.slice(0,7), ahora = new Date().toTimeString().slice(0,5);
-  document.getElementById('tStPend').textContent = todos.filter(t=>t.estado==='pendiente').length;
-  document.getElementById('tStConf').textContent = todos.filter(t=>t.estado==='confirmado').length;
-  document.getElementById('tStHoy').textContent  = todos.filter(t=>t.fecha===hoy).length;
-  document.getElementById('tStMes').textContent  = todos.filter(t=>(t.fecha||'').startsWith(mes)).length;
   const cont = document.getElementById('turnosBody');
   if (!sorted.length) {
-    cont.innerHTML = `<div class="turnos-empty">Sin turnos${filtro?' en este estado':''}.</div>`;
+    cont.innerHTML = `<div class="turnos-empty">Sin turnos${filtro?' en este estado':''} para este día.</div>`;
     return;
   }
   cont.innerHTML = sorted.map(t => {
-    const dt    = new Date(t.fecha + 'T00:00:00');
-    const pasado = t.estado !== 'cancelado' && (t.fecha + t.horario) < (hoy + ahora);
+    const pasado = esTurnoPasado(t, hoy, ahora);
     const dotC  = pasado ? 'dot-fin' : ({ pendiente:'dot-pend', confirmado:'dot-conf', cancelado:'dot-canc' }[t.estado] || '');
-    const estadoTexto = pasado ? 'finalizado' : t.estado;
+    const estadoTexto = estadoEfectivoTurno(t, hoy, ahora);
     const tieneSena = t.sena === 'si';
     return `<div class="turno-card">
       <div class="turno-card-top">
         <span class="turno-estado"><span class="dot ${dotC}"></span>${estadoTexto}${tieneSena ? ' <span class="badge-sena">seña</span>' : ''}</span>
-        <span class="turno-fecha">${fmtDateHuman(dt)}<small>${t.horario} · ${t.duracion}min</small></span>
+        <span class="turno-fecha">${t.horario} · ${t.duracion}min</span>
       </div>
       <div class="turno-cliente">${t.nombre}</div>
       <div class="turno-servicio">${t.servicio}</div>
