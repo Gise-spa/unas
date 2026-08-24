@@ -48,6 +48,14 @@ async function syncTurnos() {
   if (data.length) saveTurnos(data);
 }
 
+async function sincronizarTurnos() {
+  showToast('↻ Buscando turnos nuevos…');
+  await syncTurnos();
+  renderTurnos();
+  actualizarBadges();
+  showToast('✓ Turnos actualizados');
+}
+
 async function forzarSync() {
   showToast('↻ Sincronizando...');
   try {
