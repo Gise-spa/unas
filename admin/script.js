@@ -221,8 +221,27 @@ function confirmarTurnoRapido(id) { cambiarEstadoTurno(id, 'confirmado'); render
 // ════════════════════════════════════════════════════════
 //  TURNOS
 // ════════════════════════════════════════════════════════
+let turnoFiltroActivo = '';
+
+function renderTurnoChips() {
+  const opciones = [
+    { v: '', label: 'Todos' },
+    { v: 'pendiente', label: 'Pendientes' },
+    { v: 'confirmado', label: 'Confirmados' },
+    { v: 'cancelado', label: 'Cancelados' }
+  ];
+  document.getElementById('turnosChips').innerHTML = opciones.map(o =>
+    `<div class="chip ${turnoFiltroActivo===o.v?'on-gold':''}" onclick="setTurnoFiltro('${o.v}')">${o.label}</div>`
+  ).join('');
+}
+function setTurnoFiltro(v) {
+  turnoFiltroActivo = v;
+  renderTurnos();
+}
+
 function renderTurnos() {
-  const filtro = document.getElementById('turnoFiltro')?.value || '';
+  renderTurnoChips();
+  const filtro = turnoFiltroActivo;
   const todos  = getTurnos();
   const lista  = filtro ? todos.filter(t => t.estado === filtro) : todos;
   const sorted = [...lista].sort((a,b) => (a.fecha+a.horario).localeCompare(b.fecha+b.horario));
@@ -231,22 +250,24 @@ function renderTurnos() {
   document.getElementById('tStConf').textContent = todos.filter(t=>t.estado==='confirmado').length;
   document.getElementById('tStHoy').textContent  = todos.filter(t=>t.fecha===hoy).length;
   document.getElementById('tStMes').textContent  = todos.filter(t=>(t.fecha||'').startsWith(mes)).length;
-  const tbody = document.getElementById('turnosBody');
+  const cont = document.getElementById('turnosBody');
   if (!sorted.length) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">Sin turnos${filtro?' en este estado':''}.</td></tr>`;
+    cont.innerHTML = `<div class="turnos-empty">Sin turnos${filtro?' en este estado':''}.</div>`;
     return;
   }
-  tbody.innerHTML = sorted.map(t => {
+  cont.innerHTML = sorted.map(t => {
     const dt    = new Date(t.fecha + 'T00:00:00');
     const dotC  = { pendiente:'dot-pend', confirmado:'dot-conf', cancelado:'dot-canc' }[t.estado] || '';
     const tieneSena = t.sena === 'si';
-    return `<tr>
-      <td data-label="Estado"><span class="dot ${dotC}"></span>${t.estado}${tieneSena ? ' <span style="font-size:.7rem;background:var(--bg-yellow);border-radius:4px;padding:1px 5px">seña</span>' : ''}</td>
-      <td data-label="Cliente"><div style="font-weight:500">${t.nombre}</div><div style="font-size:.76rem;color:var(--text-muted)">${t.mail||''}</div></td>
-      <td data-label="Servicio">${t.servicio}</td>
-      <td data-label="Fecha">${fmtDateHuman(dt)}</td>
-      <td data-label="Horario">${t.horario} · ${t.duracion}min</td>
-      <td class="td-actions">
+    return `<div class="turno-card">
+      <div class="turno-card-top">
+        <span class="turno-estado"><span class="dot ${dotC}"></span>${t.estado}${tieneSena ? ' <span class="badge-sena">seña</span>' : ''}</span>
+        <span class="turno-fecha">${fmtDateHuman(dt)}<small>${t.horario} · ${t.duracion}min</small></span>
+      </div>
+      <div class="turno-cliente">${t.nombre}</div>
+      <div class="turno-servicio">${t.servicio}</div>
+      ${t.mail ? `<div class="turno-mail">${t.mail}</div>` : ''}
+      <div class="turno-actions">
         ${t.estado==='pendiente'?`
           <button onclick="cambiarEstadoTurno('${t.id}','confirmado')" class="btn btn-sm" style="background:rgba(34,197,94,.12);color:#16a34a;border:none;padding:.28rem .7rem">✓ Confirmar</button>
           <button onclick="cambiarEstadoTurno('${t.id}','cancelado')"  class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#dc2626;border:none;padding:.28rem .7rem">✗ Cancelar</button>`:''}
@@ -254,8 +275,8 @@ function renderTurnos() {
           <button onclick="abrirCambiarTurno('${t.id}')" class="btn btn-sm" style="background:none;border:1px solid var(--border);color:var(--text-muted);padding:.28rem .7rem">↺ Cambiar</button>`:''}
         ${t.fecha===hoy && typeof botonCobrarHTML === 'function' ? botonCobrarHTML(t) : ''}
         <button onclick="pedirEliminarTurno('${t.id}')" class="btn btn-sm" style="background:rgba(239,68,68,.08);color:#dc2626;border:none;padding:.28rem .7rem">🗑</button>
-      </td>
-    </tr>`;
+      </div>
+    </div>`;
   }).join('');
 }
 
