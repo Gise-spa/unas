@@ -135,16 +135,15 @@
     <div class="admin-section" id="sec-turnos">
       <h2 class="section-title">Turnos</h2>
       <p class="section-subtitle">Gestioná las reservas de tus clientes</p>
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-num" id="tStPend" style="color:var(--gold)">—</div><div class="stat-label">Pendientes</div></div>
-        <div class="stat-card"><div class="stat-num" id="tStConf" style="color:#22c55e">—</div><div class="stat-label">Confirmados</div></div>
-        <div class="stat-card"><div class="stat-num" id="tStHoy" style="color:var(--accent)">—</div><div class="stat-label">Hoy</div></div>
-        <div class="stat-card"><div class="stat-num" id="tStMes">—</div><div class="stat-label">Este mes</div></div>
-      </div>
       <div class="panel-card">
         <div class="panel-card-header">
           <h3>Reservas</h3>
           <button class="btn btn-outline btn-sm" onclick="sincronizarTurnos()">↺</button>
+        </div>
+        <div class="turnos-date-nav">
+          <button class="tdn-arrow" onclick="moverFechaTurnos(-1)" aria-label="Día anterior">‹</button>
+          <div class="tdn-fecha" id="tdnFecha" onclick="irAHoyTurnos()"></div>
+          <button class="tdn-arrow" onclick="moverFechaTurnos(1)" aria-label="Día siguiente">›</button>
         </div>
         <div class="panel-card-body" style="padding-bottom:0">
           <div class="chip-grid scrollable" id="turnosChips" style="margin-bottom:1.1rem"></div>
