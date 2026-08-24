@@ -14,7 +14,7 @@
 <div id="loginPage">
   <div class="login-wrap">
     <div class="login-card">
-      <div class="login-logo">✦ <span>Panel</span> Admin</div>
+      <div class="login-logo">✦ <span>Eva Spa</span></div>
       <p class="login-sub">Acceso privado</p>
       <div class="login-error" id="loginError">Usuario o contraseña incorrectos</div>
       <form id="loginForm" autocomplete="off">
@@ -44,7 +44,7 @@
       <button class="menu-btn" id="menuBtn" aria-label="Menú">
         <span></span><span></span><span></span>
       </button>
-      <div class="topbar-logo">✦ <span>Admin</span></div>
+      <div class="topbar-logo">✦ <span>Eva Spa</span></div>
     </div>
     <div class="topbar-right">
       <button class="theme-btn" aria-label="Cambiar tema"></button>
@@ -283,16 +283,34 @@
     <button class="bn-item" data-sec="inicio" onclick="irA('inicio')">
       <span class="bn-icon">🏠</span><span class="bn-label">Inicio</span>
     </button>
-    <button class="bn-item" data-sec="caja" onclick="irA('caja')">
-      <span class="bn-icon">💰</span><span class="bn-label">Caja</span>
-    </button>
     <button class="bn-item" data-sec="turnos" onclick="irA('turnos')">
       <span class="bn-icon">📅</span><span class="bn-label">Turnos</span>
+    </button>
+    <button class="bn-fab" id="bnFab" onclick="abrirActionSheet()" aria-label="Acciones rápidas">+</button>
+    <button class="bn-item" data-sec="caja" onclick="irA('caja')">
+      <span class="bn-icon">💰</span><span class="bn-label">Caja</span>
     </button>
     <button class="bn-item" id="bnMas">
       <span class="bn-icon">☰</span><span class="bn-label">Más</span>
     </button>
   </nav>
+</div>
+
+<!-- ACTION SHEET: "+" central de la barra inferior -->
+<div class="sheet-overlay" id="actionSheet" onclick="if(event.target===this) cerrarActionSheet()">
+  <div class="sheet-box">
+    <div class="sheet-handle"></div>
+    <button class="sheet-option" onclick="accionRapida('cobrar')">
+      <span class="sheet-icon">💰</span> Registrar pago
+    </button>
+    <button class="sheet-option" onclick="accionRapida('turno')">
+      <span class="sheet-icon">📅</span> Nuevo turno
+    </button>
+    <button class="sheet-option" onclick="accionRapida('producto')">
+      <span class="sheet-icon">📦</span> Nuevo producto
+    </button>
+    <button class="sheet-cancel" onclick="cerrarActionSheet()">Cancelar</button>
+  </div>
 </div>
 
 <!-- MODAL MOVIMIENTO DE CAJA -->
