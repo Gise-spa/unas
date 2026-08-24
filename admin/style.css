@@ -273,6 +273,44 @@
 }
 .panel-card-body { padding: 1.25rem; }
 
+/* ── Turnos: navegación por fecha ── */
+.turnos-date-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .85rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  gap: .5rem;
+}
+.tdn-arrow {
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.tdn-arrow:hover { border-color: var(--accent); }
+.tdn-fecha {
+  flex: 1;
+  text-align: center;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.15rem;
+  cursor: pointer;
+  line-height: 1.2;
+}
+.tdn-fecha small {
+  display: block;
+  font-family: inherit;
+  font-size: .72rem;
+  color: var(--text-muted);
+  margin-top: .1rem;
+}
+
 /* ── Turnos: tarjetas nativas (mismo diseño en mobile y desktop) ── */
 .turnos-list { display: flex; flex-direction: column; gap: .9rem; padding: 0 1.25rem 1.25rem; }
 .turno-card {
@@ -577,8 +615,26 @@
 @media (max-width: 768px) {
   html, body { overflow-x: hidden; }
 
-  /* Drawer */
-  .admin-drawer { width: 80vw; max-width: 300px; }
+  /* Menú hamburguesa del topbar: en mobile solo se usa el botón "Más" de la barra inferior */
+  .menu-btn { display: none; }
+
+  /* Drawer: en mobile se muestra como hoja que sube desde abajo, no desde la izquierda */
+  .admin-drawer {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: auto;
+    max-width: none;
+    height: auto;
+    max-height: 80vh;
+    border-right: none;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+    transform: translateY(100%);
+  }
+  .admin-drawer.open { transform: translateY(0); }
+  .drawer-overlay { top: 0; }
   .drawer-item  { padding: .8rem 1.35rem; font-size: .9rem; }
 
   /* Más aire en mobile */
