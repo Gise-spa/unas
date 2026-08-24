@@ -129,7 +129,6 @@ function renderSeccionActiva() {
   if (seccionActiva === 'turnos')     renderTurnos();
   if (seccionActiva === 'agenda')     renderAgenda();
   if (seccionActiva === 'inventario') renderInventario();
-  if (seccionActiva === 'categorias') renderCategorias();
   if (seccionActiva === 'caja')       renderCaja();
 }
 
@@ -245,7 +244,7 @@ function renderTurnos() {
   const todos  = getTurnos();
   const lista  = filtro ? todos.filter(t => t.estado === filtro) : todos;
   const sorted = [...lista].sort((a,b) => (a.fecha+a.horario).localeCompare(b.fecha+b.horario));
-  const hoy = todayStr(), mes = hoy.slice(0,7);
+  const hoy = todayStr(), mes = hoy.slice(0,7), ahora = new Date().toTimeString().slice(0,5);
   document.getElementById('tStPend').textContent = todos.filter(t=>t.estado==='pendiente').length;
   document.getElementById('tStConf').textContent = todos.filter(t=>t.estado==='confirmado').length;
   document.getElementById('tStHoy').textContent  = todos.filter(t=>t.fecha===hoy).length;
@@ -257,21 +256,23 @@ function renderTurnos() {
   }
   cont.innerHTML = sorted.map(t => {
     const dt    = new Date(t.fecha + 'T00:00:00');
-    const dotC  = { pendiente:'dot-pend', confirmado:'dot-conf', cancelado:'dot-canc' }[t.estado] || '';
+    const pasado = t.estado !== 'cancelado' && (t.fecha + t.horario) < (hoy + ahora);
+    const dotC  = pasado ? 'dot-fin' : ({ pendiente:'dot-pend', confirmado:'dot-conf', cancelado:'dot-canc' }[t.estado] || '');
+    const estadoTexto = pasado ? 'finalizado' : t.estado;
     const tieneSena = t.sena === 'si';
     return `<div class="turno-card">
       <div class="turno-card-top">
-        <span class="turno-estado"><span class="dot ${dotC}"></span>${t.estado}${tieneSena ? ' <span class="badge-sena">seña</span>' : ''}</span>
+        <span class="turno-estado"><span class="dot ${dotC}"></span>${estadoTexto}${tieneSena ? ' <span class="badge-sena">seña</span>' : ''}</span>
         <span class="turno-fecha">${fmtDateHuman(dt)}<small>${t.horario} · ${t.duracion}min</small></span>
       </div>
       <div class="turno-cliente">${t.nombre}</div>
       <div class="turno-servicio">${t.servicio}</div>
       ${t.mail ? `<div class="turno-mail">${t.mail}</div>` : ''}
       <div class="turno-actions">
-        ${t.estado==='pendiente'?`
+        ${t.estado==='pendiente'&&!pasado?`
           <button onclick="cambiarEstadoTurno('${t.id}','confirmado')" class="btn btn-sm" style="background:rgba(34,197,94,.12);color:#16a34a;border:none;padding:.28rem .7rem">✓ Confirmar</button>
           <button onclick="cambiarEstadoTurno('${t.id}','cancelado')"  class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#dc2626;border:none;padding:.28rem .7rem">✗ Cancelar</button>`:''}
-        ${t.estado!=='cancelado'&&!tieneSena?`
+        ${t.estado!=='cancelado'&&!tieneSena&&!pasado?`
           <button onclick="abrirCambiarTurno('${t.id}')" class="btn btn-sm" style="background:none;border:1px solid var(--border);color:var(--text-muted);padding:.28rem .7rem">↺ Cambiar</button>`:''}
         ${t.fecha===hoy && typeof botonCobrarHTML === 'function' ? botonCobrarHTML(t) : ''}
         <button onclick="pedirEliminarTurno('${t.id}')" class="btn btn-sm" style="background:rgba(239,68,68,.08);color:#dc2626;border:none;padding:.28rem .7rem">🗑</button>
@@ -894,6 +895,10 @@ function guardarProducto() {
 // ════════════════════════════════════════════════════════
 //  CATEGORÍAS
 // ════════════════════════════════════════════════════════
+function abrirModalCategorias() {
+  renderCategorias();
+  abrirModal('modalCategorias');
+}
 function renderCategorias() {
   const cats = getCategorias();
   document.getElementById('catLista').innerHTML = cats.length
