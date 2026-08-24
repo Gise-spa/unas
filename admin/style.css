@@ -410,6 +410,7 @@
 .dot-pend { background: #f59e0b; }
 .dot-conf { background: #22c55e; }
 .dot-canc { background: #ef4444; }
+.dot-fin  { background: var(--text-muted); }
 .dot-ok   { background: #22c55e; }
 .dot-low  { background: #f59e0b; }
 .dot-out  { background: #ef4444; }
