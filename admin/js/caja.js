@@ -249,6 +249,34 @@ async function confirmarAbrirCaja() {
 // ════════════════════════════════════════════════════════
 //  MOVIMIENTO MANUAL
 // ════════════════════════════════════════════════════════
+function getClientesConocidos() {
+  const turnos = (typeof getTurnos === 'function' ? getTurnos() : []) || [];
+  const mapa = new Map();
+  turnos.forEach(t => {
+    if (!t.nombre) return;
+    const key = (t.clienteId || t.nombre.trim().toLowerCase());
+    if (!mapa.has(key)) {
+      mapa.set(key, { id: t.clienteId || '', nombre: t.nombre.trim(), telefono: t.telefono || '', mail: t.mail || '' });
+    }
+  });
+  return [...mapa.values()].sort((a, b) => a.nombre.localeCompare(b.nombre));
+}
+
+function renderMvClientesDatalist() {
+  const clientes = getClientesConocidos();
+  document.getElementById('mvClientesList').innerHTML = clientes.map(c =>
+    `<option value="${c.nombre}${c.telefono ? ' — ' + c.telefono : ''}">`
+  ).join('');
+  window._mvClientesCache = clientes;
+}
+
+function mvBuscarCliente() {
+  const val = document.getElementById('mvClienteNombre').value;
+  const clientes = window._mvClientesCache || [];
+  const match = clientes.find(c => (c.nombre + (c.telefono ? ' — ' + c.telefono : '')) === val);
+  document.getElementById('mvClienteId').value = match ? match.id : '';
+}
+
 function abrirModalMovimiento() {
   document.getElementById('mvTipo').value = 'ingreso';
   document.getElementById('mvTipoIngreso').classList.add('active-vis');
@@ -257,7 +285,11 @@ function abrirModalMovimiento() {
   document.getElementById('mvMetodo').value = '';
   document.getElementById('mvCuenta').value = '';
   document.getElementById('mvConcepto').value = '';
+  document.getElementById('mvClienteNombre').value = '';
+  document.getElementById('mvClienteId').value = '';
+  document.getElementById('mvClienteWrap').style.display = '';
   document.getElementById('mvCuentaWrap').style.display = 'none';
+  renderMvClientesDatalist();
   _renderChips('mvMetodoChips', 'mvMetodo', 'mvCuentaWrap', '');
   abrirModal('modalMovimientoCaja');
 }
@@ -266,6 +298,7 @@ function setMovTipo(tipo) {
   document.getElementById('mvTipo').value = tipo;
   document.getElementById('mvTipoIngreso').classList.toggle('active-vis', tipo === 'ingreso');
   document.getElementById('mvTipoEgreso').classList.toggle('active-vis', tipo === 'egreso');
+  document.getElementById('mvClienteWrap').style.display = tipo === 'ingreso' ? '' : 'none';
 }
 
 async function confirmarMovimientoCaja() {
@@ -276,6 +309,9 @@ async function confirmarMovimientoCaja() {
   const metodoPago = document.getElementById('mvMetodo').value;
   const cuentaDestino = document.getElementById('mvCuenta').value.trim();
   const concepto = document.getElementById('mvConcepto').value.trim();
+  const clienteId = document.getElementById('mvClienteId').value;
+  const nombreClienteRaw = document.getElementById('mvClienteNombre').value.trim();
+  const nombreCliente = tipo === 'ingreso' ? nombreClienteRaw.split(' — ')[0] : '';
 
   if (isNaN(importe) || importe <= 0) { showToast('Ingresá un importe válido'); return; }
   if (!metodoPago) { showToast('Elegí un método de pago'); return; }
@@ -286,7 +322,8 @@ async function confirmarMovimientoCaja() {
     movimiento: {
       movimientoId: _cajaUuid(),
       sesionId: sesion.sesionId,
-      tipo, importe, metodoPago, cuentaDestino, concepto
+      tipo, importe, metodoPago, cuentaDestino, concepto,
+      ...(nombreCliente ? { clienteId, nombreCliente } : {})
     }
   });
 
