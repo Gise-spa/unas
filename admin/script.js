@@ -313,7 +313,7 @@ function renderTurnos() {
   const hoy = todayStr(), ahora = new Date().toTimeString().slice(0,5);
   const todos  = getTurnos().filter(t => t.fecha === turnoFechaActiva);
   const lista  = filtro ? todos.filter(t => estadoEfectivoTurno(t, hoy, ahora) === filtro) : todos;
-  const sorted = [...lista].sort((a,b) => (a.fecha+a.horario).localeCompare(b.fecha+b.horario));
+  const sorted = [...lista].sort((a,b) => (b.fecha+b.horario).localeCompare(a.fecha+a.horario));
   const cont = document.getElementById('turnosBody');
   if (!sorted.length) {
     cont.innerHTML = `<div class="turnos-empty">Sin turnos${filtro?' en este estado':''} para este día.</div>`;
