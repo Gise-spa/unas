@@ -59,11 +59,13 @@ async function sincronizarTurnos() {
 async function forzarSync() {
   showToast('↻ Sincronizando...');
   try {
-    const [t, i, cats, cfg] = await Promise.all([
+    const [t, i, cats, cfg, clientes, movs] = await Promise.all([
       apiGet('getTurnos'),
       apiGet('getInventario'),
       apiGet('getCategorias'),
       apiGet('getConfiguracion'),
+      apiGet('getClientes'),
+      apiGet('getTodosLosMovimientosCaja'),
     ]);
     if (t.length) saveTurnos(t);
     if (i.length) {
@@ -74,6 +76,8 @@ async function forzarSync() {
     // getConfiguracion devuelve un objeto (no un array); apiGet solo hace
     // fallback a [] cuando json.data es falsy (todavía no hay nada guardado).
     if (cfg && !Array.isArray(cfg)) DB.set('agenda_config', cfg);
+    if (clientes.length) saveClientes(clientes);
+    if (movs.length) saveTodosMovimientos(movs);
     if (typeof syncCaja === 'function') await syncCaja();
     renderSeccionActiva();
     actualizarBadges();
@@ -162,6 +166,7 @@ function irA(seccion) {
 function renderSeccionActiva() {
   if (seccionActiva === 'inicio')     renderInicio();
   if (seccionActiva === 'turnos')     renderTurnos();
+  if (seccionActiva === 'clientes')   renderClientes();
   if (seccionActiva === 'agenda')     renderAgenda();
   if (seccionActiva === 'inventario') renderInventario();
   if (seccionActiva === 'caja')       renderCaja();
