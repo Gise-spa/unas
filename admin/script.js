@@ -186,76 +186,65 @@ function actualizarBadges() {
 // ════════════════════════════════════════════════════════
 function renderInicio() {
   const turnos = getTurnos(), inv = getInventario();
-  const hoy = todayStr(), ahora = new Date().toTimeString().slice(0,5);
+  const hoy = todayStr(), ahora = new Date().toTimeString().slice(0,5), hoyDt = new Date();
 
-  // 1. Caja — delegado a caja.js (es su dominio, no duplicar lógica acá)
-  if (typeof renderCajaInicio === 'function') renderCajaInicio();
+  // Saludo + fecha
+  const h = hoyDt.getHours();
+  const saludo = h < 12 ? 'Buen día' : h < 20 ? 'Buenas tardes' : 'Buenas noches';
+  document.getElementById('inicioSaludo').textContent = `¡${saludo}, Gise! 👋`;
+  document.getElementById('inicioFechaHoy').textContent = fmtDateHuman(hoyDt);
 
-  // 2. Próximo turno — el que sigue hoy desde ahora; si no queda ninguno
-  // hoy, el próximo en una fecha futura. Nunca uno cancelado.
+  // Turnos hoy
+  const hoyTurnos = turnos.filter(t => t.fecha === hoy);
+  const hoyConfirmados = hoyTurnos.filter(t => t.estado === 'confirmado').length;
+  document.getElementById('stTurnosHoy').textContent = hoyTurnos.length;
+  document.getElementById('stTurnosHoySub').textContent = `${hoyConfirmados} confirmado${hoyConfirmados===1?'':'s'}`;
+
+  // Caja hoy — mismos datos que el Resumen diario de Caja (getTodosMovimientos), acá para hoy nomás
+  const movsHoy = getTodosMovimientos().filter(m => {
+    if (!m.fecha) return false;
+    const d = new Date(m.fecha);
+    return !isNaN(d.getTime()) && fmtDate(d) === hoy;
+  });
+  const ingresosHoy = movsHoy.filter(m => String(m.tipo).toLowerCase() === 'ingreso');
+  const totalCajaHoy = ingresosHoy.reduce((s,m) => s + (Number(m.importe)||0), 0);
+  document.getElementById('stCajaHoy').textContent = typeof fmtMoneda === 'function' ? fmtMoneda(totalCajaHoy) : `$${totalCajaHoy.toLocaleString('es-AR')}`;
+  document.getElementById('stCajaHoySub').textContent = `${ingresosHoy.length} pago${ingresosHoy.length===1?'':'s'} registrado${ingresosHoy.length===1?'':'s'}`;
+
+  // Ingresos del mes
+  const mesActual = hoy.slice(0,7);
+  const totalMes = getTodosMovimientos()
+    .filter(m => {
+      if (!m.fecha || String(m.tipo).toLowerCase() !== 'ingreso') return false;
+      const d = new Date(m.fecha);
+      return !isNaN(d.getTime()) && fmtDate(d).startsWith(mesActual);
+    })
+    .reduce((s,m) => s + (Number(m.importe)||0), 0);
+  document.getElementById('stIngresosMes').textContent = typeof fmtMoneda === 'function' ? fmtMoneda(totalMes) : `$${totalMes.toLocaleString('es-AR')}`;
+  document.getElementById('stIngresosMesSub').textContent = `${MESES[hoyDt.getMonth()]} ${hoyDt.getFullYear()}`;
+
+  // Stock bajo
+  const lowCount = inv.filter(p => Number(p.stock) <= 2).length;
+  document.getElementById('stStockBajo').textContent = lowCount;
+
+  // Próximos turnos (hasta 3, desde ahora en adelante, nunca cancelados)
   const activos = turnos.filter(t => t.estado !== 'cancelado');
-  let proximo = activos
-    .filter(t => t.fecha === hoy && t.horario >= ahora)
-    .sort((a,b) => a.horario.localeCompare(b.horario))[0];
-  if (!proximo) {
-    proximo = activos
-      .filter(t => t.fecha > hoy)
-      .sort((a,b) => (a.fecha + a.horario).localeCompare(b.fecha + b.horario))[0];
-  }
-  const proxEl = document.getElementById('proximoTurno');
-  if (proxEl) {
-    proxEl.innerHTML = proximo
-      ? `<div style="font-weight:500">${proximo.nombre} — ${proximo.servicio}</div>
-         <div style="font-size:.8rem;color:var(--text-muted)">${proximo.fecha === hoy ? 'Hoy' : fmtDateHuman(new Date(proximo.fecha + 'T00:00:00'))} · ${proximo.horario}</div>`
-      : '<p class="today-empty">Sin turnos próximos</p>';
-  }
-
-  // 3. Turnos de hoy
-  const hoyTurnos = turnos.filter(t => t.fecha === hoy).sort((a,b) => a.horario.localeCompare(b.horario));
-  document.getElementById('listHoy').innerHTML = hoyTurnos.length
-    ? hoyTurnos.map(t => `
+  const proximos = activos
+    .filter(t => (t.fecha + t.horario) >= (hoy + ahora))
+    .sort((a,b) => (a.fecha+a.horario).localeCompare(b.fecha+b.horario))
+    .slice(0, 3);
+  document.getElementById('listProximos').innerHTML = proximos.length
+    ? proximos.map(t => `
         <li class="today-item">
           <span class="today-time">${t.horario}</span>
-          <div>
+          <div style="flex:1;min-width:0">
             <div style="font-weight:500">${t.nombre}</div>
             <div style="font-size:.76rem;color:var(--text-muted)">${t.servicio}</div>
           </div>
-          <span class="dot dot-${t.estado==='confirmado'?'conf':t.estado==='cancelado'?'canc':'pend'}" style="margin-left:auto"></span>
-          ${typeof botonCobrarHTML === 'function' ? botonCobrarHTML(t) : ''}
+          <span class="inicio-badge inicio-badge-${t.estado === 'confirmado' ? 'confirmado' : 'pendiente'}">${t.estado === 'confirmado' ? 'Confirmado' : 'Pendiente'}</span>
         </li>`).join('')
-    : '<p class="today-empty">Sin turnos para hoy</p>';
-
-  // 4. Alertas — turnos pendientes de confirmar + stock bajo (solo si hay algo)
-  const pendTurnos = turnos.filter(t => t.estado === 'pendiente')
-    .sort((a,b) => (a.fecha+a.horario).localeCompare(b.fecha+b.horario)).slice(0,5);
-  const lowCount = inv.filter(p => Number(p.stock) <= 2).length;
-
-  document.getElementById('alertasCard').style.display = (pendTurnos.length || lowCount) ? '' : 'none';
-
-  document.getElementById('listPend').innerHTML = pendTurnos.length
-    ? pendTurnos.map(t => {
-        const dt = new Date(t.fecha + 'T00:00:00');
-        return `<li class="today-item">
-          <div style="flex:1">
-            <div style="font-weight:500">${t.nombre}</div>
-            <div style="font-size:.76rem;color:var(--text-muted)">${fmtDateHuman(dt)} · ${t.horario} · ${t.servicio}</div>
-          </div>
-          <button onclick="confirmarTurnoRapido('${t.id}')" class="btn btn-sm" style="background:rgba(34,197,94,.12);color:#16a34a;border:none;padding:.28rem .7rem;flex-shrink:0">✓</button>
-        </li>`;
-      }).join('')
-    : '<p class="today-empty">Sin turnos pendientes</p>';
-
-  const stockLine = document.getElementById('stockAlertLine');
-  if (stockLine) {
-    stockLine.style.display = lowCount ? 'flex' : 'none';
-    stockLine.innerHTML = lowCount
-      ? `<span>⚠ ${lowCount} producto${lowCount > 1 ? 's' : ''} con stock bajo</span>
-         <button class="btn btn-outline btn-sm" onclick="irA('inventario'); setTimeout(filtrarStockBajo, 150);">Ver →</button>`
-      : '';
-  }
+    : '<p class="today-empty">Sin turnos próximos</p>';
 }
-
-function confirmarTurnoRapido(id) { cambiarEstadoTurno(id, 'confirmado'); renderInicio(); }
 
 // ════════════════════════════════════════════════════════
 //  TURNOS
