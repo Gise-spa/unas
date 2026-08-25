@@ -103,35 +103,46 @@
 
     <!-- INICIO -->
     <div class="admin-section active" id="sec-inicio">
-      <h2 class="section-title">Buen día 👋</h2>
+      <h2 class="section-title" id="inicioSaludo" style="margin-bottom:0">¡Buen día, Gise! 👋</h2>
       <p class="section-subtitle">Así está Eva Spa hoy</p>
 
-      <!-- 1. Caja (rellenado por caja.js → renderCajaInicio) -->
-      <div id="inicioCajaCard"></div>
-
-      <!-- 2. Próximo turno -->
-      <div class="panel-card">
-        <div class="panel-card-header"><h3>Próximo turno</h3></div>
-        <div class="panel-card-body" id="proximoTurno"></div>
+      <div class="inicio-fecha-bar">
+        <span id="inicioFechaHoy"></span>
+        <span class="inicio-fecha-pill">📅 Hoy</span>
       </div>
 
-      <!-- 3. Turnos de hoy -->
+      <div class="inicio-stats-grid">
+        <div class="inicio-stat-card">
+          <div class="inicio-stat-top"><span>Turnos hoy</span><span class="inicio-stat-icon">📅</span></div>
+          <div class="inicio-stat-num" id="stTurnosHoy">—</div>
+          <div class="inicio-stat-sub inicio-stat-sub-accent" id="stTurnosHoySub"></div>
+        </div>
+        <div class="inicio-stat-card">
+          <div class="inicio-stat-top"><span>Caja hoy</span><span class="inicio-stat-icon">💲</span></div>
+          <div class="inicio-stat-num" id="stCajaHoy">—</div>
+          <div class="inicio-stat-sub inicio-stat-sub-accent" id="stCajaHoySub"></div>
+        </div>
+        <div class="inicio-stat-card">
+          <div class="inicio-stat-top"><span>Ingresos mes</span><span class="inicio-stat-icon">📈</span></div>
+          <div class="inicio-stat-num" id="stIngresosMes">—</div>
+          <div class="inicio-stat-sub" id="stIngresosMesSub"></div>
+        </div>
+        <div class="inicio-stat-card">
+          <div class="inicio-stat-top"><span>Stock bajo</span><span class="inicio-stat-icon">⚠</span></div>
+          <div class="inicio-stat-num" id="stStockBajo">—</div>
+          <div class="inicio-stat-sub">Productos</div>
+        </div>
+      </div>
+
       <div class="panel-card">
         <div class="panel-card-header">
-          <h3>Turnos de hoy</h3>
+          <h3>Próximos turnos</h3>
           <button class="btn btn-outline btn-sm" onclick="irA('turnos')">Ver todos →</button>
         </div>
-        <div class="panel-card-body"><ul class="today-list" id="listHoy"></ul></div>
+        <div class="panel-card-body"><ul class="today-list" id="listProximos"></ul></div>
       </div>
 
-      <!-- 4. Alertas -->
-      <div class="panel-card" id="alertasCard" style="display:none">
-        <div class="panel-card-header"><h3>Pendientes de confirmar</h3></div>
-        <div class="panel-card-body">
-          <ul class="today-list" id="listPend"></ul>
-          <div id="stockAlertLine" style="display:none;margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--border);font-size:.84rem;display:flex;align-items:center;justify-content:space-between;gap:.6rem"></div>
-        </div>
-      </div>
+      <button class="btn btn-primary" style="width:100%;padding:.85rem;font-size:.95rem;margin-top:.25rem" onclick="irA('turnos')">Ver agenda completa 📅</button>
     </div>
 
     <!-- TURNOS -->
