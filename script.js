@@ -192,3 +192,14 @@ function getCategorias() {
   ];
 }
 function saveCategorias(arr) { DB.set('categorias', arr); }
+
+// ── Clientes (Etapa 3 del rediseño del admin) ───────────────
+function getClientes()     { return DB.get('clientes') || []; }
+function saveClientes(arr) { DB.set('clientes', arr); }
+
+// ── Movimientos de caja, TODAS las sesiones (Etapa 3) ───────
+// Distinto de admin/js/caja.js: DB.get('caja_movimientos') ahí guarda
+// solo los movimientos de la sesión abierta actual. Esta clave nueva
+// guarda el historial completo, para poder armar pagos por cliente.
+function getTodosMovimientos()     { return DB.get('caja_movimientos_todos') || []; }
+function saveTodosMovimientos(arr) { DB.set('caja_movimientos_todos', arr); }
