@@ -449,7 +449,21 @@ let agTemp = null;
 function renderAgenda() {
   agTemp = JSON.parse(JSON.stringify(getAgenda()));
   renderDias(); renderSlots(); renderDuraciones(); renderBloqueadas();
+  actualizarResumenesAgenda();
 }
+function actualizarResumenesAgenda() {
+  const ag = getAgenda();
+  const dias = [...ag.diasHabilitados].sort((a,b)=>a-b).map(i => DIAS_N[i]);
+  document.getElementById('resumenDias').textContent = dias.length ? dias.join(', ') : 'Sin días configurados';
+  document.getElementById('resumenSlots').textContent = ag.slots.length ? `${ag.slots.length} horario${ag.slots.length>1?'s':''} configurado${ag.slots.length>1?'s':''}` : 'Sin horarios configurados';
+  const svcs = ag.servicios || getDefaultServicios();
+  document.getElementById('resumenDuraciones').textContent = `${svcs.length} servicios`;
+  document.getElementById('resumenBloqueos').textContent = ag.diasBloqueados.length ? `${ag.diasBloqueados.length} fecha${ag.diasBloqueados.length>1?'s':''} bloqueada${ag.diasBloqueados.length>1?'s':''}` : 'Sin fechas bloqueadas';
+}
+function abrirModalAgendaDias()       { agTemp = JSON.parse(JSON.stringify(getAgenda())); renderDias(); abrirModal('modalAgendaDias'); }
+function abrirModalAgendaSlots()      { agTemp = JSON.parse(JSON.stringify(getAgenda())); renderSlots(); abrirModal('modalAgendaSlots'); }
+function abrirModalAgendaDuraciones() { agTemp = JSON.parse(JSON.stringify(getAgenda())); renderDuraciones(); abrirModal('modalAgendaDuraciones'); }
+function abrirModalAgendaBloqueos()   { renderBloqueadas(); abrirModal('modalAgendaBloqueos'); }
 function renderDias() {
   document.getElementById('diasChips').innerHTML = DIAS_N.map((d,i) =>
     `<div class="chip ${agTemp.diasHabilitados.includes(i)?'on':''}" onclick="toggleDia(${i})">${d}</div>`
@@ -463,6 +477,7 @@ function guardarDias() {
   const ag = getAgenda(); ag.diasHabilitados = agTemp.diasHabilitados;
   DB.set('agenda_config', ag);
   apiPost({ action: 'saveConfiguracion', config: ag });
+  actualizarResumenesAgenda();
   showToast('✓ Días guardados');
 }
 function renderSlots() {
@@ -481,6 +496,7 @@ function guardarSlots() {
   const ag = getAgenda(); ag.slots = agTemp.slots;
   DB.set('agenda_config', ag);
   apiPost({ action: 'saveConfiguracion', config: ag });
+  actualizarResumenesAgenda();
   showToast('✓ Horarios guardados');
 }
 function renderDuraciones() {
@@ -506,6 +522,7 @@ function guardarDuraciones() {
   ag.servicios = svcs;
   DB.set('agenda_config', ag);
   apiPost({ action: 'saveConfiguracion', config: ag });
+  actualizarResumenesAgenda();
   showToast('✓ Duraciones guardadas');
 }
 function bloquearFecha() {
@@ -514,13 +531,13 @@ function bloquearFecha() {
   if (!ag.diasBloqueados.includes(v)) ag.diasBloqueados.push(v);
   DB.set('agenda_config', ag);
   apiPost({ action: 'saveConfiguracion', config: ag });
-  agTemp = JSON.parse(JSON.stringify(ag)); renderBloqueadas(); showToast('✓ Fecha bloqueada');
+  agTemp = JSON.parse(JSON.stringify(ag)); renderBloqueadas(); actualizarResumenesAgenda(); showToast('✓ Fecha bloqueada');
 }
 function desbloquearFecha(v) {
   const ag = getAgenda(); ag.diasBloqueados = ag.diasBloqueados.filter(d => d !== v);
   DB.set('agenda_config', ag);
   apiPost({ action: 'saveConfiguracion', config: ag });
-  agTemp = JSON.parse(JSON.stringify(ag)); renderBloqueadas();
+  agTemp = JSON.parse(JSON.stringify(ag)); renderBloqueadas(); actualizarResumenesAgenda();
 }
 function renderBloqueadas() {
   const ag = getAgenda();
