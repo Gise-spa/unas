@@ -363,6 +363,60 @@
 }
 .turnos-empty { text-align: center; padding: 2rem 1.25rem; color: var(--text-muted); }
 
+/* ── Clientes ── */
+.clientes-lista { display: flex; flex-direction: column; gap: .6rem; }
+.cliente-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .85rem 1.1rem;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+.cliente-card:hover { border-color: var(--accent); }
+.cliente-card-nombre { font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; }
+.cliente-card-sub { font-size: .8rem; color: var(--text-muted); margin-top: .15rem; }
+
+.fc-resumen {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .6rem;
+  margin-bottom: 1.25rem;
+}
+.fc-resumen-item {
+  background: var(--bg-subtle, rgba(0,0,0,.03));
+  border-radius: var(--radius);
+  padding: .6rem .75rem;
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+}
+.fc-resumen-label { font-size: .72rem; color: var(--text-muted); }
+.fc-resumen-valor { font-size: .88rem; }
+
+.fc-bloque { margin-bottom: 1.1rem; }
+.fc-bloque h4 {
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  color: var(--text-muted);
+  margin-bottom: .5rem;
+  font-weight: 500;
+}
+.fc-lista { display: flex; flex-direction: column; gap: .4rem; max-height: 220px; overflow-y: auto; }
+.fc-lista-item {
+  display: flex;
+  justify-content: space-between;
+  gap: .6rem;
+  font-size: .82rem;
+  padding: .5rem .65rem;
+  background: var(--bg-subtle, rgba(0,0,0,.03));
+  border-radius: var(--radius);
+}
+.fc-lista-estado { color: var(--text-muted); text-transform: capitalize; flex-shrink: 0; }
+.fc-lista-monto { color: #16a34a; font-weight: 600; flex-shrink: 0; }
+.fc-lista-vacio { font-size: .82rem; color: var(--text-muted); padding: .4rem .1rem; }
+
 /* ── Input inline ── */
 .input-sm {
   padding: .4rem .75rem;
