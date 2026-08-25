@@ -172,42 +172,38 @@
     <div class="admin-section" id="sec-agenda">
       <h2 class="section-title">Mi Agenda</h2>
       <p class="section-subtitle">Configurá tu disponibilidad</p>
-      <div class="panel-card" style="margin-bottom:1.25rem">
-        <div class="panel-card-header"><h3>Días habilitados</h3></div>
-        <div class="panel-card-body">
-          <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem">Días de la semana en que atendés.</p>
-          <div class="chip-grid" id="diasChips"></div>
-          <button class="btn btn-primary btn-sm" style="margin-top:1rem" onclick="guardarDias()">Guardar días</button>
-        </div>
-      </div>
-      <div class="panel-card" style="margin-bottom:1.25rem">
-        <div class="panel-card-header"><h3>Horarios disponibles</h3></div>
-        <div class="panel-card-body">
-          <div class="chip-grid scrollable" id="slotsChips" style="margin-bottom:1rem"></div>
-          <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap">
-            <input type="time" id="nuevoSlot" class="input-sm">
-            <button class="btn btn-outline btn-sm" onclick="agregarSlot()">+ Agregar</button>
+      <div class="config-lista">
+        <div class="config-row" onclick="abrirModalAgendaDias()">
+          <div class="config-row-icon">📆</div>
+          <div class="config-row-body">
+            <div class="config-row-title">Días habilitados</div>
+            <div class="config-row-sub" id="resumenDias">—</div>
           </div>
-          <button class="btn btn-primary btn-sm" onclick="guardarSlots()">Guardar horarios</button>
+          <div class="config-row-arrow">›</div>
         </div>
-      </div>
-      <div class="panel-card" style="margin-bottom:1.25rem">
-        <div class="panel-card-header"><h3>Duración por servicio</h3></div>
-        <div class="panel-card-body">
-          <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem">Los cambios se reflejan en el sitio automáticamente.</p>
-          <div id="duracionesWrap"></div>
-          <button class="btn btn-primary btn-sm" style="margin-top:1rem" onclick="guardarDuraciones()">Guardar duraciones</button>
-        </div>
-      </div>
-      <div class="panel-card">
-        <div class="panel-card-header"><h3>Bloquear fechas</h3></div>
-        <div class="panel-card-body">
-          <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem">Feriados, vacaciones o días que no atendés.</p>
-          <div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap">
-            <input type="date" id="fechaBloqueo" class="input-sm">
-            <button class="btn btn-outline btn-sm" onclick="bloquearFecha()">Bloquear</button>
+        <div class="config-row" onclick="abrirModalAgendaSlots()">
+          <div class="config-row-icon">🕐</div>
+          <div class="config-row-body">
+            <div class="config-row-title">Horarios disponibles</div>
+            <div class="config-row-sub" id="resumenSlots">—</div>
           </div>
-          <div class="chip-grid" id="fechasBloqueadas"></div>
+          <div class="config-row-arrow">›</div>
+        </div>
+        <div class="config-row" onclick="abrirModalAgendaDuraciones()">
+          <div class="config-row-icon">⏱</div>
+          <div class="config-row-body">
+            <div class="config-row-title">Duración por servicio</div>
+            <div class="config-row-sub" id="resumenDuraciones">—</div>
+          </div>
+          <div class="config-row-arrow">›</div>
+        </div>
+        <div class="config-row" onclick="abrirModalAgendaBloqueos()">
+          <div class="config-row-icon">🚫</div>
+          <div class="config-row-body">
+            <div class="config-row-title">Bloquear fechas</div>
+            <div class="config-row-sub" id="resumenBloqueos">—</div>
+          </div>
+          <div class="config-row-arrow">›</div>
         </div>
       </div>
     </div>
@@ -246,6 +242,27 @@
     <div class="admin-section" id="sec-caja">
       <h2 class="section-title">Caja</h2>
       <p class="section-subtitle">Cobros, gastos y cierre del día</p>
+
+      <!-- Resumen diario, filtrado por fecha (independiente de si la caja
+           de HOY está abierta o cerrada — muestra cualquier día, incluidos
+           los ya cerrados/liquidados) -->
+      <div class="panel-card" style="margin-bottom:1.25rem">
+        <div class="panel-card-header"><h3>Resumen diario</h3></div>
+        <div class="turnos-date-nav">
+          <button class="tdn-arrow" onclick="moverFechaCaja(-1)" aria-label="Día anterior">‹</button>
+          <div class="tdn-fecha" id="cdnFecha" onclick="irAHoyCaja()"></div>
+          <button class="tdn-arrow" onclick="moverFechaCaja(1)" aria-label="Día siguiente">›</button>
+        </div>
+        <div class="panel-card-body">
+          <div class="caja-resumen-dia-totales">
+            <div><span>Ingresos</span><strong id="crdIngresos" style="color:#22c55e">—</strong></div>
+            <div><span>Egresos</span><strong id="crdEgresos" style="color:#dc2626">—</strong></div>
+            <div><span>Neto</span><strong id="crdNeto">—</strong></div>
+          </div>
+          <div id="cajaResumenDiaDesglose" style="margin-top:1rem"></div>
+          <ul class="today-list" id="cajaResumenDiaMovs" style="margin-top:.75rem"></ul>
+        </div>
+      </div>
 
       <!-- Caja cerrada -->
       <div id="cajaCerradaWrap" style="display:none">
@@ -672,6 +689,64 @@
       <button class="btn btn-primary" style="flex:1" onclick="confirmarCambioTurno()">Guardar cambio</button>
       <button class="btn btn-outline" onclick="cerrarModal('modalCambiarTurno')">Cancelar</button>
     </div>
+  </div>
+</div>
+
+<!-- MODAL AGENDA: DÍAS HABILITADOS -->
+<div class="modal-overlay" id="modalAgendaDias">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-header">
+      <h3>Días habilitados</h3>
+      <button class="modal-close" onclick="cerrarModal('modalAgendaDias')">×</button>
+    </div>
+    <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem">Días de la semana en que atendés.</p>
+    <div class="chip-grid" id="diasChips"></div>
+    <button class="btn btn-primary btn-sm" style="margin-top:1rem" onclick="guardarDias()">Guardar días</button>
+  </div>
+</div>
+
+<!-- MODAL AGENDA: HORARIOS DISPONIBLES -->
+<div class="modal-overlay" id="modalAgendaSlots">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header">
+      <h3>Horarios disponibles</h3>
+      <button class="modal-close" onclick="cerrarModal('modalAgendaSlots')">×</button>
+    </div>
+    <div class="chip-grid scrollable" id="slotsChips" style="margin-bottom:1rem"></div>
+    <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap">
+      <input type="time" id="nuevoSlot" class="input-sm">
+      <button class="btn btn-outline btn-sm" onclick="agregarSlot()">+ Agregar</button>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="guardarSlots()">Guardar horarios</button>
+  </div>
+</div>
+
+<!-- MODAL AGENDA: DURACIÓN POR SERVICIO -->
+<div class="modal-overlay" id="modalAgendaDuraciones">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header">
+      <h3>Duración por servicio</h3>
+      <button class="modal-close" onclick="cerrarModal('modalAgendaDuraciones')">×</button>
+    </div>
+    <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem">Los cambios se reflejan en el sitio automáticamente.</p>
+    <div id="duracionesWrap" style="max-height:50vh;overflow-y:auto"></div>
+    <button class="btn btn-primary btn-sm" style="margin-top:1rem" onclick="guardarDuraciones()">Guardar duraciones</button>
+  </div>
+</div>
+
+<!-- MODAL AGENDA: BLOQUEAR FECHAS -->
+<div class="modal-overlay" id="modalAgendaBloqueos">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-header">
+      <h3>Bloquear fechas</h3>
+      <button class="modal-close" onclick="cerrarModal('modalAgendaBloqueos')">×</button>
+    </div>
+    <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem">Feriados, vacaciones o días que no atendés.</p>
+    <div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap">
+      <input type="date" id="fechaBloqueo" class="input-sm">
+      <button class="btn btn-outline btn-sm" onclick="bloquearFecha()">Bloquear</button>
+    </div>
+    <div class="chip-grid" id="fechasBloqueadas"></div>
   </div>
 </div>
 
