@@ -214,32 +214,30 @@
 
     <!-- INVENTARIO -->
     <div class="admin-section" id="sec-inventario">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem;flex-wrap:wrap;gap:1rem">
         <div>
           <h2 class="section-title" style="margin-bottom:.2rem">Inventario</h2>
           <p class="section-subtitle" style="margin-bottom:0">Productos con foto, stock y visibilidad</p>
         </div>
-        <div style="display:flex;gap:.6rem;flex-wrap:wrap">
-          <button class="btn btn-outline" onclick="abrirModalCategorias()">🏷 Categorías</button>
-          <button class="btn btn-outline" onclick="abrirModalPDF()">📄 Exportar PDF</button>
-          <button class="btn btn-primary" onclick="abrirModalProducto()">+ Agregar producto</button>
-        </div>
+        <button class="btn btn-primary" onclick="abrirModalProducto()">+ Agregar producto</button>
       </div>
-      <div class="stock-alerta" id="stockAlerta">
-        <p>⚠ Productos con stock bajo:</p>
-        <div class="stock-alerta-lista" id="stockAlertaLista"></div>
-      </div>
-      <div class="chip-grid scrollable" id="invTabs" style="margin-bottom:1rem"></div>
-      <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem">
+      <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:.75rem">
         <input type="text" class="input-sm" id="invBuscar"
           placeholder="Buscar por nombre o marca…"
           style="flex:1;min-width:180px;max-width:300px"
           oninput="renderInventario()">
-        <div class="vis-filtro-wrap">
-          <button class="vis-filtro-btn active" data-vis="" onclick="setVisFiltro('')">Todos</button>
-          <button class="vis-filtro-btn" data-vis="publico" onclick="setVisFiltro('publico')">👁 Públicos</button>
-          <button class="vis-filtro-btn" data-vis="privado" onclick="setVisFiltro('privado')">🔒 Privados</button>
-        </div>
+        <button class="btn btn-ghost btn-sm" onclick="abrirModalCategorias()">🏷 Categorías</button>
+        <button class="btn btn-ghost btn-sm" onclick="abrirModalPDF()" style="font-size:.76rem">📄 PDF</button>
+      </div>
+      <div class="chip-grid scrollable" id="invTabs" style="margin-bottom:1rem"></div>
+      <div class="vis-filtro-wrap" style="margin-bottom:1rem">
+        <button class="vis-filtro-btn active" data-vis="" onclick="setVisFiltro('')">Todos</button>
+        <button class="vis-filtro-btn" data-vis="publico" onclick="setVisFiltro('publico')">👁 Públicos</button>
+        <button class="vis-filtro-btn" data-vis="privado" onclick="setVisFiltro('privado')">🔒 Privados</button>
+      </div>
+      <div class="stock-alerta" id="stockAlerta">
+        <p>⚠ Productos con stock bajo:</p>
+        <div class="stock-alerta-lista" id="stockAlertaLista"></div>
       </div>
       <div id="invGrid" class="inv-grid"></div>
     </div>
