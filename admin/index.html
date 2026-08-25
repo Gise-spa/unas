@@ -71,6 +71,9 @@
         <span class="di-icon">📅</span> Turnos
         <span class="di-badge" id="turnosBadge" style="display:none"></span>
       </div>
+      <div class="drawer-item" data-sec="clientes" onclick="irA('clientes')">
+        <span class="di-icon">👤</span> Clientes
+      </div>
       <div class="drawer-item" data-sec="agenda" onclick="irA('agenda')">
         <span class="di-icon">🗓</span> Mi Agenda
       </div>
@@ -150,6 +153,19 @@
         </div>
         <div class="turnos-list" id="turnosBody"></div>
       </div>
+    </div>
+
+    <!-- CLIENTES -->
+    <div class="admin-section" id="sec-clientes">
+      <h2 class="section-title">Clientes</h2>
+      <p class="section-subtitle">Buscá una clienta para ver su ficha</p>
+      <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem">
+        <input type="text" class="input-sm" id="clientesBuscar"
+          placeholder="Buscar por nombre o teléfono…"
+          style="flex:1;min-width:180px"
+          oninput="renderClientes()">
+      </div>
+      <div id="clientesLista" class="clientes-lista"></div>
     </div>
 
     <!-- AGENDA -->
@@ -661,9 +677,30 @@
   </div>
 </div>
 
+<!-- MODAL FICHA DE CLIENTE -->
+<div class="modal-overlay" id="modalFichaCliente">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-header">
+      <h3 id="fcNombre">Cliente</h3>
+      <button class="modal-close" onclick="cerrarModal('modalFichaCliente')">×</button>
+    </div>
+    <div id="fcContacto" style="font-size:.84rem;color:var(--text-muted);margin-bottom:1rem"></div>
+    <div id="fcResumen" class="fc-resumen"></div>
+    <div class="fc-bloque">
+      <h4>Turnos recientes / próximos</h4>
+      <div id="fcTurnos" class="fc-lista"></div>
+    </div>
+    <div class="fc-bloque">
+      <h4>Historial de pagos</h4>
+      <div id="fcPagos" class="fc-lista"></div>
+    </div>
+  </div>
+</div>
+
 <script src="../shared/js/identity.js"></script>
 <script src="../script.js"></script>
 <script src="script.js"></script>
 <script src="js/caja.js"></script>
+<script src="js/clientes.js"></script>
 </body>
 </html>
