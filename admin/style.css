@@ -4,7 +4,15 @@
    ============================================================ */
 
 /* ── Layout principal ── */
-.admin-page { min-height: 100vh; background: var(--bg); }
+.admin-page {
+  min-height: 100vh;
+  background: var(--bg);
+  /* Contraste más claro para texto secundario, solo en el admin (no toca
+     el sitio público, que sigue usando la paleta de shared/css/tokens.css
+     tal cual) — el --text-muted original (#B09090) es muy tenue para
+     leer badges, subtítulos y listas en pantallas de trabajo. */
+  --text-muted: #7A5A5A;
+}
 
 /* ── Top bar ── */
 .admin-topbar {
@@ -374,7 +382,7 @@
   transition: border-color .15s;
 }
 .cliente-card:hover { border-color: var(--accent); }
-.cliente-card-nombre { font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; }
+.cliente-card-nombre { font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 1rem; }
 .cliente-card-sub { font-size: .8rem; color: var(--text-muted); margin-top: .15rem; }
 
 .fc-resumen {
@@ -416,6 +424,33 @@
 .fc-lista-estado { color: var(--text-muted); text-transform: capitalize; flex-shrink: 0; }
 .fc-lista-monto { color: #16a34a; font-weight: 600; flex-shrink: 0; }
 .fc-lista-vacio { font-size: .82rem; color: var(--text-muted); padding: .4rem .1rem; }
+
+/* ── Mi Agenda: filas de configuración ── */
+.config-lista { display: flex; flex-direction: column; gap: .55rem; }
+.config-row {
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .9rem 1.1rem;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+.config-row:hover { border-color: var(--accent); }
+.config-row-icon { font-size: 1.3rem; flex-shrink: 0; width: 1.6rem; text-align: center; }
+.config-row-body { flex: 1; min-width: 0; }
+.config-row-title { font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: .95rem; }
+.config-row-sub {
+  font-size: .8rem;
+  color: var(--text-muted);
+  margin-top: .15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.config-row-arrow { font-size: 1.3rem; color: var(--text-muted); flex-shrink: 0; }
 
 /* ── Input inline ── */
 .input-sm {
@@ -852,7 +887,8 @@
   margin-bottom: .2rem;
 }
 .inv-card-nombre {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
   font-size: 1rem;
   color: var(--text);
   line-height: 1.25;
@@ -1039,7 +1075,8 @@
   color: var(--gold); margin-bottom: .2rem;
 }
 .inv-card-nombre {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
   font-size: 1rem; color: var(--text);
   line-height: 1.25; margin-bottom: .15rem;
 }
@@ -1340,6 +1377,11 @@
 .caja-hero-datos { display: flex; gap: 1.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
 .caja-hero-datos span { display: block; font-size: .74rem; opacity: .85; margin-bottom: 2px; }
 .caja-hero-datos strong { font-size: 1.15rem; font-family: 'Cormorant Garamond', serif; }
+
+/* ── Caja: resumen diario (filtrado por fecha) ── */
+.caja-resumen-dia-totales { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+.caja-resumen-dia-totales span { display: block; font-size: .74rem; color: var(--text-muted); margin-bottom: 2px; }
+.caja-resumen-dia-totales strong { font-size: 1.1rem; font-family: 'DM Sans', sans-serif; font-weight: 500; }
 .caja-hero-btn {
   background: rgba(255,255,255,.18);
   border: 1px solid rgba(255,255,255,.4);
