@@ -101,6 +101,93 @@ function botonCobrarHTML(t) {
 async function renderCaja() {
   await syncCaja();
   _renderCajaUI();
+  renderResumenDiaCaja();
+}
+
+// ════════════════════════════════════════════════════════
+//  RESUMEN DIARIO — filtrado por fecha, como Turnos.
+//  A diferencia del bloque "Caja abierta" de arriba (que solo existe
+//  mientras hay una sesión abierta), este resumen se arma cruzando
+//  getTodosMovimientos() — TODOS los movimientos, de TODAS las
+//  sesiones — así que muestra cualquier día, incluidos los ya
+//  cerrados/liquidados. No pide nada nuevo al backend: usa el mismo
+//  caché que ya trae forzarSync() desde la Etapa 3 (Clientes).
+// ════════════════════════════════════════════════════════
+let fechaCajaActiva = todayStr();
+
+function _movimientosDelDia(fecha) {
+  return getTodosMovimientos().filter(m => {
+    if (!m.fecha) return false;
+    const d = new Date(m.fecha);
+    if (isNaN(d.getTime())) return false;
+    return fmtDate(d) === fecha;
+  });
+}
+
+function moverFechaCaja(delta) {
+  const dt = new Date(fechaCajaActiva + 'T00:00:00');
+  dt.setDate(dt.getDate() + delta);
+  fechaCajaActiva = fmtDate(dt);
+  renderResumenDiaCaja();
+}
+function irAHoyCaja() {
+  fechaCajaActiva = todayStr();
+  renderResumenDiaCaja();
+}
+
+function renderResumenDiaCaja() {
+  const fechaEl = document.getElementById('cdnFecha');
+  if (!fechaEl) return; // sección todavía no está en el DOM
+
+  const hoy = todayStr();
+  const dt  = new Date(fechaCajaActiva + 'T00:00:00');
+  const label = fechaCajaActiva === hoy ? 'Hoy' : fmtDateHuman(dt);
+  fechaEl.innerHTML = `${label}${fechaCajaActiva !== hoy ? `<small>${fmtDateHuman(dt)}</small>` : ''}`;
+
+  const movs = _movimientosDelDia(fechaCajaActiva);
+  let ingresos = 0, egresos = 0;
+  const porMetodo = {};
+  movs.forEach(m => {
+    const importe = Number(m.importe) || 0;
+    const tipo = String(m.tipo || '').toLowerCase();
+    const label2 = m.cuentaDestino || m.metodoPago || 'Sin especificar';
+    if (!porMetodo[label2]) porMetodo[label2] = { ingresos: 0, egresos: 0 };
+    if (tipo === 'ingreso') { ingresos += importe; porMetodo[label2].ingresos += importe; }
+    else if (tipo === 'egreso') { egresos += importe; porMetodo[label2].egresos += importe; }
+  });
+
+  document.getElementById('crdIngresos').textContent = fmtMoneda(ingresos);
+  document.getElementById('crdEgresos').textContent  = fmtMoneda(egresos);
+  document.getElementById('crdNeto').textContent      = fmtMoneda(ingresos - egresos);
+
+  const desgloseEl = document.getElementById('cajaResumenDiaDesglose');
+  desgloseEl.innerHTML = Object.keys(porMetodo).length
+    ? Object.keys(porMetodo).sort().map(l => {
+        const m = porMetodo[l];
+        return `<div class="caja-desglose-row"><span>${l}</span><span>${fmtMoneda(m.ingresos - m.egresos)}</span></div>`;
+      }).join('')
+    : '<p class="today-empty">Sin movimientos por método</p>';
+
+  const movsEl = document.getElementById('cajaResumenDiaMovs');
+  if (movs.length) {
+    const ordenados = [...movs].sort((a, b) => new Date(b.creadoEn || b.fecha) - new Date(a.creadoEn || a.fecha));
+    movsEl.innerHTML = ordenados.map(m => {
+      const hora = m.creadoEn ? new Date(m.creadoEn).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '';
+      const signo = m.tipo === 'ingreso' ? '+' : '−';
+      const clase = m.tipo === 'ingreso' ? 'caja-mov-importe-ingreso' : 'caja-mov-importe-egreso';
+      const etiqueta = m.cuentaDestino || m.metodoPago || '';
+      return `<li class="caja-mov-item">
+        <span style="color:var(--text-muted);flex-shrink:0">${hora}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:500">${m.concepto || (m.nombreCliente ? 'Cobro — ' + m.nombreCliente : (m.tipo === 'ingreso' ? 'Ingreso' : 'Egreso'))}</div>
+          <div style="font-size:.76rem;color:var(--text-muted)">${etiqueta}</div>
+        </div>
+        <span class="${clase}">${signo} ${fmtMoneda(m.importe)}</span>
+      </li>`;
+    }).join('');
+  } else {
+    movsEl.innerHTML = '<p class="today-empty">Sin movimientos para este día.</p>';
+  }
 }
 
 // Tarjeta destacada de Caja en Inicio — usa el mismo cache que renderCaja(),
