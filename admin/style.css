@@ -707,6 +707,14 @@
 .inicio-stat-sub { font-size: .76rem; color: var(--text-muted); margin-top: .3rem; }
 .inicio-stat-sub-accent { color: var(--accent); font-weight: 500; }
 
+/* Tarjeta "Caja hoy" con caja cerrada — invita a tocar para abrirla */
+#inicioCajaHoyCard { cursor: pointer; }
+#inicioCajaHoyCard.inicio-stat-card-accion {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-card));
+}
+#inicioCajaHoyCard.inicio-stat-card-accion .inicio-stat-num { color: var(--accent); font-size: 1.15rem; }
+
 /* ── Inicio: badges de estado en Próximos turnos ── */
 .inicio-badge {
   font-size: .72rem;
