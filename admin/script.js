@@ -184,6 +184,25 @@ function actualizarBadges() {
 // ════════════════════════════════════════════════════════
 //  INICIO
 // ════════════════════════════════════════════════════════
+// Formato de moneda propio del dashboard: sin decimales, aunque el
+// Sheets guarde el importe con centavos — solo redondea la vista,
+// no toca el dato guardado. fmtMoneda() (caja.js) sigue mostrando
+// centavos en el resto de Caja, sin cambios.
+function fmtMonedaDashboard(n) {
+  return '$' + Math.round(Number(n) || 0).toLocaleString('es-AR');
+}
+
+// Tarjeta "Caja hoy": si la caja está cerrada, abre el modal de
+// apertura sin salir de Inicio; si está abierta, lleva a la sección Caja.
+function cajaHoyTileClick() {
+  const sesion = typeof getCajaSesion === 'function' ? getCajaSesion() : null;
+  if (!sesion) {
+    if (typeof abrirModalAbrirCajaInicio === 'function') abrirModalAbrirCajaInicio();
+  } else {
+    irA('caja');
+  }
+}
+
 function renderInicio() {
   const turnos = getTurnos(), inv = getInventario();
   const hoy = todayStr(), ahora = new Date().toTimeString().slice(0,5), hoyDt = new Date();
@@ -200,16 +219,26 @@ function renderInicio() {
   document.getElementById('stTurnosHoy').textContent = hoyTurnos.length;
   document.getElementById('stTurnosHoySub').textContent = `${hoyConfirmados} confirmado${hoyConfirmados===1?'':'s'}`;
 
-  // Caja hoy — mismos datos que el Resumen diario de Caja (getTodosMovimientos), acá para hoy nomás
-  const movsHoy = getTodosMovimientos().filter(m => {
-    if (!m.fecha) return false;
-    const d = new Date(m.fecha);
-    return !isNaN(d.getTime()) && fmtDate(d) === hoy;
-  });
-  const ingresosHoy = movsHoy.filter(m => String(m.tipo).toLowerCase() === 'ingreso');
-  const totalCajaHoy = ingresosHoy.reduce((s,m) => s + (Number(m.importe)||0), 0);
-  document.getElementById('stCajaHoy').textContent = typeof fmtMoneda === 'function' ? fmtMoneda(totalCajaHoy) : `$${totalCajaHoy.toLocaleString('es-AR')}`;
-  document.getElementById('stCajaHoySub').textContent = `${ingresosHoy.length} pago${ingresosHoy.length===1?'':'s'} registrado${ingresosHoy.length===1?'':'s'}`;
+  // Caja hoy — mismos datos que el Resumen diario de Caja (getTodosMovimientos), acá para hoy nomás.
+  // Si la caja está cerrada, la tarjeta no muestra importe: invita a abrirla (ver cajaHoyTileClick).
+  const cajaHoyCard = document.getElementById('inicioCajaHoyCard');
+  const sesionActual = typeof getCajaSesion === 'function' ? getCajaSesion() : null;
+  if (!sesionActual) {
+    document.getElementById('stCajaHoy').textContent = 'Abrir caja';
+    document.getElementById('stCajaHoySub').textContent = 'Caja cerrada — tocá para abrirla';
+    if (cajaHoyCard) cajaHoyCard.classList.add('inicio-stat-card-accion');
+  } else {
+    const movsHoy = getTodosMovimientos().filter(m => {
+      if (!m.fecha) return false;
+      const d = new Date(m.fecha);
+      return !isNaN(d.getTime()) && fmtDate(d) === hoy;
+    });
+    const ingresosHoy = movsHoy.filter(m => String(m.tipo).toLowerCase() === 'ingreso');
+    const totalCajaHoy = ingresosHoy.reduce((s,m) => s + (Number(m.importe)||0), 0);
+    document.getElementById('stCajaHoy').textContent = fmtMonedaDashboard(totalCajaHoy);
+    document.getElementById('stCajaHoySub').textContent = `${ingresosHoy.length} pago${ingresosHoy.length===1?'':'s'} registrado${ingresosHoy.length===1?'':'s'}`;
+    if (cajaHoyCard) cajaHoyCard.classList.remove('inicio-stat-card-accion');
+  }
 
   // Ingresos del mes
   const mesActual = hoy.slice(0,7);
@@ -220,7 +249,7 @@ function renderInicio() {
       return !isNaN(d.getTime()) && fmtDate(d).startsWith(mesActual);
     })
     .reduce((s,m) => s + (Number(m.importe)||0), 0);
-  document.getElementById('stIngresosMes').textContent = typeof fmtMoneda === 'function' ? fmtMoneda(totalMes) : `$${totalMes.toLocaleString('es-AR')}`;
+  document.getElementById('stIngresosMes').textContent = fmtMonedaDashboard(totalMes);
   document.getElementById('stIngresosMesSub').textContent = `${MESES[hoyDt.getMonth()]} ${hoyDt.getFullYear()}`;
 
   // Stock bajo
