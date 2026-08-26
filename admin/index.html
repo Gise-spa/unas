@@ -117,7 +117,7 @@
           <div class="inicio-stat-num" id="stTurnosHoy">—</div>
           <div class="inicio-stat-sub inicio-stat-sub-accent" id="stTurnosHoySub"></div>
         </div>
-        <div class="inicio-stat-card">
+        <div class="inicio-stat-card" id="inicioCajaHoyCard" onclick="cajaHoyTileClick()">
           <div class="inicio-stat-top"><span>Caja hoy</span><span class="inicio-stat-icon">💲</span></div>
           <div class="inicio-stat-num" id="stCajaHoy">—</div>
           <div class="inicio-stat-sub inicio-stat-sub-accent" id="stCajaHoySub"></div>
@@ -351,6 +351,24 @@
       <span class="sheet-icon">📦</span> Nuevo producto
     </button>
     <button class="sheet-cancel" onclick="cerrarActionSheet()">Cancelar</button>
+  </div>
+</div>
+
+<!-- MODAL ABRIR CAJA (desde Inicio, sin salir del dashboard) -->
+<div class="modal-overlay" id="modalAbrirCajaInicio">
+  <div class="modal-box" style="max-width:340px">
+    <div class="modal-header">
+      <h3>Abrir caja</h3>
+      <button class="modal-close" onclick="cerrarModal('modalAbrirCajaInicio')">×</button>
+    </div>
+    <div class="form-group">
+      <label>Saldo inicial (efectivo)</label>
+      <input type="number" id="inicioCajaSaldoInicial" min="0" step="0.01" placeholder="0.00">
+    </div>
+    <div style="display:flex;gap:.6rem;margin-top:.75rem">
+      <button class="btn btn-primary" style="flex:1" onclick="confirmarAbrirCajaInicio()">Confirmar apertura</button>
+      <button class="btn btn-outline" onclick="cerrarModal('modalAbrirCajaInicio')">Cancelar</button>
+    </div>
   </div>
 </div>
 
