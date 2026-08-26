@@ -333,6 +333,30 @@ async function confirmarAbrirCaja() {
   }
 }
 
+// Abrir caja desde la tarjeta "Caja hoy" de Inicio — mismo endpoint
+// que confirmarAbrirCaja(), en un modal propio para no salir del
+// dashboard. Al confirmar, sincroniza caja y refresca Inicio.
+function abrirModalAbrirCajaInicio() {
+  const input = document.getElementById('inicioCajaSaldoInicial');
+  if (input) input.value = '';
+  abrirModal('modalAbrirCajaInicio');
+  setTimeout(() => input?.focus(), 100);
+}
+
+async function confirmarAbrirCajaInicio() {
+  const saldo = Number(document.getElementById('inicioCajaSaldoInicial').value);
+  if (isNaN(saldo) || saldo < 0) { showToast('Ingresá un saldo inicial válido'); return; }
+  const res = await apiPost({ action: 'abrirCaja', saldoInicial: saldo });
+  if (res.ok) {
+    showToast('✓ Caja abierta');
+    cerrarModal('modalAbrirCajaInicio');
+    await syncCaja();
+    if (typeof renderInicio === 'function') renderInicio();
+  } else {
+    showToast(res.error || 'No se pudo abrir la caja');
+  }
+}
+
 // ════════════════════════════════════════════════════════
 //  MOVIMIENTO MANUAL
 // ════════════════════════════════════════════════════════
