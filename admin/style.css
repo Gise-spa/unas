@@ -3,10 +3,20 @@
    Importa styles.css para variables y base
    ============================================================ */
 
+/* Tipografía propia del admin: 'Poppins' reemplaza a la serif
+   decorativa (Cormorant Garamond, heredada de shared/css/tokens.css
+   para el sitio público) en todos los títulos/números del admin —
+   más clara y prolija para pantallas de trabajo. Import propio,
+   sin tocar tokens.css ni el sitio público. */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
 /* ── Layout principal ── */
 .admin-page {
   min-height: 100vh;
   background: var(--bg);
+  /* Base del admin en Poppins (pisa el 'DM Sans' de style.css raíz) —
+     unifica toda la tipografía del panel; el sitio público no se toca. */
+  font-family: 'Poppins', sans-serif;
   /* Contraste más claro para texto secundario, solo en el admin (no toca
      el sitio público, que sigue usando la paleta de shared/css/tokens.css
      tal cual) — el --text-muted original (#B09090) es muy tenue para
@@ -36,8 +46,8 @@
 }
 
 .topbar-logo {
-  font-family: 'Cormorant Garamond', serif;
-  font-style: italic;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
   font-size: 1.15rem;
   color: var(--text);
 }
@@ -212,9 +222,9 @@
 }
 
 .section-title {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 1.6rem;
-  font-weight: 400;
+  font-weight: 600;
   margin-bottom: .25rem;
   color: var(--text);
 }
@@ -238,7 +248,8 @@
   padding: 1.1rem 1.25rem;
 }
 .stat-num {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
   font-size: 2rem;
   line-height: 1;
   margin-bottom: .25rem;
@@ -269,9 +280,9 @@
   flex-wrap: wrap;
 }
 .panel-card-header h3 {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 1.1rem;
-  font-weight: 400;
+  font-weight: 600;
 }
 .panel-card-header-actions {
   display: flex;
@@ -306,7 +317,7 @@
 .tdn-fecha {
   flex: 1;
   text-align: center;
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 1.15rem;
   cursor: pointer;
   line-height: 1.2;
@@ -344,7 +355,7 @@
   padding-top: .2rem;
 }
 .turno-fecha {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 1.05rem;
   color: var(--text);
   text-align: right;
@@ -352,7 +363,7 @@
 }
 .turno-fecha small {
   display: block;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: .72rem;
   color: var(--text-muted);
   font-weight: 400;
@@ -382,7 +393,7 @@
   transition: border-color .15s;
 }
 .cliente-card:hover { border-color: var(--accent); }
-.cliente-card-nombre { font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 1rem; }
+.cliente-card-nombre { font-family: 'Poppins', sans-serif; font-weight: 500; font-size: 1rem; }
 .cliente-card-sub { font-size: .8rem; color: var(--text-muted); margin-top: .15rem; }
 
 .fc-resumen {
@@ -441,7 +452,7 @@
 .config-row:hover { border-color: var(--accent); }
 .config-row-icon { font-size: 1.3rem; flex-shrink: 0; width: 1.6rem; text-align: center; }
 .config-row-body { flex: 1; min-width: 0; }
-.config-row-title { font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: .95rem; }
+.config-row-title { font-family: 'Poppins', sans-serif; font-weight: 500; font-size: .95rem; }
 .config-row-sub {
   font-size: .8rem;
   color: var(--text-muted);
@@ -459,7 +470,7 @@
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: .82rem;
   outline: none;
   transition: border-color .2s;
@@ -595,9 +606,9 @@
   margin-bottom: 1.25rem;
 }
 .modal-header h3 {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 1.25rem;
-  font-weight: 400;
+  font-weight: 600;
 }
 .modal-close {
   background: none;
@@ -613,7 +624,7 @@
 /* Modal confirmación */
 .confirm-box { text-align: center; padding: .5rem 0; }
 .confirm-icon { font-size: 2.5rem; margin-bottom: .75rem; display: block; }
-.confirm-box h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 400; margin-bottom: .5rem; }
+.confirm-box h3 { font-family: 'Poppins', sans-serif; font-size: 1.3rem; font-weight: 600; margin-bottom: .5rem; }
 .confirm-box p  { font-size: .86rem; color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.6; }
 .confirm-btns   { display: flex; gap: .6rem; }
 
@@ -665,11 +676,11 @@
   align-items: center;
   justify-content: space-between;
   margin: 1.1rem 0;
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 1.05rem;
 }
 .inicio-fecha-pill {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: .78rem;
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -699,7 +710,7 @@
 }
 .inicio-stat-icon { font-size: .95rem; }
 .inicio-stat-num {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-weight: 600;
   font-size: 1.5rem;
   line-height: 1.1;
@@ -748,10 +759,11 @@
   box-shadow: var(--shadow-lg);
   text-align: center;
 }
+.login-logo .identity-logo-img { width: 64px; height: 64px; display: block; margin: 0 auto .5rem; }
 .login-logo {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 1.6rem;
-  font-style: italic;
+  font-weight: 600;
   margin-bottom: .35rem;
 }
 .login-logo span { color: var(--accent); }
@@ -954,7 +966,7 @@
   margin-bottom: .2rem;
 }
 .inv-card-nombre {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-weight: 500;
   font-size: 1rem;
   color: var(--text);
@@ -1013,7 +1025,7 @@
   flex: 1;
   padding: .65rem;
   border-radius: var(--radius-md);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: .84rem;
   cursor: pointer;
   transition: all .2s;
@@ -1065,7 +1077,7 @@
   border: none;
   border-radius: 50px;
   padding: .4rem .9rem;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: .76rem;
   font-weight: 500;
   cursor: pointer;
@@ -1142,7 +1154,7 @@
   color: var(--gold); margin-bottom: .2rem;
 }
 .inv-card-nombre {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-weight: 500;
   font-size: 1rem; color: var(--text);
   line-height: 1.25; margin-bottom: .15rem;
@@ -1228,7 +1240,7 @@
 #visPrivado, #visPublico {
   flex: 1; padding: .65rem;
   border-radius: var(--radius-md);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: .84rem; cursor: pointer;
   transition: all .2s; border: none !important;
   font-weight: 500;
@@ -1256,7 +1268,7 @@
   background: rgba(0,0,0,.55); color: #fff;
   border: none; border-radius: 50px;
   padding: .4rem .9rem;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: .76rem; font-weight: 500;
   cursor: pointer; backdrop-filter: blur(4px); transition: background .2s;
 }
@@ -1301,7 +1313,7 @@
   border: 1px solid var(--border);
   background: var(--bg-card);
   color: var(--text-muted);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: .78rem;
   cursor: pointer;
   transition: all .18s;
@@ -1331,7 +1343,7 @@
   flex: 1;
   padding: .6rem;
   border-radius: var(--radius-md);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: .84rem;
   cursor: pointer;
   transition: all .2s;
@@ -1443,12 +1455,12 @@
 .caja-hero-estado { font-size: 1.05rem; font-weight: 600; }
 .caja-hero-datos { display: flex; gap: 1.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
 .caja-hero-datos span { display: block; font-size: .74rem; opacity: .85; margin-bottom: 2px; }
-.caja-hero-datos strong { font-size: 1.15rem; font-family: 'Cormorant Garamond', serif; }
+.caja-hero-datos strong { font-size: 1.15rem; font-family: 'Poppins', sans-serif; }
 
 /* ── Caja: resumen diario (filtrado por fecha) ── */
 .caja-resumen-dia-totales { display: flex; gap: 1.5rem; flex-wrap: wrap; }
 .caja-resumen-dia-totales span { display: block; font-size: .74rem; color: var(--text-muted); margin-bottom: 2px; }
-.caja-resumen-dia-totales strong { font-size: 1.1rem; font-family: 'DM Sans', sans-serif; font-weight: 500; }
+.caja-resumen-dia-totales strong { font-size: 1.1rem; font-family: 'Poppins', sans-serif; font-weight: 500; }
 .caja-hero-btn {
   background: rgba(255,255,255,.18);
   border: 1px solid rgba(255,255,255,.4);
@@ -1480,7 +1492,8 @@
   font-family: inherit;
   -webkit-tap-highlight-color: transparent;
 }
-.bn-icon { font-size: 1.35rem; line-height: 1; }
+.bn-icon { font-size: 1.35rem; line-height: 1; display: flex; }
+.bn-icon svg { width: 23px; height: 23px; }
 .bn-label { font-size: .64rem; font-weight: 500; }
 .bn-item.active { color: var(--accent); }
 .bn-item.active .bn-icon { transform: scale(1.08); }
