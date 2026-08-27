@@ -21,6 +21,17 @@ var NAV_LINKS = [
   { label: 'Turnos',    href: 'index.html#turnos' },
 ];
 
+// Logo del header/footer público: img real si IDENTITY.logoUrl está
+// cargado (páginas de raíz, ruta tal cual, sin '../' — a diferencia del
+// admin que vive un nivel más abajo), con fallback automático al símbolo
+// de texto si el archivo todavía no existe en assets/.
+function _identityLogoHtml() {
+  if (!IDENTITY.logoUrl) return IDENTITY.simbolo + ' <span>' + IDENTITY.nombre + '</span>';
+  return '<img src="' + IDENTITY.logoUrl + '" alt="' + IDENTITY.nombre + '" class="identity-logo-img" ' +
+    'onerror="this.remove(); this.parentNode.insertAdjacentHTML(\'afterbegin\', ' +
+    JSON.stringify(IDENTITY.simbolo + ' ') + ')"> <span>' + IDENTITY.nombre + '</span>';
+}
+
 function _navEsPaginaActual(href) {
   var pagina = location.pathname.split('/').pop() || 'index.html';
   var hrefPagina = href.split('#')[0] || 'index.html';
@@ -38,7 +49,7 @@ function renderNav() {
 
   cont.innerHTML =
     '<nav class="nav">' +
-      '<a href="index.html" class="nav-logo">' + IDENTITY.simbolo + ' <span>' + IDENTITY.nombre + '</span></a>' +
+      '<a href="index.html" class="nav-logo">' + _identityLogoHtml() + '</a>' +
       '<ul class="nav-links">' +
         links +
         '<li><a href="admin/" class="nav-admin">Admin</a></li>' +
@@ -90,7 +101,7 @@ function renderFooter() {
   cont.innerHTML =
     '<footer class="footer">' +
       '<div class="footer-inner">' +
-        '<div class="footer-logo">' + IDENTITY.simbolo + ' <span>' + IDENTITY.nombre + '</span></div>' +
+        '<div class="footer-logo">' + _identityLogoHtml() + '</div>' +
         '<ul class="footer-links">' +
           links +
           '<li><a href="admin/">Admin</a></li>' +
@@ -130,6 +141,17 @@ function actualizarTituloDesdeIdentity() {
   }
 }
 
+// Favicon del sitio público a partir de IDENTITY.favicon (páginas de
+// raíz, ruta tal cual). Si el archivo no existe todavía, el navegador
+// simplemente no muestra ícono — no rompe nada.
+function actualizarFaviconDesdeIdentity() {
+  if (typeof IDENTITY === 'undefined' || !IDENTITY.favicon) return;
+  var link = document.querySelector("link[rel~='icon']");
+  if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
+  link.href = IDENTITY.favicon;
+}
+
 actualizarTituloDesdeIdentity();
+actualizarFaviconDesdeIdentity();
 renderNav();
 renderFooter();
