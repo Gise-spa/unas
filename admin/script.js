@@ -8,9 +8,25 @@
 // de tener el nombre del comercio hardcodeado en 2 lugares propios.
 (function aplicarIdentidad() {
   if (typeof IDENTITY === 'undefined') return;
+  // El admin vive un nivel debajo de la raíz del repo (admin/index.html),
+  // por eso a IDENTITY.logoUrl ('assets/logo.png', relativo a la raíz)
+  // se le antepone '../' acá — en el sitio público (shared/js/nav.js)
+  // se usa tal cual porque esas páginas SÍ están en la raíz.
+  const logoSrc = IDENTITY.logoUrl ? '../' + IDENTITY.logoUrl : null;
   document.querySelectorAll('.topbar-logo, .login-logo').forEach(el => {
-    el.innerHTML = `${IDENTITY.simbolo} <span>${IDENTITY.nombre}</span>`;
+    if (!logoSrc) { el.innerHTML = `${IDENTITY.simbolo} <span>${IDENTITY.nombre}</span>`; return; }
+    // Si el archivo todavía no existe en assets/, el <img> dispara
+    // onerror UNA vez y recién ahí se cae al símbolo de texto — así
+    // no queda un ícono roto del navegador mientras tanto.
+    el.innerHTML = `<img src="${logoSrc}" alt="${IDENTITY.nombre}" class="identity-logo-img"> <span>${IDENTITY.nombre}</span>`;
+    const img = el.querySelector('img');
+    img.onerror = () => { img.remove(); el.insertAdjacentHTML('afterbegin', `${IDENTITY.simbolo} `); };
   });
+  if (IDENTITY.favicon) {
+    let link = document.querySelector("link[rel~='icon']");
+    if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
+    link.href = '../' + IDENTITY.favicon;
+  }
 })();
 
 // API_URL heredada de ../script.js
