@@ -43,7 +43,22 @@ function _cajaUuid() {
 
 function fmtMoneda(n) {
   const num = Number(n) || 0;
-  return '$' + num.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return '$' + Math.round(num).toLocaleString('es-AR');
+}
+
+// Color estable por método/cuenta de pago, calculado del texto (nunca
+// hardcodeado — los métodos son 100% dinámicos desde Configuración).
+// Mismo label siempre da el mismo color, sin necesidad de una lista fija.
+const _METODO_COLORES = ['#E89090', '#7DAA92', '#6B9BD1', '#C99A4A', '#A184C9', '#4AAFB5'];
+function _colorMetodo(label) {
+  let hash = 0;
+  for (let i = 0; i < label.length; i++) hash = (hash * 31 + label.charCodeAt(i)) >>> 0;
+  return _METODO_COLORES[hash % _METODO_COLORES.length];
+}
+function _badgeMetodo(label) {
+  if (!label) return '';
+  const color = _colorMetodo(label);
+  return `<span class="caja-metodo-badge" style="background:${color}22;color:${color}"><span class="caja-metodo-dot" style="background:${color}"></span>${label}</span>`;
 }
 
 // ════════════════════════════════════════════════════════
@@ -164,7 +179,7 @@ function renderResumenDiaCaja() {
   desgloseEl.innerHTML = Object.keys(porMetodo).length
     ? Object.keys(porMetodo).sort().map(l => {
         const m = porMetodo[l];
-        return `<div class="caja-desglose-row"><span>${l}</span><span>${fmtMoneda(m.ingresos - m.egresos)}</span></div>`;
+        return `<div class="caja-desglose-row">${_badgeMetodo(l)}<span>${fmtMoneda(m.ingresos - m.egresos)}</span></div>`;
       }).join('')
     : '<p class="today-empty">Sin movimientos por método</p>';
 
@@ -180,7 +195,7 @@ function renderResumenDiaCaja() {
         <span style="color:var(--text-muted);flex-shrink:0">${hora}</span>
         <div style="flex:1;min-width:0">
           <div style="font-weight:500">${m.concepto || (m.nombreCliente ? 'Cobro — ' + m.nombreCliente : (m.tipo === 'ingreso' ? 'Ingreso' : 'Egreso'))}</div>
-          <div style="font-size:.76rem;color:var(--text-muted)">${etiqueta}</div>
+          <div style="margin-top:2px">${_badgeMetodo(etiqueta)}</div>
         </div>
         <span class="${clase}">${signo} ${fmtMoneda(m.importe)}</span>
       </li>`;
@@ -258,7 +273,7 @@ function _renderCajaUI() {
   if (totales && totales.porMetodo && Object.keys(totales.porMetodo).length) {
     desgloseEl.innerHTML = Object.keys(totales.porMetodo).sort().map(label => {
       const m = totales.porMetodo[label];
-      return `<div class="caja-desglose-row"><span>${label}</span><span>${fmtMoneda(m.ingresos - m.egresos)}</span></div>`;
+      return `<div class="caja-desglose-row">${_badgeMetodo(label)}<span>${fmtMoneda(m.ingresos - m.egresos)}</span></div>`;
     }).join('');
   } else {
     desgloseEl.innerHTML = '<p class="today-empty">Sin movimientos todavía</p>';
@@ -277,7 +292,7 @@ function _renderCajaUI() {
         <span style="color:var(--text-muted);flex-shrink:0">${hora}</span>
         <div style="flex:1;min-width:0">
           <div style="font-weight:500">${m.concepto || (m.nombreCliente ? 'Cobro — ' + m.nombreCliente : (m.tipo === 'ingreso' ? 'Ingreso' : 'Egreso'))}</div>
-          <div style="font-size:.76rem;color:var(--text-muted)">${etiqueta}</div>
+          <div style="margin-top:2px">${_badgeMetodo(etiqueta)}</div>
         </div>
         <span class="${clase}">${signo} ${fmtMoneda(m.importe)}</span>
       </li>`;
@@ -530,7 +545,7 @@ function abrirModalCierreCaja() {
   if (totales.porMetodo && Object.keys(totales.porMetodo).length) {
     desgloseEl.innerHTML = Object.keys(totales.porMetodo).sort().map(label => {
       const m = totales.porMetodo[label];
-      return `<div class="caja-desglose-row"><span>${label}</span><span>${fmtMoneda(m.ingresos - m.egresos)}</span></div>`;
+      return `<div class="caja-desglose-row">${_badgeMetodo(label)}<span>${fmtMoneda(m.ingresos - m.egresos)}</span></div>`;
     }).join('');
   } else {
     desgloseEl.innerHTML = '<p class="today-empty">Sin movimientos</p>';
