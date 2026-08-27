@@ -13,14 +13,18 @@
   // se le antepone '../' acá — en el sitio público (shared/js/nav.js)
   // se usa tal cual porque esas páginas SÍ están en la raíz.
   const logoSrc = IDENTITY.logoUrl ? '../' + IDENTITY.logoUrl : null;
+  // Topbar del admin: SOLO el logo, sin texto al lado (con poco ancho
+  // disponible el texto se apilaba debajo del logo y quedaba ilegible).
+  // Login: logo + nombre, tiene su propio espacio y se ve bien apilado.
   document.querySelectorAll('.topbar-logo, .login-logo').forEach(el => {
-    if (!logoSrc) { el.innerHTML = `${IDENTITY.simbolo} <span>${IDENTITY.nombre}</span>`; return; }
+    const conTexto = !el.classList.contains('topbar-logo');
+    if (!logoSrc) { el.innerHTML = conTexto ? `${IDENTITY.simbolo} <span>${IDENTITY.nombre}</span>` : IDENTITY.simbolo; return; }
     // Si el archivo todavía no existe en assets/, el <img> dispara
     // onerror UNA vez y recién ahí se cae al símbolo de texto — así
     // no queda un ícono roto del navegador mientras tanto.
-    el.innerHTML = `<img src="${logoSrc}" alt="${IDENTITY.nombre}" class="identity-logo-img"> <span>${IDENTITY.nombre}</span>`;
+    el.innerHTML = `<img src="${logoSrc}" alt="${IDENTITY.nombre}" class="identity-logo-img">` + (conTexto ? ` <span>${IDENTITY.nombre}</span>` : '');
     const img = el.querySelector('img');
-    img.onerror = () => { img.remove(); el.insertAdjacentHTML('afterbegin', `${IDENTITY.simbolo} `); };
+    img.onerror = () => { img.remove(); el.insertAdjacentHTML('afterbegin', conTexto ? `${IDENTITY.simbolo} ` : IDENTITY.simbolo); };
   });
   if (IDENTITY.favicon) {
     let link = document.querySelector("link[rel~='icon']");
@@ -28,6 +32,32 @@
     link.href = '../' + IDENTITY.favicon;
   }
 })();
+
+// ── Tema claro/oscuro (movido del topbar al drawer, ver Etapa "pulido"
+//    del usuario) — misma clave de localStorage que ../script.js, para
+//    que ambos queden sincronizados si algún día vuelve a haber un
+//    control de tema en más de un lugar.
+function _iconoTemaSol() {
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="22"/><line x1="4.2" y1="4.2" x2="6" y2="6"/><line x1="18" y1="18" x2="19.8" y2="19.8"/><line x1="2" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="22" y2="12"/><line x1="4.2" y1="19.8" x2="6" y2="18"/><line x1="18" y1="6" x2="19.8" y2="4.2"/></svg>';
+}
+function _iconoTemaLuna() {
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z"/></svg>';
+}
+function _actualizarIconoTema() {
+  const esOscuro = document.documentElement.getAttribute('data-theme') === 'dark';
+  const icon = document.getElementById('drawerThemeIcon');
+  const label = document.getElementById('drawerThemeLabel');
+  if (icon) icon.innerHTML = esOscuro ? _iconoTemaLuna() : _iconoTemaSol();
+  if (label) label.textContent = esOscuro ? 'Modo claro' : 'Modo oscuro';
+}
+function toggleTheme() {
+  const html = document.documentElement;
+  const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  _actualizarIconoTema();
+}
+_actualizarIconoTema();
 
 // API_URL heredada de ../script.js
 
