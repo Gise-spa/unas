@@ -57,3 +57,15 @@
   --shadow-md:    0 4px 24px rgba(0,0,0,0.4);
   --shadow-lg:    0 8px 40px rgba(232,144,144,0.12);
 }
+
+/* Logo real (círculo, .png) — base compartida por admin y sitio
+   público; cada lugar ajusta el tamaño exacto en su propio CSS.
+   Tamaño por default pensado para el header/topbar. */
+.identity-logo-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  vertical-align: middle;
+  margin-right: 2px;
+}
