@@ -17,6 +17,23 @@
  *   caja_movimientos  -> movimientos de la sesión abierta
  *   caja_totales      -> resultado de calcularTotalesSesion()
  *   caja_cuentas      -> métodos/cuentas configurados
+ *
+ * Ronda "Caja clara + editar/eliminar":
+ *   - todo bloque "por método/cuenta" (resumen diario, caja abierta,
+ *     cierre, resultado del cierre) pasó a usar el mismo par de
+ *     helpers (_filasPorMetodo + _cdtBoxHTML) en vez de 3
+ *     implementaciones sueltas — mismo criterio en toda la pantalla.
+ *   - el resumen diario ahora suma un cuarto bucket, "Apertura caja",
+ *     calculado desde getTodasSesiones() (nuevo, ver ../script.js),
+ *     ya que la apertura no es un movimiento y antes no se podía ver
+ *     para un día que no fuera el de la sesión abierta actual.
+ *   - cada movimiento (en el resumen diario y en "Caja abierta") tiene
+ *     ahora botones Editar/Eliminar — reutilizan el mismo modal de
+ *     "Nuevo movimiento" y el backend nuevo editarMovimientoCaja/
+ *     eliminarMovimientoCaja (Caja.gs).
+ *   - los botones "Confirmar cobro"/"Confirmar"/"Cerrar caja" ahora se
+ *     bloquean mientras la petición está en curso, para que un doble
+ *     toque no registre el mismo cobro dos veces.
  * ------------------------------------------------------------
  */
 
@@ -59,6 +76,78 @@ function _badgeMetodo(label) {
   if (!label) return '';
   const color = _colorMetodo(label);
   return `<span class="caja-metodo-badge" style="background:${color}22;color:${color}"><span class="caja-metodo-dot" style="background:${color}"></span>${label}</span>`;
+}
+
+// "Apertura caja" no es un método de pago (es el saldo con el que se
+// abrió la caja), así que no le corresponde el color por hash de
+// _colorMetodo — usa un tono ámbar fijo, distinto de la paleta de
+// métodos, para que se lea como algo estructuralmente distinto.
+function _colorDetalle(label) {
+  return label === 'Apertura caja' ? '#C99A4A' : _colorMetodo(label);
+}
+
+// ════════════════════════════════════════════════════════
+//  DETALLE TOTAL POR MÉTODO/CUENTA — bloque mediano reutilizado en
+//  Resumen diario, Caja abierta, Cierre de caja y Resultado del cierre.
+//  Orden: primero como están cargadas en Configuración (nunca
+//  alfabético ni hardcodeado), después cualquier etiqueta suelta que
+//  no esté en esa lista (ej. una cuentaDestino escrita a mano).
+// ════════════════════════════════════════════════════════
+function _filasPorMetodo(porMetodo) {
+  porMetodo = porMetodo || {};
+  const cuentas = getCuentasCajaLocal().map(c => c.metodo).filter(Boolean);
+  const usados = new Set();
+  const filas = [];
+  cuentas.forEach(m => {
+    if (porMetodo[m]) {
+      filas.push({ label: m, monto: porMetodo[m].ingresos - porMetodo[m].egresos });
+      usados.add(m);
+    }
+  });
+  Object.keys(porMetodo).sort().forEach(label => {
+    if (!usados.has(label)) filas.push({ label, monto: porMetodo[label].ingresos - porMetodo[label].egresos });
+  });
+  return filas;
+}
+
+function _cdtBoxHTML(label, monto) {
+  return `<div class="cdt-box" style="border-left-color:${_colorDetalle(label)}">
+    <span>${label}</span>
+    <strong>${fmtMoneda(monto)}</strong>
+  </div>`;
+}
+
+function _detalleTotalHTML(filas) {
+  if (!filas.length) return '<p class="today-empty">Sin movimientos</p>';
+  return `<div class="caja-detalle-total-grid">${filas.map(f => _cdtBoxHTML(f.label, f.monto)).join('')}</div>`;
+}
+
+// Suma el saldoInicial de toda sesión de caja abierta en la fecha dada
+// (normalmente una sola por día) — usa getTodasSesiones(), cacheado
+// desde ../script.js en cada forzarSync().
+function _aperturaDelDia(fecha) {
+  const sesiones = typeof getTodasSesiones === 'function' ? getTodasSesiones() : [];
+  return sesiones
+    .filter(s => s.fechaApertura && fmtDate(new Date(s.fechaApertura)) === fecha)
+    .reduce((sum, s) => sum + (Number(s.saldoInicial) || 0), 0);
+}
+
+// ════════════════════════════════════════════════════════
+//  BLOQUEO DE BOTÓN — evita doble toque en acciones que registran
+//  algo (cobrar, movimiento manual, cerrar caja). Deshabilita el botón
+//  y cambia su texto mientras la petición está en curso; se restaura
+//  siempre en el finally del caller, haya salido bien o mal.
+// ════════════════════════════════════════════════════════
+function _bloquearBoton(btn, textoEnProceso = 'Procesando…') {
+  if (!btn) return;
+  btn.disabled = true;
+  if (btn.dataset.txtOriginal === undefined) btn.dataset.txtOriginal = btn.textContent;
+  btn.textContent = textoEnProceso;
+}
+function _desbloquearBoton(btn) {
+  if (!btn) return;
+  btn.disabled = false;
+  if (btn.dataset.txtOriginal !== undefined) btn.textContent = btn.dataset.txtOriginal;
 }
 
 // ════════════════════════════════════════════════════════
@@ -150,6 +239,32 @@ function irAHoyCaja() {
   renderResumenDiaCaja();
 }
 
+// Fila de un movimiento individual — usada tanto en el Resumen diario
+// (cruza todas las sesiones) como en la lista "Movimientos" de la
+// sesión abierta. Único lugar que arma este markup, para no repetir
+// la lógica de edición/eliminación en dos partes distintas.
+function _movItemHTML(m) {
+  const hora = m.creadoEn ? new Date(m.creadoEn).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '';
+  const signo = m.tipo === 'ingreso' ? '+' : '−';
+  const clase = m.tipo === 'ingreso' ? 'caja-mov-importe-ingreso' : 'caja-mov-importe-egreso';
+  const etiqueta = m.cuentaDestino || m.metodoPago || '';
+  const idEscapado = String(m.movimientoId).replace(/'/g, "\\'");
+  return `<li class="caja-mov-item">
+    <span style="color:var(--text-muted);flex-shrink:0">${hora}</span>
+    <div style="flex:1;min-width:0">
+      <div style="font-weight:500">${m.concepto || (m.nombreCliente ? 'Cobro — ' + m.nombreCliente : (m.tipo === 'ingreso' ? 'Ingreso' : 'Egreso'))}</div>
+      <div style="margin-top:2px">${_badgeMetodo(etiqueta)}</div>
+    </div>
+    <div class="caja-mov-derecha">
+      <span class="${clase}">${signo} ${fmtMoneda(m.importe)}</span>
+      <div class="caja-mov-acciones">
+        <button onclick="abrirEditarMovimiento('${idEscapado}')" class="btn btn-sm caja-mov-btn-editar" title="Editar">✎</button>
+        <button onclick="pedirEliminarMovimiento('${idEscapado}')" class="btn btn-sm caja-mov-btn-eliminar" title="Eliminar">🗑</button>
+      </div>
+    </div>
+  </li>`;
+}
+
 function renderResumenDiaCaja() {
   const fechaEl = document.getElementById('cdnFecha');
   if (!fechaEl) return; // sección todavía no está en el DOM
@@ -175,31 +290,17 @@ function renderResumenDiaCaja() {
   document.getElementById('crdEgresos').textContent  = fmtMoneda(egresos);
   document.getElementById('crdNeto').textContent      = fmtMoneda(ingresos - egresos);
 
-  const desgloseEl = document.getElementById('cajaResumenDiaDesglose');
-  desgloseEl.innerHTML = Object.keys(porMetodo).length
-    ? Object.keys(porMetodo).sort().map(l => {
-        const m = porMetodo[l];
-        return `<div class="caja-desglose-row">${_badgeMetodo(l)}<span>${fmtMoneda(m.ingresos - m.egresos)}</span></div>`;
-      }).join('')
-    : '<p class="today-empty">Sin movimientos por método</p>';
+  // Detalle total: métodos configurados (con movimientos ese día) +
+  // "Apertura caja" siempre al final, aunque sea $0 (para que quede
+  // claro que ese día no se abrió caja, y no falte la fila).
+  const filas = _filasPorMetodo(porMetodo);
+  filas.push({ label: 'Apertura caja', monto: _aperturaDelDia(fechaCajaActiva) });
+  document.getElementById('cajaResumenDiaDesglose').innerHTML = _detalleTotalHTML(filas);
 
   const movsEl = document.getElementById('cajaResumenDiaMovs');
   if (movs.length) {
     const ordenados = [...movs].sort((a, b) => new Date(b.creadoEn || b.fecha) - new Date(a.creadoEn || a.fecha));
-    movsEl.innerHTML = ordenados.map(m => {
-      const hora = m.creadoEn ? new Date(m.creadoEn).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '';
-      const signo = m.tipo === 'ingreso' ? '+' : '−';
-      const clase = m.tipo === 'ingreso' ? 'caja-mov-importe-ingreso' : 'caja-mov-importe-egreso';
-      const etiqueta = m.cuentaDestino || m.metodoPago || '';
-      return `<li class="caja-mov-item">
-        <span style="color:var(--text-muted);flex-shrink:0">${hora}</span>
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:500">${m.concepto || (m.nombreCliente ? 'Cobro — ' + m.nombreCliente : (m.tipo === 'ingreso' ? 'Ingreso' : 'Egreso'))}</div>
-          <div style="margin-top:2px">${_badgeMetodo(etiqueta)}</div>
-        </div>
-        <span class="${clase}">${signo} ${fmtMoneda(m.importe)}</span>
-      </li>`;
-    }).join('');
+    movsEl.innerHTML = ordenados.map(_movItemHTML).join('');
   } else {
     movsEl.innerHTML = '<p class="today-empty">Sin movimientos para este día.</p>';
   }
@@ -270,33 +371,13 @@ function _renderCajaUI() {
   document.getElementById('cjEsperado').textContent = totales ? fmtMoneda(totales.efectivoEsperado) : '—';
 
   const desgloseEl = document.getElementById('cajaDesglose');
-  if (totales && totales.porMetodo && Object.keys(totales.porMetodo).length) {
-    desgloseEl.innerHTML = Object.keys(totales.porMetodo).sort().map(label => {
-      const m = totales.porMetodo[label];
-      return `<div class="caja-desglose-row">${_badgeMetodo(label)}<span>${fmtMoneda(m.ingresos - m.egresos)}</span></div>`;
-    }).join('');
-  } else {
-    desgloseEl.innerHTML = '<p class="today-empty">Sin movimientos todavía</p>';
-  }
+  desgloseEl.innerHTML = totales ? _detalleTotalHTML(_filasPorMetodo(totales.porMetodo)) : '<p class="today-empty">Sin movimientos todavía</p>';
 
   const movs = getCajaMovimientos();
   const movsList = document.getElementById('cajaMovimientosList');
   if (movs.length) {
     const ordenados = [...movs].sort((a, b) => new Date(b.creadoEn) - new Date(a.creadoEn));
-    movsList.innerHTML = ordenados.map(m => {
-      const hora = m.creadoEn ? new Date(m.creadoEn).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '';
-      const signo = m.tipo === 'ingreso' ? '+' : '−';
-      const clase = m.tipo === 'ingreso' ? 'caja-mov-importe-ingreso' : 'caja-mov-importe-egreso';
-      const etiqueta = m.cuentaDestino || m.metodoPago || '';
-      return `<li class="caja-mov-item">
-        <span style="color:var(--text-muted);flex-shrink:0">${hora}</span>
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:500">${m.concepto || (m.nombreCliente ? 'Cobro — ' + m.nombreCliente : (m.tipo === 'ingreso' ? 'Ingreso' : 'Egreso'))}</div>
-          <div style="margin-top:2px">${_badgeMetodo(etiqueta)}</div>
-        </div>
-        <span class="${clase}">${signo} ${fmtMoneda(m.importe)}</span>
-      </li>`;
-    }).join('');
+    movsList.innerHTML = ordenados.map(_movItemHTML).join('');
   } else {
     movsList.innerHTML = '<p class="today-empty">Sin movimientos todavía</p>';
   }
@@ -403,7 +484,15 @@ function mvBuscarCliente() {
   document.getElementById('mvClienteId').value = match ? match.id : '';
 }
 
+// movimientoId del movimiento en edición, o null si el modal está en
+// modo "Nuevo movimiento" — decide qué acción dispara confirmarMovimientoCaja().
+let _mvEditandoId = null;
+
 function abrirModalMovimiento() {
+  _mvEditandoId = null;
+  document.getElementById('modalMovimientoCajaTitulo').textContent = 'Nuevo movimiento';
+  document.getElementById('mvConfirmarBtn').textContent = 'Confirmar';
+  document.getElementById('mvTipoWrap').style.display = '';
   document.getElementById('mvTipo').value = 'ingreso';
   document.getElementById('mvTipoIngreso').classList.add('active-vis');
   document.getElementById('mvTipoEgreso').classList.remove('active-vis');
@@ -427,7 +516,91 @@ function setMovTipo(tipo) {
   document.getElementById('mvClienteWrap').style.display = tipo === 'ingreso' ? '' : 'none';
 }
 
+// ════════════════════════════════════════════════════════
+//  EDITAR / ELIMINAR UN MOVIMIENTO YA CARGADO
+//  Reusa el modal de "Nuevo movimiento" en modo edición — solo se
+//  puede corregir importe/método/cuenta/concepto (nunca tipo, ni a
+//  qué turno/cliente/sesión pertenece: si eso está mal, se elimina y
+//  se carga de nuevo). Funciona para un movimiento de cualquier día,
+//  esté la sesión abierta o ya cerrada.
+// ════════════════════════════════════════════════════════
+function abrirEditarMovimiento(movimientoId) {
+  const m = getTodosMovimientos().find(x => String(x.movimientoId) === String(movimientoId));
+  if (!m) { showToast('No se encontró el movimiento'); return; }
+
+  _mvEditandoId = movimientoId;
+  document.getElementById('modalMovimientoCajaTitulo').textContent = 'Editar movimiento';
+  document.getElementById('mvConfirmarBtn').textContent = 'Guardar cambios';
+  document.getElementById('mvTipoWrap').style.display = 'none';
+  document.getElementById('mvClienteWrap').style.display = 'none';
+  document.getElementById('mvImporte').value = m.importe || '';
+  document.getElementById('mvConcepto').value = m.concepto || '';
+  document.getElementById('mvCuenta').value = m.cuentaDestino || '';
+  _renderChips('mvMetodoChips', 'mvMetodo', 'mvCuentaWrap', m.metodoPago || '');
+  abrirModal('modalMovimientoCaja');
+}
+
+function pedirEliminarMovimiento(movimientoId) {
+  mostrarConfirm({
+    icon: '🗑',
+    titulo: 'Eliminar movimiento',
+    msg: 'Esta acción no se puede deshacer. ¿Eliminar este movimiento de caja?',
+    btnTxt: 'Eliminar',
+    btnColor: '#dc2626',
+    onOk: () => eliminarMovimientoCaja(movimientoId)
+  });
+}
+
+async function eliminarMovimientoCaja(movimientoId) {
+  const res = await apiPost({ action: 'eliminarMovimientoCaja', movimientoId });
+  if (res.ok) {
+    showToast('✓ Movimiento eliminado');
+    await renderCaja();
+  } else {
+    showToast(res.error || 'No se pudo eliminar el movimiento');
+  }
+}
+
+let _mvGuardando = false;
+
 async function confirmarMovimientoCaja() {
+  if (_mvGuardando) return;
+  const btn = document.getElementById('mvConfirmarBtn');
+
+  // ── Modo edición ──
+  if (_mvEditandoId) {
+    const importe = Number(document.getElementById('mvImporte').value);
+    const metodoPago = document.getElementById('mvMetodo').value;
+    const cuentaDestino = document.getElementById('mvCuenta').value.trim();
+    const concepto = document.getElementById('mvConcepto').value.trim();
+
+    if (isNaN(importe) || importe <= 0) { showToast('Ingresá un importe válido'); return; }
+    if (!metodoPago) { showToast('Elegí un método de pago'); return; }
+    if (!concepto) { showToast('Ingresá un concepto'); return; }
+
+    _mvGuardando = true;
+    _bloquearBoton(btn, 'Guardando…');
+    try {
+      const res = await apiPost({
+        action: 'editarMovimientoCaja',
+        movimientoId: _mvEditandoId,
+        cambios: { importe, metodoPago, cuentaDestino, concepto }
+      });
+      if (res.ok) {
+        showToast('✓ Movimiento actualizado');
+        cerrarModal('modalMovimientoCaja');
+        await renderCaja();
+      } else {
+        showToast(res.error || 'No se pudo actualizar el movimiento');
+      }
+    } finally {
+      _mvGuardando = false;
+      _desbloquearBoton(btn);
+    }
+    return;
+  }
+
+  // ── Modo alta nueva ──
   const sesion = getCajaSesion();
   if (!sesion) { showToast('No hay caja abierta'); return; }
   const tipo = document.getElementById('mvTipo').value;
@@ -443,22 +616,29 @@ async function confirmarMovimientoCaja() {
   if (!metodoPago) { showToast('Elegí un método de pago'); return; }
   if (!concepto) { showToast('Ingresá un concepto'); return; }
 
-  const res = await apiPost({
-    action: 'registrarMovimientoCaja',
-    movimiento: {
-      movimientoId: _cajaUuid(),
-      sesionId: sesion.sesionId,
-      tipo, importe, metodoPago, cuentaDestino, concepto,
-      ...(nombreCliente ? { clienteId, nombreCliente } : {})
-    }
-  });
+  _mvGuardando = true;
+  _bloquearBoton(btn, 'Guardando…');
+  try {
+    const res = await apiPost({
+      action: 'registrarMovimientoCaja',
+      movimiento: {
+        movimientoId: _cajaUuid(),
+        sesionId: sesion.sesionId,
+        tipo, importe, metodoPago, cuentaDestino, concepto,
+        ...(nombreCliente ? { clienteId, nombreCliente } : {})
+      }
+    });
 
-  if (res.ok) {
-    showToast(tipo === 'ingreso' ? '✓ Ingreso registrado' : '✓ Egreso registrado');
-    cerrarModal('modalMovimientoCaja');
-    await renderCaja();
-  } else {
-    showToast(res.error || 'No se pudo registrar el movimiento');
+    if (res.ok) {
+      showToast(tipo === 'ingreso' ? '✓ Ingreso registrado' : '✓ Egreso registrado');
+      cerrarModal('modalMovimientoCaja');
+      await renderCaja();
+    } else {
+      showToast(res.error || 'No se pudo registrar el movimiento');
+    }
+  } finally {
+    _mvGuardando = false;
+    _desbloquearBoton(btn);
   }
 }
 
@@ -488,7 +668,10 @@ function abrirCobrar(turnoId) {
   abrirModal('modalCobrar');
 }
 
+let _cobroEnProceso = false;
+
 async function confirmarCobro() {
+  if (_cobroEnProceso) return; // evita que un doble toque registre el mismo cobro dos veces
   const sesion = getCajaSesion();
   if (!sesion) { showToast('No hay caja abierta'); return; }
 
@@ -505,26 +688,34 @@ async function confirmarCobro() {
   if (isNaN(importe) || importe <= 0) { showToast('Ingresá un importe válido'); return; }
   if (!metodoPago) { showToast('Elegí un método de pago'); return; }
 
-  const res = await apiPost({
-    action: 'registrarMovimientoCaja',
-    movimiento: {
-      movimientoId: _cajaUuid(),
-      sesionId: sesion.sesionId,
-      tipo: 'ingreso',
-      turnoId, clienteId, importe, metodoPago, cuentaDestino, concepto,
-      nombreCliente, telefonoCliente, mailCliente
-    }
-  });
+  const btn = document.getElementById('cbConfirmarBtn');
+  _cobroEnProceso = true;
+  _bloquearBoton(btn, 'Registrando…');
+  try {
+    const res = await apiPost({
+      action: 'registrarMovimientoCaja',
+      movimiento: {
+        movimientoId: _cajaUuid(),
+        sesionId: sesion.sesionId,
+        tipo: 'ingreso',
+        turnoId, clienteId, importe, metodoPago, cuentaDestino, concepto,
+        nombreCliente, telefonoCliente, mailCliente
+      }
+    });
 
-  if (res.ok) {
-    showToast('✓ Cobro registrado');
-    cerrarModal('modalCobrar');
-    await renderCaja();
-    // Refrescar donde puede estar visible el turno (badge "Cobrado")
-    if (typeof renderInicio === 'function' && seccionActiva === 'inicio') renderInicio();
-    if (typeof renderTurnos === 'function' && seccionActiva === 'turnos') renderTurnos();
-  } else {
-    showToast(res.error || 'No se pudo registrar el cobro');
+    if (res.ok) {
+      showToast('✓ Cobro registrado');
+      cerrarModal('modalCobrar');
+      await renderCaja();
+      // Refrescar donde puede estar visible el turno (badge "Cobrado")
+      if (typeof renderInicio === 'function' && seccionActiva === 'inicio') renderInicio();
+      if (typeof renderTurnos === 'function' && seccionActiva === 'turnos') renderTurnos();
+    } else {
+      showToast(res.error || 'No se pudo registrar el cobro');
+    }
+  } finally {
+    _cobroEnProceso = false;
+    _desbloquearBoton(btn);
   }
 }
 
@@ -541,15 +732,7 @@ function abrirModalCierreCaja() {
   document.getElementById('czContado').value = '';
   document.getElementById('czDiferencia').textContent = '—';
 
-  const desgloseEl = document.getElementById('czDesglose');
-  if (totales.porMetodo && Object.keys(totales.porMetodo).length) {
-    desgloseEl.innerHTML = Object.keys(totales.porMetodo).sort().map(label => {
-      const m = totales.porMetodo[label];
-      return `<div class="caja-desglose-row">${_badgeMetodo(label)}<span>${fmtMoneda(m.ingresos - m.egresos)}</span></div>`;
-    }).join('');
-  } else {
-    desgloseEl.innerHTML = '<p class="today-empty">Sin movimientos</p>';
-  }
+  document.getElementById('czDesglose').innerHTML = _detalleTotalHTML(_filasPorMetodo(totales.porMetodo));
 
   document.getElementById('czTotales').innerHTML =
     `Total ingresos: <strong>${fmtMoneda(totales.totalIngresos)}</strong><br>` +
@@ -589,16 +772,52 @@ function pedirConfirmarCierre() {
   });
 }
 
+let _cierreEnProceso = false;
+
 async function confirmarCierreCaja(contado) {
-  const sesionId = document.getElementById('czSesionId').value;
-  const res = await apiPost({ action: 'cerrarCaja', sesionId, efectivoContado: contado });
-  if (res.ok) {
-    showToast('✓ Caja cerrada');
-    cerrarModal('modalCierreCaja');
-    await renderCaja();
-    if (typeof renderInicio === 'function' && seccionActiva === 'inicio') renderInicio();
-    if (typeof renderTurnos === 'function' && seccionActiva === 'turnos') renderTurnos();
-  } else {
-    showToast(res.error || 'No se pudo cerrar la caja');
+  if (_cierreEnProceso) return; // mostrarConfirm ya cierra su modal al primer toque, esto es un resguardo extra
+  _cierreEnProceso = true;
+  try {
+    const sesionId = document.getElementById('czSesionId').value;
+    const res = await apiPost({ action: 'cerrarCaja', sesionId, efectivoContado: contado });
+    if (res.ok) {
+      cerrarModal('modalCierreCaja');
+      await renderCaja();
+      if (typeof renderInicio === 'function' && seccionActiva === 'inicio') renderInicio();
+      if (typeof renderTurnos === 'function' && seccionActiva === 'turnos') renderTurnos();
+      mostrarResultadoCierre(res);
+    } else {
+      showToast(res.error || 'No se pudo cerrar la caja');
+    }
+  } finally {
+    _cierreEnProceso = false;
   }
+}
+
+// ════════════════════════════════════════════════════════
+//  RESULTADO DEL CIERRE — pantalla final con el número que Gise
+//  necesita: cuánto debería haber en cada cuenta. "Efectivo" acá
+//  es lo que debería estar físicamente en la caja (incluye el saldo
+//  con el que se abrió); Mercado Pago/Transferencia no tienen
+//  apertura, así que ahí es directo ingresos−egresos del día.
+// ════════════════════════════════════════════════════════
+function mostrarResultadoCierre(res) {
+  document.getElementById('crTotalDia').textContent = fmtMoneda(res.resultadoNeto);
+
+  const filas = _filasPorMetodo(res.porMetodo).map(f => {
+    if (f.label.toLowerCase() === 'efectivo' && res.efectivo) {
+      return { label: f.label, monto: Number(res.efectivo.esperado) || 0 };
+    }
+    return f;
+  });
+  document.getElementById('crDetalle').innerHTML = _detalleTotalHTML(filas);
+
+  abrirModal('modalCierreResultado');
+}
+
+function verDetallesCierre() {
+  cerrarModal('modalCierreResultado');
+  irA('caja');
+  fechaCajaActiva = todayStr();
+  renderResumenDiaCaja();
 }
