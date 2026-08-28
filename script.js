@@ -203,3 +203,11 @@ function saveClientes(arr) { DB.set('clientes', arr); }
 // guarda el historial completo, para poder armar pagos por cliente.
 function getTodosMovimientos()     { return DB.get('caja_movimientos_todos') || []; }
 function saveTodosMovimientos(arr) { DB.set('caja_movimientos_todos', arr); }
+
+// ── Sesiones de caja, TODAS (abiertas y cerradas) ───────────
+// Se usa para calcular cuánto se abrió de caja en un día puntual
+// (bucket "Apertura caja" del resumen diario de Caja) — antes no había
+// forma de saberlo para un día ya cerrado, solo se cacheaba la sesión
+// abierta actual (caja_sesion, en admin/js/caja.js).
+function getTodasSesiones()     { return DB.get('caja_sesiones_todas') || []; }
+function saveTodasSesiones(arr) { DB.set('caja_sesiones_todas', arr); }
