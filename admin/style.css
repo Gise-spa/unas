@@ -1430,22 +1430,6 @@
   color: #dc2626;
   font-weight: 600;
 }
-.caja-fab {
-  position: fixed;
-  bottom: 5.5rem;
-  right: 1.25rem;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  font-size: 1.6rem;
-  line-height: 1;
-  box-shadow: var(--shadow-lg);
-  cursor: pointer;
-  z-index: 50;
-}
 .caja-cerrar-sticky {
   position: sticky;
   bottom: 0;
@@ -1549,6 +1533,40 @@
   line-height: 1.15;
   overflow-wrap: break-word;
 }
+/* ── Caja: detalle total por método/cuenta (mediano) — usado en
+   Resumen diario, Caja abierta, Cierre y Resultado del cierre ── */
+.caja-detalle-total-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+.cdt-box {
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+  border-left-style: solid;
+  border-radius: var(--radius);
+  padding: .55rem .75rem;
+  background: var(--bg);
+  min-width: 0;
+}
+.cdt-box span { display: block; font-size: .72rem; color: var(--text-muted); margin-bottom: .2rem; font-weight: 500; }
+.cdt-box strong {
+  display: block;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  line-height: 1.15;
+  overflow-wrap: break-word;
+}
+
+/* ── Caja: acciones de cada movimiento (editar/eliminar) ── */
+.caja-mov-derecha { display: flex; flex-direction: column; align-items: flex-end; gap: .3rem; flex-shrink: 0; }
+.caja-mov-acciones { display: flex; gap: .35rem; }
+.caja-mov-btn-editar, .caja-mov-btn-eliminar {
+  border: none;
+  padding: .22rem .5rem;
+  font-size: .78rem;
+  line-height: 1.4;
+}
+.caja-mov-btn-editar { background: rgba(232,144,144,.12); color: var(--accent); }
+.caja-mov-btn-eliminar { background: rgba(239,68,68,.08); color: #dc2626; }
+
 .caja-hero-btn {
   background: rgba(255,255,255,.18);
   border: 1px solid rgba(255,255,255,.4);
@@ -1672,8 +1690,6 @@
 }
 
 @media (max-width: 768px) {
-  .caja-fab { bottom: calc(60px + env(safe-area-inset-bottom) + .9rem); }
-
   .admin-bottom-nav {
     display: flex;
     position: fixed;
