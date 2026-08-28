@@ -101,11 +101,36 @@ async function syncTurnos() {
 }
 
 async function sincronizarTurnos() {
-  showToast('↻ Actualizando turnos…');
-  await syncTurnos();
-  renderTurnos();
-  actualizarBadges();
-  showToast('✓ Turnos actualizados');
+  const btn = document.getElementById('btnSincronizarTurnos');
+  const original = btn ? btn.innerHTML : '';
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="btn-spinner btn-spinner-light"></span> Buscando…'; }
+  try {
+    const res = await apiPost({ action: 'sincronizarCalendly' });
+    if (res && res.error) {
+      showToast('⚠ ' + res.error);
+    } else if (res && typeof res.nuevos === 'number') {
+      await syncTurnos();
+      renderTurnos();
+      actualizarBadges();
+      const huboErrores = res.errores && res.errores.length;
+      if (huboErrores) {
+        showToast(`⚠ ${res.nuevos} nuevo${res.nuevos === 1 ? '' : 's'}, ${res.errores.length} con error`);
+      } else {
+        showToast(res.nuevos > 0
+          ? `✓ ${res.nuevos} turno${res.nuevos === 1 ? '' : 's'} nuevo${res.nuevos === 1 ? '' : 's'}`
+          : '✓ Ya estabas al día');
+      }
+    } else {
+      // Respuesta inesperada del backend — igual refresca desde la
+      // hoja, por si el problema fue solo en la respuesta, no en el guardado.
+      await syncTurnos();
+      renderTurnos();
+      actualizarBadges();
+      showToast('✓ Turnos actualizados');
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = original; }
+  }
 }
 
 async function forzarSync() {
