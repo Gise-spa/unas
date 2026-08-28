@@ -58,6 +58,20 @@
   align-items: center;
   gap: .6rem;
 }
+.topbar-theme-btn {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.topbar-theme-btn svg { width: 18px; height: 18px; }
+.topbar-theme-btn:active { background: var(--bg); }
 
 /* Hamburger */
 .menu-btn {
@@ -294,6 +308,8 @@
   flex-wrap: wrap;
   align-items: center;
 }
+.turnos-sync-btn { display: flex; align-items: center; gap: .4rem; white-space: nowrap; }
+.turnos-sync-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
 .panel-card-body { padding: 1.25rem; }
 
 /* ── Turnos: navegación por fecha ── */
@@ -1494,9 +1510,41 @@
 .caja-hero-datos strong { font-size: 1.15rem; font-family: 'Poppins', sans-serif; }
 
 /* ── Caja: resumen diario (filtrado por fecha) ── */
-.caja-resumen-dia-totales { display: flex; gap: 1.5rem; flex-wrap: wrap; }
-.caja-resumen-dia-totales span { display: block; font-size: .8rem; color: var(--text-muted); margin-bottom: 3px; font-weight: 500; }
-.caja-resumen-dia-totales strong { font-size: 1.55rem; font-family: 'Poppins', sans-serif; font-weight: 700; }
+.caja-resumen-dia-totales { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; }
+.crd-box {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .7rem .85rem;
+  background: var(--bg);
+  min-width: 0;
+}
+.crd-box span { display: block; font-size: .78rem; color: var(--text-muted); margin-bottom: .3rem; font-weight: 500; }
+.crd-box strong {
+  display: block;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  font-size: 1.35rem;
+  line-height: 1.15;
+  overflow-wrap: break-word;
+}
+.crd-ingresos strong { color: #16a34a; }
+.crd-egresos strong { color: #dc2626; }
+.crd-neto-box {
+  margin-top: .7rem;
+  text-align: center;
+  padding: .85rem;
+  border-radius: var(--radius);
+  background: rgba(232,144,144,.08);
+  border: 1px solid var(--border);
+}
+.crd-neto-box span { display: block; font-size: .8rem; color: var(--text-muted); margin-bottom: .3rem; font-weight: 500; }
+.crd-neto-box strong {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  font-size: 1.9rem;
+  line-height: 1.15;
+  overflow-wrap: break-word;
+}
 .caja-hero-btn {
   background: rgba(255,255,255,.18);
   border: 1px solid rgba(255,255,255,.4);
