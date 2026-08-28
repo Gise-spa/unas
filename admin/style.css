@@ -1306,6 +1306,7 @@
   animation: spin .7s linear infinite; flex-shrink: 0;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+.btn-spinner-light { border-color: rgba(255,255,255,.4); border-top-color: #fff; }
 
 /* Responsive */
 @media (max-width: 500px) {
