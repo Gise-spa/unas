@@ -136,13 +136,14 @@ async function sincronizarTurnos() {
 async function forzarSync() {
   showToast('↻ Sincronizando...');
   try {
-    const [t, i, cats, cfg, clientes, movs] = await Promise.all([
+    const [t, i, cats, cfg, clientes, movs, sesiones] = await Promise.all([
       apiGet('getTurnos'),
       apiGet('getInventario'),
       apiGet('getCategorias'),
       apiGet('getConfiguracion'),
       apiGet('getClientes'),
       apiGet('getTodosLosMovimientosCaja'),
+      apiGet('getTodasSesionesCaja'),
     ]);
     if (t.length) saveTurnos(t);
     if (i.length) {
@@ -155,6 +156,7 @@ async function forzarSync() {
     if (cfg && !Array.isArray(cfg)) DB.set('agenda_config', cfg);
     if (clientes.length) saveClientes(clientes);
     if (movs.length) saveTodosMovimientos(movs);
+    if (sesiones.length) saveTodasSesiones(sesiones);
     if (typeof syncCaja === 'function') await syncCaja();
     renderSeccionActiva();
     actualizarBadges();
