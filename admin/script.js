@@ -13,18 +13,17 @@
   // se le antepone '../' acá — en el sitio público (shared/js/nav.js)
   // se usa tal cual porque esas páginas SÍ están en la raíz.
   const logoSrc = IDENTITY.logoUrl ? '../' + IDENTITY.logoUrl : null;
-  // Topbar del admin: SOLO el logo, sin texto al lado (con poco ancho
-  // disponible el texto se apilaba debajo del logo y quedaba ilegible).
-  // Login: logo + nombre, tiene su propio espacio y se ve bien apilado.
+  // Logo + nombre a la derecha, en topbar y login — ya no hace falta
+  // el logo solo: con el topbar liberado (tema/sync/caché/salir se
+  // movieron al drawer) hay lugar de sobra para el texto sin que se apile.
   document.querySelectorAll('.topbar-logo, .login-logo').forEach(el => {
-    const conTexto = !el.classList.contains('topbar-logo');
-    if (!logoSrc) { el.innerHTML = conTexto ? `${IDENTITY.simbolo} <span>${IDENTITY.nombre}</span>` : IDENTITY.simbolo; return; }
+    if (!logoSrc) { el.innerHTML = `${IDENTITY.simbolo} <span>${IDENTITY.nombre}</span>`; return; }
     // Si el archivo todavía no existe en assets/, el <img> dispara
     // onerror UNA vez y recién ahí se cae al símbolo de texto — así
     // no queda un ícono roto del navegador mientras tanto.
-    el.innerHTML = `<img src="${logoSrc}" alt="${IDENTITY.nombre}" class="identity-logo-img">` + (conTexto ? ` <span>${IDENTITY.nombre}</span>` : '');
+    el.innerHTML = `<img src="${logoSrc}" alt="${IDENTITY.nombre}" class="identity-logo-img"> <span>${IDENTITY.nombre}</span>`;
     const img = el.querySelector('img');
-    img.onerror = () => { img.remove(); el.insertAdjacentHTML('afterbegin', conTexto ? `${IDENTITY.simbolo} ` : IDENTITY.simbolo); };
+    img.onerror = () => { img.remove(); el.insertAdjacentHTML('afterbegin', `${IDENTITY.simbolo} `); };
   });
   if (IDENTITY.favicon) {
     let link = document.querySelector("link[rel~='icon']");
@@ -45,10 +44,17 @@ function _iconoTemaLuna() {
 }
 function _actualizarIconoTema() {
   const esOscuro = document.documentElement.getAttribute('data-theme') === 'dark';
-  const icon = document.getElementById('drawerThemeIcon');
-  const label = document.getElementById('drawerThemeLabel');
-  if (icon) icon.innerHTML = esOscuro ? _iconoTemaLuna() : _iconoTemaSol();
-  if (label) label.textContent = esOscuro ? 'Modo claro' : 'Modo oscuro';
+  // Convención: el ícono muestra el modo AL QUE SE PASA al tocarlo (no
+  // el actual) — en oscuro se ve el sol (te lleva a claro), en claro
+  // se ve la luna (te lleva a oscuro).
+  const iconoHtml = esOscuro ? _iconoTemaSol() : _iconoTemaLuna();
+  const labelTxt = esOscuro ? 'Modo claro' : 'Modo oscuro';
+  const drawerIcon = document.getElementById('drawerThemeIcon');
+  const drawerLabel = document.getElementById('drawerThemeLabel');
+  const topbarIcon = document.getElementById('topbarThemeIcon');
+  if (drawerIcon) drawerIcon.innerHTML = iconoHtml;
+  if (drawerLabel) drawerLabel.textContent = labelTxt;
+  if (topbarIcon) topbarIcon.innerHTML = iconoHtml;
 }
 function toggleTheme() {
   const html = document.documentElement;
@@ -95,7 +101,7 @@ async function syncTurnos() {
 }
 
 async function sincronizarTurnos() {
-  showToast('↻ Buscando turnos nuevos…');
+  showToast('↻ Actualizando turnos…');
   await syncTurnos();
   renderTurnos();
   actualizarBadges();
@@ -1174,10 +1180,10 @@ function iniciarAdmin() {
 }
 
 function doLogout() {
-  // apiPost toma el token de sessionStorage — hay que avisar al servidor
+  // apiPost toma el token de localStorage — hay que avisar al servidor
   // ANTES de limpiarlo, o el logout le llegaría con el token ya vacío.
   if (getAuthToken()) apiPost({ action: 'logout' });
-  sessionStorage.removeItem(AUTH_KEY);
-  sessionStorage.removeItem(AUTH_TOKEN);
+  localStorage.removeItem(AUTH_KEY);
+  localStorage.removeItem(AUTH_TOKEN);
   location.href = '../index.html';
 }
