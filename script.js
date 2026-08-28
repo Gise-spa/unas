@@ -52,8 +52,8 @@ function showToast(msg, duration = 3000) {
 const AUTH_KEY   = 'nails_auth';
 const AUTH_TOKEN = 'nails_token';
 
-function isLoggedIn()   { return sessionStorage.getItem(AUTH_KEY) === '1'; }
-function getAuthToken() { return sessionStorage.getItem(AUTH_TOKEN) || ''; }
+function isLoggedIn()   { return localStorage.getItem(AUTH_KEY) === '1'; }
+function getAuthToken() { return localStorage.getItem(AUTH_TOKEN) || ''; }
 
 async function doLogin(u, p) {
   try {
@@ -61,8 +61,8 @@ async function doLogin(u, p) {
     const res  = await fetch(url);
     const json = await res.json();
     if (json.ok) {
-      sessionStorage.setItem(AUTH_KEY, '1');
-      sessionStorage.setItem(AUTH_TOKEN, json.token || '');
+      localStorage.setItem(AUTH_KEY, '1');
+      localStorage.setItem(AUTH_TOKEN, json.token || '');
       return { ok: true };
     }
     return { ok: false, error: json.error || 'Usuario o contraseña incorrectos' };
@@ -72,8 +72,8 @@ async function doLogin(u, p) {
 }
 
 function doLogout() {
-  sessionStorage.removeItem(AUTH_KEY);
-  sessionStorage.removeItem(AUTH_TOKEN);
+  localStorage.removeItem(AUTH_KEY);
+  localStorage.removeItem(AUTH_TOKEN);
   location.href = 'index.html';
 }
 
