@@ -632,9 +632,14 @@ function mvOcultarResultadosCliente() {
 // movimientoId del movimiento en edición, o null si el modal está en
 // modo "Nuevo movimiento" — decide qué acción dispara confirmarMovimientoCaja().
 let _mvEditandoId = null;
+// Tipo del movimiento que se está editando — el modal en modo edición
+// oculta el selector de Tipo, así que hace falta guardarlo aparte para
+// saber si corresponde exigir/mandar nombreCliente.
+let _mvEditandoTipo = null;
 
 function abrirModalMovimiento() {
   _mvEditandoId = null;
+  _mvEditandoTipo = null;
   document.getElementById('modalMovimientoCajaTitulo').textContent = 'Nuevo movimiento';
   document.getElementById('mvConfirmarBtn').textContent = 'Confirmar';
   document.getElementById('mvTipoWrap').style.display = '';
@@ -661,21 +666,31 @@ function setMovTipo(tipo) {
 
 // ════════════════════════════════════════════════════════
 //  EDITAR / ELIMINAR UN MOVIMIENTO YA CARGADO
-//  Reusa el modal de "Nuevo movimiento" en modo edición — solo se
-//  puede corregir importe/método/cuenta/concepto (nunca tipo, ni a
-//  qué turno/cliente/sesión pertenece: si eso está mal, se elimina y
-//  se carga de nuevo). Funciona para un movimiento de cualquier día,
-//  esté la sesión abierta o ya cerrada.
+//  Reusa el modal de "Nuevo movimiento" en modo edición — se puede
+//  corregir importe/método/cuenta/concepto y, si es un ingreso, el
+//  nombre del cliente (el snapshot, no a qué clienteId/turnoId/sesión
+//  pertenece: si eso está mal, se elimina y se carga de nuevo).
+//  Funciona para un movimiento de cualquier día, esté la sesión
+//  abierta o ya cerrada.
 // ════════════════════════════════════════════════════════
 function abrirEditarMovimiento(movimientoId) {
   const m = getTodosMovimientos().find(x => String(x.movimientoId) === String(movimientoId));
   if (!m) { showToast('No se encontró el movimiento'); return; }
 
   _mvEditandoId = movimientoId;
+  _mvEditandoTipo = String(m.tipo || '').toLowerCase();
+  const esIngreso = _mvEditandoTipo === 'ingreso';
+
   document.getElementById('modalMovimientoCajaTitulo').textContent = 'Editar movimiento';
   document.getElementById('mvConfirmarBtn').textContent = 'Guardar cambios';
   document.getElementById('mvTipoWrap').style.display = 'none';
-  document.getElementById('mvClienteWrap').style.display = 'none';
+
+  document.getElementById('mvClienteWrap').style.display = esIngreso ? '' : 'none';
+  document.getElementById('mvClienteNombre').value = m.nombreCliente || '';
+  document.getElementById('mvClienteId').value = m.clienteId || '';
+  document.getElementById('mvClienteResultados').innerHTML = '';
+  document.getElementById('mvClienteResultados').style.display = 'none';
+
   document.getElementById('mvImporte').value = m.importe || '';
   document.getElementById('mvConcepto').value = m.concepto || '';
   _renderChips('mv', m.metodoPago || '', m.cuentaDestino || '');
@@ -715,10 +730,15 @@ async function confirmarMovimientoCaja() {
     const metodoPago = document.getElementById('mvMetodo').value;
     const cuentaDestino = document.getElementById('mvCuenta').value.trim();
     const concepto = document.getElementById('mvConcepto').value.trim();
+    const nombreCliente = document.getElementById('mvClienteNombre').value.trim();
 
     if (isNaN(importe) || importe <= 0) { showToast('Ingresá un importe válido'); return; }
     if (!metodoPago) { showToast('Elegí un método de pago'); return; }
     if (!concepto) { showToast('Ingresá un concepto'); return; }
+    if (_mvEditandoTipo === 'ingreso' && !nombreCliente) { showToast('Ingresá el nombre del cliente'); return; }
+
+    const cambios = { importe, metodoPago, cuentaDestino, concepto };
+    if (_mvEditandoTipo === 'ingreso') cambios.nombreCliente = nombreCliente;
 
     _mvGuardando = true;
     _bloquearBoton(btn, 'Guardando…');
@@ -726,7 +746,7 @@ async function confirmarMovimientoCaja() {
       const res = await apiPost({
         action: 'editarMovimientoCaja',
         movimientoId: _mvEditandoId,
-        cambios: { importe, metodoPago, cuentaDestino, concepto }
+        cambios
       });
       if (res.ok) {
         showToast('✓ Movimiento actualizado');
@@ -751,12 +771,15 @@ async function confirmarMovimientoCaja() {
   const cuentaDestino = document.getElementById('mvCuenta').value.trim();
   const concepto = document.getElementById('mvConcepto').value.trim();
   const clienteId = document.getElementById('mvClienteId').value;
-  const nombreClienteRaw = document.getElementById('mvClienteNombre').value.trim();
-  const nombreCliente = tipo === 'ingreso' ? nombreClienteRaw.split(' — ')[0] : '';
+  const nombreCliente = tipo === 'ingreso' ? document.getElementById('mvClienteNombre').value.trim() : '';
 
   if (isNaN(importe) || importe <= 0) { showToast('Ingresá un importe válido'); return; }
   if (!metodoPago) { showToast('Elegí un método de pago'); return; }
   if (!concepto) { showToast('Ingresá un concepto'); return; }
+  // El nombre del cliente ya no es opcional en un ingreso — es lo que
+  // se muestra como título de cada movimiento (en vez del concepto),
+  // así se puede reconocer de un vistazo quién pagó.
+  if (tipo === 'ingreso' && !nombreCliente) { showToast('Ingresá el nombre del cliente'); return; }
 
   _mvGuardando = true;
   _bloquearBoton(btn, 'Guardando…');
@@ -826,6 +849,7 @@ async function confirmarCobro() {
 
   if (isNaN(importe) || importe <= 0) { showToast('Ingresá un importe válido'); return; }
   if (!metodoPago) { showToast('Elegí un método de pago'); return; }
+  if (!nombreCliente) { showToast('Falta el nombre del cliente'); return; }
 
   const btn = document.getElementById('cbConfirmarBtn');
   _cobroEnProceso = true;
