@@ -608,7 +608,7 @@ function mvBuscarCliente() {
           ${c.telefono ? `<span>${c.telefono}</span>` : ''}
         </div>`).join('')
     : '<div class="cliente-resultado-vacio">Sin coincidencias</div>';
-  cont.style.display = '';
+  cont.style.display = 'block';
 }
 
 function mvElegirCliente(clienteId) {
