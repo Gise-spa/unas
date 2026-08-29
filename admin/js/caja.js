@@ -134,7 +134,7 @@ function _filasPorMetodo(porMetodo) {
 function _cdtBoxHTML(label, monto) {
   return `<div class="cdt-box" style="border-left-color:${_colorDetalle(label)}">
     <span>${label}</span>
-    <strong>${fmtMoneda(monto)}</strong>
+    <strong class="monto-caja">${fmtMoneda(monto)}</strong>
   </div>`;
 }
 
@@ -235,6 +235,34 @@ async function renderCaja() {
   await syncCaja();
   _renderCajaUI();
   renderResumenDiaCaja();
+  _aplicarEstadoMontosCaja();
+}
+
+// ════════════════════════════════════════════════════════
+//  OCULTAR/MOSTRAR MONTOS — botón "ojo" junto a Neto, como en las
+//  apps de billeteras virtuales. Puramente visual: una clase en el
+//  body tapa con puntitos cualquier elemento marcado con
+//  class="monto-caja" (vía CSS) — no toca cálculos ni datos, ni qué
+//  se manda al backend. El estado queda en localStorage para que no
+//  se destapen los montos solo por recargar la página o volver a
+//  entrar a Caja.
+// ════════════════════════════════════════════════════════
+// Mismo estilo outline (stroke, sin relleno) que los íconos de la barra
+// inferior de navegación, para que el botón no desentone.
+const _ICONO_OJO_ABIERTO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12S5.5 4.5 12 4.5 22.5 12 22.5 12 18.5 19.5 12 19.5 1.5 12 1.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const _ICONO_OJO_CERRADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 3.5l17 17"/><path d="M10.6 5.1A11.6 11.6 0 0 1 12 4.5c6.5 0 10.5 7.5 10.5 7.5a19 19 0 0 1-3.4 4.6M6.6 6.6C3.2 8.7 1.5 12 1.5 12s4 7.5 10.5 7.5a10.6 10.6 0 0 0 4.9-1.2"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+
+function _aplicarEstadoMontosCaja() {
+  const oculto = localStorage.getItem('caja_montos_ocultos') === '1';
+  document.body.classList.toggle('caja-montos-ocultos', oculto);
+  const btn = document.getElementById('cajaOjoBtn');
+  if (btn) btn.innerHTML = oculto ? _ICONO_OJO_CERRADO : _ICONO_OJO_ABIERTO;
+}
+
+function toggleMontosCaja() {
+  const oculto = localStorage.getItem('caja_montos_ocultos') === '1';
+  localStorage.setItem('caja_montos_ocultos', oculto ? '0' : '1');
+  _aplicarEstadoMontosCaja();
 }
 
 // ════════════════════════════════════════════════════════
@@ -290,7 +318,7 @@ function _movItemHTML(m) {
       <div style="margin-top:2px">${_badgeMetodo(etiqueta)}</div>
     </div>
     <div class="caja-mov-derecha">
-      <span class="${clase}">${signo} ${fmtMoneda(m.importe)}</span>
+      <span class="${clase} monto-caja">${signo} ${fmtMoneda(m.importe)}</span>
       <div class="caja-mov-acciones">
         <button onclick="event.stopPropagation();abrirEditarMovimiento('${idEscapado}')" class="btn btn-sm caja-mov-btn-editar" title="Editar">✎</button>
         <button onclick="event.stopPropagation();pedirEliminarMovimiento('${idEscapado}')" class="btn btn-sm caja-mov-btn-eliminar" title="Eliminar">🗑</button>
@@ -321,7 +349,7 @@ function abrirDetalleMovimiento(movimientoId) {
 
   document.getElementById('dmTitulo').textContent = m.nombreCliente || (m.tipo === 'ingreso' ? 'Ingreso' : 'Egreso');
   document.getElementById('dmCuerpo').innerHTML = filas.map(([label, val]) =>
-    `<div class="dm-fila"><span>${label}</span><strong>${val}</strong></div>`
+    `<div class="dm-fila"><span>${label}</span><strong${label === 'Importe' ? ' class="monto-caja"' : ''}>${val}</strong></div>`
   ).join('');
 
   const idEscapado = String(movimientoId).replace(/'/g, "\\'");
@@ -594,6 +622,12 @@ async function confirmarAbrirCajaInicio() {
 function mvBuscarCliente() {
   const val = document.getElementById('mvClienteNombre').value.trim().toLowerCase();
   document.getElementById('mvClienteId').value = '';
+  // Si estaba tipeando sobre un cliente ya elegido, invalida el
+  // teléfono/mail que se habían autocompletado — si no los borra, un
+  // nombre distinto tipeado a mano podría guardarse con el teléfono/
+  // mail del cliente elegido antes.
+  document.getElementById('mvClienteTelefono').value = '';
+  document.getElementById('mvClienteMail').value = '';
   const cont = document.getElementById('mvClienteResultados');
   if (!val) { cont.innerHTML = ''; cont.style.display = 'none'; return; }
 
@@ -611,11 +645,17 @@ function mvBuscarCliente() {
   cont.style.display = 'block';
 }
 
+// Al elegir un cliente de la lista, se trae también su teléfono/mail
+// guardados en Clientes — antes solo se copiaba el nombre, así que un
+// movimiento cargado eligiendo un cliente existente terminaba sin
+// teléfono ni mail aunque esos datos sí estuvieran cargados.
 function mvElegirCliente(clienteId) {
   const c = getClientes().find(x => String(x.clienteId) === String(clienteId));
   if (!c) return;
   document.getElementById('mvClienteId').value = c.clienteId;
   document.getElementById('mvClienteNombre').value = c.nombre || '';
+  document.getElementById('mvClienteTelefono').value = c.telefono || '';
+  document.getElementById('mvClienteMail').value = c.mail || '';
   document.getElementById('mvClienteResultados').innerHTML = '';
   document.getElementById('mvClienteResultados').style.display = 'none';
 }
@@ -650,6 +690,8 @@ function abrirModalMovimiento() {
   document.getElementById('mvConcepto').value = '';
   document.getElementById('mvClienteNombre').value = '';
   document.getElementById('mvClienteId').value = '';
+  document.getElementById('mvClienteTelefono').value = '';
+  document.getElementById('mvClienteMail').value = '';
   document.getElementById('mvClienteResultados').innerHTML = '';
   document.getElementById('mvClienteResultados').style.display = 'none';
   document.getElementById('mvClienteWrap').style.display = '';
@@ -688,6 +730,8 @@ function abrirEditarMovimiento(movimientoId) {
   document.getElementById('mvClienteWrap').style.display = esIngreso ? '' : 'none';
   document.getElementById('mvClienteNombre').value = m.nombreCliente || '';
   document.getElementById('mvClienteId').value = m.clienteId || '';
+  document.getElementById('mvClienteTelefono').value = m.telefonoCliente || '';
+  document.getElementById('mvClienteMail').value = m.mailCliente || '';
   document.getElementById('mvClienteResultados').innerHTML = '';
   document.getElementById('mvClienteResultados').style.display = 'none';
 
@@ -731,6 +775,8 @@ async function confirmarMovimientoCaja() {
     const cuentaDestino = document.getElementById('mvCuenta').value.trim();
     const concepto = document.getElementById('mvConcepto').value.trim();
     const nombreCliente = document.getElementById('mvClienteNombre').value.trim();
+    const telefonoCliente = document.getElementById('mvClienteTelefono').value.trim();
+    const mailCliente = document.getElementById('mvClienteMail').value.trim();
 
     if (isNaN(importe) || importe <= 0) { showToast('Ingresá un importe válido'); return; }
     if (!metodoPago) { showToast('Elegí un método de pago'); return; }
@@ -738,7 +784,15 @@ async function confirmarMovimientoCaja() {
     if (_mvEditandoTipo === 'ingreso' && !nombreCliente) { showToast('Ingresá el nombre del cliente'); return; }
 
     const cambios = { importe, metodoPago, cuentaDestino, concepto };
-    if (_mvEditandoTipo === 'ingreso') cambios.nombreCliente = nombreCliente;
+    if (_mvEditandoTipo === 'ingreso') {
+      cambios.nombreCliente = nombreCliente;
+      // Solo se mandan si hay algo nuevo (se completaron al elegir un
+      // cliente de la lista) — si se tipeó el nombre a mano sin elegir
+      // ninguno, quedan vacíos acá y NO se mandan, así no se pisa el
+      // teléfono/mail que ya estaba guardado con un blanco.
+      if (telefonoCliente) cambios.telefonoCliente = telefonoCliente;
+      if (mailCliente) cambios.mailCliente = mailCliente;
+    }
 
     _mvGuardando = true;
     _bloquearBoton(btn, 'Guardando…');
@@ -772,6 +826,8 @@ async function confirmarMovimientoCaja() {
   const concepto = document.getElementById('mvConcepto').value.trim();
   const clienteId = document.getElementById('mvClienteId').value;
   const nombreCliente = tipo === 'ingreso' ? document.getElementById('mvClienteNombre').value.trim() : '';
+  const telefonoCliente = tipo === 'ingreso' ? document.getElementById('mvClienteTelefono').value.trim() : '';
+  const mailCliente = tipo === 'ingreso' ? document.getElementById('mvClienteMail').value.trim() : '';
 
   if (isNaN(importe) || importe <= 0) { showToast('Ingresá un importe válido'); return; }
   if (!metodoPago) { showToast('Elegí un método de pago'); return; }
@@ -790,7 +846,7 @@ async function confirmarMovimientoCaja() {
         movimientoId: _cajaUuid(),
         sesionId: sesion.sesionId,
         tipo, importe, metodoPago, cuentaDestino, concepto,
-        ...(nombreCliente ? { clienteId, nombreCliente } : {})
+        ...(nombreCliente ? { clienteId, nombreCliente, telefonoCliente, mailCliente } : {})
       }
     });
 
@@ -898,9 +954,9 @@ function abrirModalCierreCaja() {
   document.getElementById('czDesglose').innerHTML = _detalleTotalHTML(_filasPorMetodo(totales.porMetodo));
 
   document.getElementById('czTotales').innerHTML =
-    `Total ingresos: <strong>${fmtMoneda(totales.totalIngresos)}</strong><br>` +
-    `Total egresos: <strong>${fmtMoneda(totales.totalEgresos)}</strong><br>` +
-    `Resultado neto: <strong>${fmtMoneda(totales.resultadoNeto)}</strong>`;
+    `Total ingresos: <strong class="monto-caja">${fmtMoneda(totales.totalIngresos)}</strong><br>` +
+    `Total egresos: <strong class="monto-caja">${fmtMoneda(totales.totalEgresos)}</strong><br>` +
+    `Resultado neto: <strong class="monto-caja">${fmtMoneda(totales.resultadoNeto)}</strong>`;
 
   abrirModal('modalCierreCaja');
 }
