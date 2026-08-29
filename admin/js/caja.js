@@ -423,7 +423,11 @@ function _renderCajaUI() {
   wrapCerrada.style.display = 'none';
   wrapAbierta.style.display = '';
 
-  const totales = getCajaTotales();
+  // Solo el estado + "Cerrar caja" — los totales, el desglose por
+  // método y los movimientos del día ya están en "Resumen diario" de
+  // arriba (que además cruza todas las sesiones, no solo esta), tenerlo
+  // acá también era mostrar exactamente lo mismo dos veces en la misma
+  // pantalla.
   const apertura = sesion.fechaApertura ? new Date(sesion.fechaApertura) : null;
   const horaApertura = apertura && !isNaN(apertura.getTime())
     ? apertura.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
@@ -431,22 +435,6 @@ function _renderCajaUI() {
   document.getElementById('cajaEstadoInfo').innerHTML =
     `<strong style="color:#16a34a">● Caja abierta</strong>${horaApertura ? ' desde las ' + horaApertura : ''}` +
     `<br>Saldo inicial: ${fmtMoneda(sesion.saldoInicial)}`;
-
-  document.getElementById('cjIngresos').textContent = totales ? fmtMoneda(totales.totalIngresos) : '—';
-  document.getElementById('cjEgresos').textContent  = totales ? fmtMoneda(totales.totalEgresos) : '—';
-  document.getElementById('cjEsperado').textContent = totales ? fmtMoneda(totales.efectivoEsperado) : '—';
-
-  const desgloseEl = document.getElementById('cajaDesglose');
-  desgloseEl.innerHTML = totales ? _detalleTotalHTML(_filasPorMetodo(totales.porMetodo)) : '<p class="today-empty">Sin movimientos todavía</p>';
-
-  const movs = getCajaMovimientos();
-  const movsList = document.getElementById('cajaMovimientosList');
-  if (movs.length) {
-    const ordenados = [...movs].sort((a, b) => new Date(b.creadoEn) - new Date(a.creadoEn));
-    movsList.innerHTML = ordenados.map(_movItemHTML).join('');
-  } else {
-    movsList.innerHTML = '<p class="today-empty">Sin movimientos todavía</p>';
-  }
 }
 
 // Sub-cuentas fijas para Transferencia/Tarjeta — son la forma en que
