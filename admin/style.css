@@ -1444,6 +1444,7 @@
   padding: .7rem 0;
   border-bottom: 1px solid var(--border);
   font-size: .85rem;
+  cursor: pointer;
 }
 .caja-mov-item:last-child { border-bottom: none; }
 .caja-mov-importe-ingreso { color: #16a34a; font-weight: 600; }
@@ -1533,6 +1534,49 @@
   line-height: 1.15;
   overflow-wrap: break-word;
 }
+/* ── Caja: buscador de cliente (Nuevo movimiento) ── */
+.cliente-resultados {
+  position: absolute;
+  left: 0; right: 0;
+  top: 100%;
+  margin-top: .25rem;
+  background: var(--bg-card, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 20;
+  display: none;
+}
+.cliente-resultado-item {
+  padding: .55rem .75rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .5rem;
+  border-bottom: 1px solid var(--border);
+}
+.cliente-resultado-item:last-child { border-bottom: none; }
+.cliente-resultado-item:active { background: rgba(232,144,144,.12); }
+.cliente-resultado-item strong { font-weight: 600; font-size: .88rem; }
+.cliente-resultado-item span { font-size: .76rem; color: var(--text-muted); flex-shrink: 0; }
+.cliente-resultado-vacio { padding: .6rem .75rem; font-size: .82rem; color: var(--text-muted); }
+
+/* ── Ficha de detalle de un movimiento ── */
+.dm-fila {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .5rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: .85rem;
+}
+.dm-fila:last-child { border-bottom: none; }
+.dm-fila span { color: var(--text-muted); flex-shrink: 0; }
+.dm-fila strong { text-align: right; font-weight: 600; overflow-wrap: anywhere; }
+
 /* ── Caja: detalle total por método/cuenta (mediano) — usado en
    Resumen diario, Caja abierta, Cierre y Resultado del cierre ── */
 .caja-detalle-total-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
