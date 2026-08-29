@@ -1577,6 +1577,33 @@
 .dm-fila span { color: var(--text-muted); flex-shrink: 0; }
 .dm-fila strong { text-align: right; font-weight: 600; overflow-wrap: anywhere; }
 
+/* ── Caja: ocultar/mostrar montos (botón "ojo") — puramente visual,
+   no toca los datos. Cualquier elemento con clase .monto-caja queda
+   tapado con puntitos mientras el body tenga .caja-montos-ocultos. ── */
+.caja-montos-ocultos .monto-caja {
+  color: transparent !important;
+  position: relative;
+  user-select: none;
+}
+.caja-montos-ocultos .monto-caja::after {
+  content: '••••••';
+  position: absolute;
+  inset: 0;
+  color: var(--text);
+  letter-spacing: 1px;
+}
+.caja-ojo-btn {
+  background: none;
+  border: none;
+  padding: .25rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  line-height: 1;
+  vertical-align: middle;
+  display: inline-flex;
+}
+.caja-ojo-btn svg { width: 20px; height: 20px; }
+
 /* ── Caja: detalle total por método/cuenta (mediano) — usado en
    Resumen diario, Caja abierta, Cierre y Resultado del cierre ── */
 .caja-detalle-total-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
