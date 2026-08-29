@@ -287,10 +287,16 @@
         </div>
         <div class="panel-card-body">
           <div class="caja-resumen-dia-totales">
-            <div class="crd-box crd-ingresos"><span>Ingresos</span><strong id="crdIngresos">—</strong></div>
-            <div class="crd-box crd-egresos"><span>Egresos</span><strong id="crdEgresos">—</strong></div>
+            <div class="crd-box crd-ingresos"><span>Ingresos</span><strong id="crdIngresos" class="monto-caja">—</strong></div>
+            <div class="crd-box crd-egresos"><span>Egresos</span><strong id="crdEgresos" class="monto-caja">—</strong></div>
           </div>
-          <div class="crd-neto-box"><span>Neto</span><strong id="crdNeto">—</strong></div>
+          <div class="crd-neto-box">
+            <span>Neto</span>
+            <span style="display:flex;align-items:center;justify-content:center;gap:.4rem">
+              <strong id="crdNeto" class="monto-caja">—</strong>
+              <button type="button" class="caja-ojo-btn" onclick="toggleMontosCaja()" id="cajaOjoBtn" title="Mostrar/ocultar montos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12S5.5 4.5 12 4.5 22.5 12 22.5 12 18.5 19.5 12 19.5 1.5 12 1.5 12Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            </span>
+          </div>
           <div id="cajaResumenDiaDesglose" style="margin-top:1rem"></div>
           <ul class="today-list" id="cajaResumenDiaMovs" style="margin-top:.75rem"></ul>
         </div>
@@ -406,6 +412,8 @@
       <input type="text" id="mvClienteNombre" placeholder="Buscar por nombre…" autocomplete="off"
              oninput="mvBuscarCliente()" onfocus="mvBuscarCliente()" onblur="mvOcultarResultadosCliente()">
       <input type="hidden" id="mvClienteId" value="">
+      <input type="hidden" id="mvClienteTelefono" value="">
+      <input type="hidden" id="mvClienteMail" value="">
       <div id="mvClienteResultados" class="cliente-resultados"></div>
     </div>
     <div class="form-group">
@@ -514,7 +522,7 @@
     <input type="hidden" id="czSesionId">
     <div class="form-group">
       <label>Efectivo esperado</label>
-      <div id="czEsperado" style="font-size:1.3rem;font-family:'Cormorant Garamond',serif">—</div>
+      <div id="czEsperado" class="monto-caja" style="font-size:1.3rem;font-family:'Cormorant Garamond',serif">—</div>
     </div>
     <div class="form-group">
       <label>Efectivo contado</label>
@@ -522,7 +530,7 @@
     </div>
     <div class="form-group">
       <label>Diferencia</label>
-      <div id="czDiferencia" style="font-size:1.1rem">—</div>
+      <div id="czDiferencia" class="monto-caja" style="font-size:1.1rem">—</div>
     </div>
     <div class="panel-card" style="margin:1rem 0">
       <div class="panel-card-header"><h3 style="font-size:.95rem">Por método / cuenta</h3></div>
@@ -547,7 +555,7 @@
     </div>
     <div class="crd-neto-box" style="margin-bottom:.9rem">
       <span>Total del día</span>
-      <strong id="crTotalDia">—</strong>
+      <strong id="crTotalDia" class="monto-caja">—</strong>
     </div>
     <div id="crDetalle"></div>
     <p style="font-size:.78rem;color:var(--text-muted);margin-top:.9rem">Así sabés cuánto debería haber en cada cuenta.</p>
