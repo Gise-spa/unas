@@ -313,23 +313,13 @@
         </div>
       </div>
 
-      <!-- Caja abierta -->
+      <!-- Caja abierta — solo el estado ("Caja abierta desde las..." +
+           saldo inicial) y "Cerrar caja". Los totales/desglose/movimientos
+           del día ya están en "Resumen diario" de arriba (que además cruza
+           todas las sesiones, no solo esta), así que no se repiten acá. -->
       <div id="cajaAbiertaWrap" style="display:none">
         <div class="panel-card">
           <div class="panel-card-body" id="cajaEstadoInfo" style="font-size:.86rem;color:var(--text-muted)"></div>
-        </div>
-        <div class="stats-grid">
-          <div class="stat-card"><div class="stat-num" id="cjIngresos" style="color:#22c55e">—</div><div class="stat-label">Ingresos hoy</div></div>
-          <div class="stat-card"><div class="stat-num" id="cjEgresos" style="color:#dc2626">—</div><div class="stat-label">Egresos hoy</div></div>
-          <div class="stat-card"><div class="stat-num" id="cjEsperado" style="color:var(--accent)">—</div><div class="stat-label">Efectivo esperado</div></div>
-        </div>
-        <div class="panel-card">
-          <div class="panel-card-header"><h3>Por método / cuenta</h3></div>
-          <div class="panel-card-body" id="cajaDesglose"></div>
-        </div>
-        <div class="panel-card">
-          <div class="panel-card-header"><h3>Movimientos</h3></div>
-          <div class="panel-card-body"><ul class="today-list" id="cajaMovimientosList"></ul></div>
         </div>
         <!-- El "+" central de la barra inferior ya registra un pago desde
              cualquier pantalla (incluida esta) — un segundo botón flotante
