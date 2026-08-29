@@ -34,6 +34,27 @@
  *   - los botones "Confirmar cobro"/"Confirmar"/"Cerrar caja" ahora se
  *     bloquean mientras la petición está en curso, para que un doble
  *     toque no registre el mismo cobro dos veces.
+ *
+ * Ronda "Cuenta destino + buscador de cliente + detalle por cliente":
+ *   - "Cuenta destino" ahora depende del método: Efectivo/Mercado Pago
+ *     nunca preguntan nada (evita que un texto suelto tipo "Galicia"
+ *     genere su propio bucket en vez de sumar a "Mercado Pago");
+ *     Transferencia/Tarjeta muestran un select fijo (CUENTAS_BANCARIAS)
+ *     con "Banco Galicia"/"Otra" — "Otra" habilita un texto libre.
+ *   - el campo Cliente de "Nuevo movimiento" pasó de un <input
+ *     list=...> (datalist nativo, poco confiable en mobile) a un
+ *     buscador propio (mvBuscarCliente/mvElegirCliente) sobre
+ *     getClientes() — la hoja "clientes" real, no derivada de turnos.
+ *   - cada fila de movimiento muestra el nombre del cliente como
+ *     título (antes mostraba el servicio) y al tocarla abre una ficha
+ *     de detalle (abrirDetalleMovimiento) con nombre/mail/teléfono/
+ *     servicio/importe/método — los botones editar/eliminar siguen
+ *     andando directo desde la fila (stopPropagation).
+ *   - syncCaja() ahora también refresca getTodosMovimientos() y
+ *     getTodasSesiones() en cada acción de Caja (antes solo se
+ *     refrescaban en el forzarSync() periódico) — si no, el Resumen
+ *     diario y la ficha de detalle quedaban con la foto vieja justo
+ *     después de cobrar/cargar/editar/eliminar un movimiento.
  * ------------------------------------------------------------
  */
 
@@ -163,11 +184,19 @@ function getCuentasCajaLocal()    { return DB.get('caja_cuentas') || []; }
 function saveCuentasCajaLocal(a)  { DB.set('caja_cuentas', a); }
 
 async function syncCaja() {
-  const [sesionRes, cuentasRes] = await Promise.all([
+  const [sesionRes, cuentasRes, todosMovRes, sesionesRes] = await Promise.all([
     apiGetRaw('getSesionCaja'),
     apiGetRaw('getCuentasCaja'),
+    // Se traen acá también (no solo en el forzarSync periódico) para que,
+    // apenas se cobra/carga/edita/elimina un movimiento, el Resumen diario
+    // y la ficha de detalle (cruzan TODAS las sesiones) queden al día al
+    // toque — antes se quedaban con la foto del último forzarSync().
+    apiGetRaw('getTodosLosMovimientosCaja'),
+    apiGetRaw('getTodasSesionesCaja'),
   ]);
   if (cuentasRes.ok) saveCuentasCajaLocal(cuentasRes.data || []);
+  if (todosMovRes.ok) saveTodosMovimientos(todosMovRes.data || []);
+  if (sesionesRes.ok) saveTodasSesiones(sesionesRes.data || []);
 
   const sesion = sesionRes.ok ? sesionRes.sesion : null;
   saveCajaSesion(sesion);
@@ -249,20 +278,57 @@ function _movItemHTML(m) {
   const clase = m.tipo === 'ingreso' ? 'caja-mov-importe-ingreso' : 'caja-mov-importe-egreso';
   const etiqueta = m.cuentaDestino || m.metodoPago || '';
   const idEscapado = String(m.movimientoId).replace(/'/g, "\\'");
-  return `<li class="caja-mov-item">
+  // Título: el cliente, no el servicio — es lo que Gise busca de un
+  // vistazo ("¿ya cobré a Dora?"), el servicio queda en el detalle al
+  // tocar la fila. Si no hay cliente (movimiento manual), se usa el
+  // concepto como antes.
+  const titulo = m.nombreCliente || m.concepto || (m.tipo === 'ingreso' ? 'Ingreso' : 'Egreso');
+  return `<li class="caja-mov-item" onclick="abrirDetalleMovimiento('${idEscapado}')">
     <span style="color:var(--text-muted);flex-shrink:0">${hora}</span>
     <div style="flex:1;min-width:0">
-      <div style="font-weight:500">${m.concepto || (m.nombreCliente ? 'Cobro — ' + m.nombreCliente : (m.tipo === 'ingreso' ? 'Ingreso' : 'Egreso'))}</div>
+      <div style="font-weight:500">${titulo}</div>
       <div style="margin-top:2px">${_badgeMetodo(etiqueta)}</div>
     </div>
     <div class="caja-mov-derecha">
       <span class="${clase}">${signo} ${fmtMoneda(m.importe)}</span>
       <div class="caja-mov-acciones">
-        <button onclick="abrirEditarMovimiento('${idEscapado}')" class="btn btn-sm caja-mov-btn-editar" title="Editar">✎</button>
-        <button onclick="pedirEliminarMovimiento('${idEscapado}')" class="btn btn-sm caja-mov-btn-eliminar" title="Eliminar">🗑</button>
+        <button onclick="event.stopPropagation();abrirEditarMovimiento('${idEscapado}')" class="btn btn-sm caja-mov-btn-editar" title="Editar">✎</button>
+        <button onclick="event.stopPropagation();pedirEliminarMovimiento('${idEscapado}')" class="btn btn-sm caja-mov-btn-eliminar" title="Eliminar">🗑</button>
       </div>
     </div>
   </li>`;
+}
+
+// ════════════════════════════════════════════════════════
+//  DETALLE DE UN MOVIMIENTO — se abre al tocar la fila (no los
+//  botones editar/eliminar, que llevan su propio stopPropagation).
+//  Muestra lo que la fila ya no muestra: nombre, mail, teléfono,
+//  servicio realizado, importe y con qué se pagó.
+// ════════════════════════════════════════════════════════
+function abrirDetalleMovimiento(movimientoId) {
+  const m = getTodosMovimientos().find(x => String(x.movimientoId) === String(movimientoId));
+  if (!m) { showToast('No se encontró el movimiento'); return; }
+
+  const filas = [];
+  if (m.nombreCliente) filas.push(['Cliente', m.nombreCliente]);
+  if (m.telefonoCliente) filas.push(['Teléfono', m.telefonoCliente]);
+  if (m.mailCliente) filas.push(['Mail', m.mailCliente]);
+  filas.push(['Servicio / concepto', m.concepto || '—']);
+  filas.push(['Importe', fmtMoneda(m.importe)]);
+  filas.push(['Método de pago', m.metodoPago || '—']);
+  if (m.cuentaDestino) filas.push(['Cuenta', m.cuentaDestino]);
+  if (m.creadoEn) filas.push(['Fecha', new Date(m.creadoEn).toLocaleString('es-AR')]);
+
+  document.getElementById('dmTitulo').textContent = m.nombreCliente || (m.tipo === 'ingreso' ? 'Ingreso' : 'Egreso');
+  document.getElementById('dmCuerpo').innerHTML = filas.map(([label, val]) =>
+    `<div class="dm-fila"><span>${label}</span><strong>${val}</strong></div>`
+  ).join('');
+
+  const idEscapado = String(movimientoId).replace(/'/g, "\\'");
+  document.getElementById('dmEditarBtn').setAttribute('onclick', `cerrarModal('modalDetalleMovimiento');abrirEditarMovimiento('${idEscapado}')`);
+  document.getElementById('dmEliminarBtn').setAttribute('onclick', `cerrarModal('modalDetalleMovimiento');pedirEliminarMovimiento('${idEscapado}')`);
+
+  abrirModal('modalDetalleMovimiento');
 }
 
 function renderResumenDiaCaja() {
@@ -383,9 +449,24 @@ function _renderCajaUI() {
   }
 }
 
-function _renderChips(containerId, hiddenInputId, cuentaWrapId, seleccionado) {
+// Sub-cuentas fijas para Transferencia/Tarjeta — son la forma en que
+// el cliente pagó, no un "método" nuevo en Configuración, así que van
+// hardcodeadas acá (lista corta, se edita a mano si se suma un banco).
+// Efectivo y Mercado Pago nunca preguntan cuenta destino: Efectivo no
+// la necesita, y Mercado Pago tiene un solo destino (la cuenta de MP
+// del negocio) — así se evita que quede una cuenta escrita a mano
+// distinta ("Galicia", etc.) generando un bucket propio en el desglose
+// en vez de sumar dentro de "Mercado Pago".
+const CUENTAS_BANCARIAS = ['Banco Galicia', 'Otra'];
+
+function _requiereCuenta(metodo) {
+  const m = String(metodo || '').toLowerCase();
+  return m === 'transferencia' || m === 'tarjeta';
+}
+
+function _renderChips(prefix, seleccionado, cuentaActual) {
   const cuentas = getCuentasCajaLocal();
-  const cont = document.getElementById(containerId);
+  const cont = document.getElementById(prefix + 'MetodoChips');
   if (!cont) return;
   if (!cuentas.length) {
     cont.innerHTML = '<p class="today-empty">No hay métodos configurados en Configuración</p>';
@@ -394,17 +475,76 @@ function _renderChips(containerId, hiddenInputId, cuentaWrapId, seleccionado) {
   cont.innerHTML = cuentas.map(c => {
     const metodo = c.metodo || '';
     const on = metodo === seleccionado ? 'on' : '';
-    return `<div class="chip ${on}" onclick="_elegirMetodo('${containerId}','${hiddenInputId}','${cuentaWrapId}','${metodo.replace(/'/g, "\\'")}')">${metodo}</div>`;
+    return `<div class="chip ${on}" onclick="_elegirMetodo('${prefix}','${metodo.replace(/'/g, "\\'")}')">${metodo}</div>`;
   }).join('');
+  _actualizarCuentaWrap(prefix, seleccionado, cuentaActual || '');
 }
 
-function _elegirMetodo(containerId, hiddenInputId, cuentaWrapId, metodo) {
-  document.getElementById(hiddenInputId).value = metodo;
-  document.querySelectorAll(`#${containerId} .chip`).forEach(ch => {
+function _elegirMetodo(prefix, metodo) {
+  document.getElementById(prefix + 'Metodo').value = metodo;
+  document.querySelectorAll(`#${prefix}MetodoChips .chip`).forEach(ch => {
     ch.classList.toggle('on', ch.textContent === metodo);
   });
-  const wrap = document.getElementById(cuentaWrapId);
-  if (wrap) wrap.style.display = (metodo.toLowerCase() === 'efectivo') ? 'none' : '';
+  _actualizarCuentaWrap(prefix, metodo, '');
+}
+
+// Arma "Cuenta destino" según el método:
+//  - Efectivo / Mercado Pago -> se oculta y se limpia (no hay nada que elegir)
+//  - Transferencia / Tarjeta -> select fijo Banco Galicia/Otra; si elige
+//    "Otra" aparece un campo de texto para escribirla
+function _actualizarCuentaWrap(prefix, metodo, cuentaActual) {
+  const wrap = document.getElementById(prefix + 'CuentaWrap');
+  if (!wrap) return;
+  const cuentaInput = document.getElementById(prefix + 'Cuenta');
+
+  if (!_requiereCuenta(metodo)) {
+    wrap.style.display = 'none';
+    cuentaInput.value = '';
+    return;
+  }
+
+  wrap.style.display = '';
+  const sel = document.getElementById(prefix + 'CuentaSelect');
+  const otroWrap = document.getElementById(prefix + 'CuentaOtroWrap');
+  const otroInput = document.getElementById(prefix + 'CuentaOtro');
+
+  sel.innerHTML = '<option value="">Elegí una cuenta…</option>' +
+    CUENTAS_BANCARIAS.map(c => `<option value="${c}">${c}</option>`).join('');
+
+  if (cuentaActual && CUENTAS_BANCARIAS.includes(cuentaActual)) {
+    sel.value = cuentaActual;
+    otroWrap.style.display = 'none';
+    otroInput.value = '';
+    cuentaInput.value = cuentaActual;
+  } else if (cuentaActual) {
+    sel.value = 'Otra';
+    otroWrap.style.display = '';
+    otroInput.value = cuentaActual;
+    cuentaInput.value = cuentaActual;
+  } else {
+    sel.value = '';
+    otroWrap.style.display = 'none';
+    otroInput.value = '';
+    cuentaInput.value = '';
+  }
+}
+
+function _cuentaSelectCambio(prefix) {
+  const val = document.getElementById(prefix + 'CuentaSelect').value;
+  const otroWrap = document.getElementById(prefix + 'CuentaOtroWrap');
+  const otroInput = document.getElementById(prefix + 'CuentaOtro');
+  if (val === 'Otra') {
+    otroWrap.style.display = '';
+    document.getElementById(prefix + 'Cuenta').value = otroInput.value.trim();
+    otroInput.focus();
+  } else {
+    otroWrap.style.display = 'none';
+    document.getElementById(prefix + 'Cuenta').value = val;
+  }
+}
+
+function _cuentaOtroInput(prefix) {
+  document.getElementById(prefix + 'Cuenta').value = document.getElementById(prefix + 'CuentaOtro').value.trim();
 }
 
 // ════════════════════════════════════════════════════════
@@ -456,32 +596,49 @@ async function confirmarAbrirCajaInicio() {
 // ════════════════════════════════════════════════════════
 //  MOVIMIENTO MANUAL
 // ════════════════════════════════════════════════════════
-function getClientesConocidos() {
-  const turnos = (typeof getTurnos === 'function' ? getTurnos() : []) || [];
-  const mapa = new Map();
-  turnos.forEach(t => {
-    if (!t.nombre) return;
-    const key = (t.clienteId || t.nombre.trim().toLowerCase());
-    if (!mapa.has(key)) {
-      mapa.set(key, { id: t.clienteId || '', nombre: t.nombre.trim(), telefono: t.telefono || '', mail: t.mail || '' });
-    }
-  });
-  return [...mapa.values()].sort((a, b) => a.nombre.localeCompare(b.nombre));
-}
 
-function renderMvClientesDatalist() {
-  const clientes = getClientesConocidos();
-  document.getElementById('mvClientesList').innerHTML = clientes.map(c =>
-    `<option value="${c.nombre}${c.telefono ? ' — ' + c.telefono : ''}">`
-  ).join('');
-  window._mvClientesCache = clientes;
-}
-
+// Buscador de cliente para "Nuevo movimiento" — antes era un <input
+// list=...> (datalist nativo), poco confiable en el celular y difícil
+// de tocar bien. Ahora es un buscador propio: se escribe, aparece una
+// lista de resultados debajo, se toca uno y queda elegido. Usa
+// getClientes() (la hoja "clientes" real) en vez de derivar clientes
+// de los turnos, así trae también los cargados a mano desde Clientes.
 function mvBuscarCliente() {
-  const val = document.getElementById('mvClienteNombre').value;
-  const clientes = window._mvClientesCache || [];
-  const match = clientes.find(c => (c.nombre + (c.telefono ? ' — ' + c.telefono : '')) === val);
-  document.getElementById('mvClienteId').value = match ? match.id : '';
+  const val = document.getElementById('mvClienteNombre').value.trim().toLowerCase();
+  document.getElementById('mvClienteId').value = '';
+  const cont = document.getElementById('mvClienteResultados');
+  if (!val) { cont.innerHTML = ''; cont.style.display = 'none'; return; }
+
+  const clientes = getClientes()
+    .filter(c => (c.nombre || '').toLowerCase().includes(val))
+    .slice(0, 8);
+
+  cont.innerHTML = clientes.length
+    ? clientes.map(c => `
+        <div class="cliente-resultado-item" onmousedown="mvElegirCliente('${String(c.clienteId).replace(/'/g, "\\'")}')">
+          <strong>${c.nombre || 'Sin nombre'}</strong>
+          ${c.telefono ? `<span>${c.telefono}</span>` : ''}
+        </div>`).join('')
+    : '<div class="cliente-resultado-vacio">Sin coincidencias</div>';
+  cont.style.display = '';
+}
+
+function mvElegirCliente(clienteId) {
+  const c = getClientes().find(x => String(x.clienteId) === String(clienteId));
+  if (!c) return;
+  document.getElementById('mvClienteId').value = c.clienteId;
+  document.getElementById('mvClienteNombre').value = c.nombre || '';
+  document.getElementById('mvClienteResultados').innerHTML = '';
+  document.getElementById('mvClienteResultados').style.display = 'none';
+}
+
+function mvOcultarResultadosCliente() {
+  // pequeño delay: si no, el blur cierra la lista ANTES de que el
+  // onmousedown de mvElegirCliente llegue a dispararse
+  setTimeout(() => {
+    const cont = document.getElementById('mvClienteResultados');
+    if (cont) cont.style.display = 'none';
+  }, 150);
 }
 
 // movimientoId del movimiento en edición, o null si el modal está en
@@ -497,15 +654,13 @@ function abrirModalMovimiento() {
   document.getElementById('mvTipoIngreso').classList.add('active-vis');
   document.getElementById('mvTipoEgreso').classList.remove('active-vis');
   document.getElementById('mvImporte').value = '';
-  document.getElementById('mvMetodo').value = '';
-  document.getElementById('mvCuenta').value = '';
   document.getElementById('mvConcepto').value = '';
   document.getElementById('mvClienteNombre').value = '';
   document.getElementById('mvClienteId').value = '';
+  document.getElementById('mvClienteResultados').innerHTML = '';
+  document.getElementById('mvClienteResultados').style.display = 'none';
   document.getElementById('mvClienteWrap').style.display = '';
-  document.getElementById('mvCuentaWrap').style.display = 'none';
-  renderMvClientesDatalist();
-  _renderChips('mvMetodoChips', 'mvMetodo', 'mvCuentaWrap', '');
+  _renderChips('mv', '');
   abrirModal('modalMovimientoCaja');
 }
 
@@ -535,8 +690,7 @@ function abrirEditarMovimiento(movimientoId) {
   document.getElementById('mvClienteWrap').style.display = 'none';
   document.getElementById('mvImporte').value = m.importe || '';
   document.getElementById('mvConcepto').value = m.concepto || '';
-  document.getElementById('mvCuenta').value = m.cuentaDestino || '';
-  _renderChips('mvMetodoChips', 'mvMetodo', 'mvCuentaWrap', m.metodoPago || '');
+  _renderChips('mv', m.metodoPago || '', m.cuentaDestino || '');
   abrirModal('modalMovimientoCaja');
 }
 
@@ -659,11 +813,8 @@ function abrirCobrar(turnoId) {
   document.getElementById('cbTelefono').value = t.telefono || '';
   document.getElementById('cbMail').value = t.mail || '';
   document.getElementById('cbImporte').value = '';
-  document.getElementById('cbMetodo').value = '';
-  document.getElementById('cbCuenta').value = '';
   document.getElementById('cbConcepto').value = t.servicio || '';
-  document.getElementById('cbCuentaWrap').style.display = 'none';
-  _renderChips('cbMetodoChips', 'cbMetodo', 'cbCuentaWrap', '');
+  _renderChips('cb', '');
 
   abrirModal('modalCobrar');
 }
