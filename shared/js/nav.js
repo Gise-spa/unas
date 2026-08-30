@@ -53,6 +53,7 @@ function renderNav() {
       '<a href="index.html" class="nav-logo">' + _identityLogoHtml() + '</a>' +
       '<ul class="nav-links">' +
         links +
+        '<li><a href="admin/" class="nav-admin">Iniciar sesión</a></li>' +
       '</ul>' +
       '<div class="nav-right">' +
         '<button class="theme-btn" aria-label="Cambiar tema"></button>' +
