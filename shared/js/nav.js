@@ -17,8 +17,9 @@
 var NAV_LINKS = [
   { label: 'Inicio',    href: 'index.html#inicio' },
   { label: 'Servicios', href: 'index.html#servicios' },
+  { label: 'Inspirate', href: 'index.html#inspirate' },
   { label: 'Catálogo',  href: 'catalogo.html' },
-  { label: 'Turnos',    href: 'index.html#turnos' },
+  { label: 'Reservar',  href: 'index.html#turnos' },
 ];
 
 // Logo del header/footer público: img real si IDENTITY.logoUrl está
@@ -52,7 +53,6 @@ function renderNav() {
       '<a href="index.html" class="nav-logo">' + _identityLogoHtml() + '</a>' +
       '<ul class="nav-links">' +
         links +
-        '<li><a href="admin/" class="nav-admin">Admin</a></li>' +
       '</ul>' +
       '<div class="nav-right">' +
         '<button class="theme-btn" aria-label="Cambiar tema"></button>' +
@@ -104,7 +104,6 @@ function renderFooter() {
         '<div class="footer-logo">' + _identityLogoHtml() + '</div>' +
         '<ul class="footer-links">' +
           links +
-          '<li><a href="admin/">Admin</a></li>' +
         '</ul>' +
         socialHtml +
       '</div>' +
