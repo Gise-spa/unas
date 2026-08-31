@@ -117,29 +117,21 @@ h3 { font-size: 1.3rem; }
   gap: 1rem;
 }
 
-/* Theme toggle */
+/* Theme toggle — mismo componente visual que admin/style.css .topbar-theme-btn */
 .theme-btn {
-  width: 40px; height: 22px;
-  border-radius: 11px;
+  width: 36px; height: 36px;
+  border-radius: 50%;
   border: 1px solid var(--border);
   background: var(--bg-card);
-  position: relative;
-  transition: background 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  cursor: pointer;
   flex-shrink: 0;
 }
-.theme-btn::after {
-  content: '';
-  position: absolute;
-  top: 3px; left: 3px;
-  width: 16px; height: 16px;
-  border-radius: 50%;
-  background: var(--gold);
-  transition: transform 0.3s;
-}
-[data-theme="dark"] .theme-btn::after {
-  transform: translateX(18px);
-  background: var(--bg-yellow);
-}
+.theme-btn svg { width: 18px; height: 18px; }
+.theme-btn:active { background: var(--bg); }
 
 /* Hamburger */
 .hamburger {
