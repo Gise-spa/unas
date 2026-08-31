@@ -35,9 +35,7 @@
         radial-gradient(ellipse 70% 60% at 80% 85%, rgba(212,160,23,.30), transparent 60%),
         linear-gradient(150deg, #E8A5A5 0%, #DDA9C4 35%, #C97070 70%, #8C4A4A 100%);
     }
-    /* Reemplazá el fondo de acá arriba por una foto real así:
-       <div class="hero-photo"><img src="assets/hero.jpg" alt="Eva Spa" loading="eager"> ...
-       y en CSS: .hero-photo img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover } */
+    .hero-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
     .hero-photo-note {
       position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
       text-align: center; padding: 0 3rem; color: rgba(255,255,255,.8);
@@ -86,14 +84,16 @@
       color: #fff; text-decoration: none; display: block;
     }
     .svc-card .bgimg { position: absolute; inset: 0; }
+    .svc-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
     .svc-card:nth-child(3n+1) .bgimg { background: linear-gradient(155deg,#F6C9D6,#E89090); }
     .svc-card:nth-child(3n+2) .bgimg { background: linear-gradient(155deg,#F5DFA0,#D4A017); }
     .svc-card:nth-child(3n+3) .bgimg { background: linear-gradient(155deg,#EBC9DE,#C97BA8); }
-    .svc-card .scrim { position: absolute; inset: 0; background: linear-gradient(to top, rgba(40,15,15,.78), transparent 55%); }
+    .svc-card .scrim { position: absolute; inset: 0; background: linear-gradient(to top, rgba(40,15,15,.82), rgba(40,15,15,.15) 60%); }
     .svc-card .info { position: absolute; left: 0; right: 0; bottom: 0; padding: 1.1rem 1.15rem; }
     .svc-card .grp { font-size: .64rem; letter-spacing: .1em; text-transform: uppercase; opacity: .85; }
     .svc-card h3 { color: #fff; font-size: 1.4rem; margin: .15rem 0 .35rem; }
-    .svc-card .meta { display: flex; align-items: center; justify-content: space-between; font-size: .72rem; opacity: .92; }
+    .svc-card .desc { font-size: .74rem; line-height: 1.45; opacity: .92; margin-bottom: .5rem; }
+    .svc-card .meta { display: flex; justify-content: flex-end; }
     .svc-card .meta .go {
       width: 27px; height: 27px; border-radius: 50%; background: rgba(255,255,255,.22);
       display: flex; align-items: center; justify-content: center; transition: transform .2s;
@@ -106,6 +106,7 @@
       overflow: hidden; background: linear-gradient(135deg,#FBE9C8 0%, #F3D2D8 55%, #E4B8C4 100%); box-shadow: var(--shadow-md);
     }
     .exp-visual svg { position: absolute; inset: 0; margin: auto; width: 2.5rem; height: 2.5rem; color: rgba(61,32,32,.35); }
+    .exp-visual img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
     .exp-title { margin-bottom: .6rem; max-width: 340px; }
     .exp-title em { font-style: italic; color: var(--accent-dark); }
     .exp-desc { font-size: .9rem; color: var(--text-mid); line-height: 1.75; margin-bottom: 1.9rem; max-width: 420px; }
@@ -121,7 +122,11 @@
       padding: .1rem clamp(1.25rem,5vw,3rem) 1rem; scroll-snap-type: x mandatory;
     }
     .insp-scroll::-webkit-scrollbar { display: none; }
-    .insp-card { flex: 0 0 auto; scroll-snap-align: start; border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); }
+    .insp-card {
+      flex: 0 0 auto; scroll-snap-align: start; border-radius: var(--radius-lg); overflow: hidden;
+      box-shadow: var(--shadow-sm); width: 170px; height: 220px;
+    }
+    .insp-card:nth-child(even) { margin-top: 1.6rem; width: 125px; }
     .insp-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
     /* ── CTA DE RESERVA ── */
@@ -171,6 +176,8 @@
       .exp-pillars { gap: 1.25rem; }
       .contact-list { flex-direction: row; }
       .contact-item { flex: 1; flex-direction: column; text-align: center; gap: .6rem; padding: 1.5rem 1.2rem; }
+      .insp-scroll { display: grid; grid-template-columns: repeat(4, 1fr); overflow: visible; margin: 0; padding: 0; }
+      .insp-card, .insp-card:nth-child(even) { width: 100%; height: 240px; margin-top: 0; }
     }
     @media (min-width: 980px) {
       .hero-photo { height: 78vh; max-height: 680px; }
@@ -526,10 +533,11 @@
 <!-- ══ HERO — foto a sangre completa, texto superpuesto ═══════ -->
 <section id="inicio">
   <div class="hero-photo reveal">
-    <!-- Reemplazá el fondo degradé de acá arriba por una foto real:
-         agregar <img src="assets/hero.jpg" alt="Eva Spa" loading="eager">
-         como primer hijo de .hero-photo, y en CSS:
-         .hero-photo img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover } -->
+    <!-- Subí el archivo a assets/hero.jpg y listo — no hace falta tocar más código.
+         Si el archivo no existe todavía, esta imagen falla silenciosamente y se
+         ve el degradé de referencia de abajo (nada se rompe). -->
+    <img src="assets/hero.jpg" alt="Eva Spa" loading="eager"
+         onload="this.nextElementSibling.style.display='none'" onerror="this.remove()">
     <div class="hero-photo-note">
       <svg class="icon" viewBox="0 0 24 24"><path d="M12 3C12 3 6 11 6 15C6 18.3 8.7 21 12 21C15.3 21 18 18.3 18 15C18 11 12 3 12 3Z"/></svg>
       <p>Foto real del salón / manos<br>(reemplaza este degradé de referencia)</p>
@@ -578,6 +586,10 @@
 <section class="section" id="experiencia">
   <div class="exp-layout">
     <div class="exp-visual reveal">
+      <!-- Subí el archivo a assets/experiencia.jpg y listo. Si no existe,
+           se ve el degradé + ícono de referencia (nada se rompe). -->
+      <img src="assets/experiencia.jpg" alt="Espacio Eva Spa" loading="lazy"
+           onload="this.nextElementSibling.style.display='none'" onerror="this.remove()">
       <svg viewBox="0 0 24 24" style="stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="M12 2L14 10L22 12L14 14L12 22L10 14L2 12L10 10L12 2Z"/></svg>
     </div>
     <div class="reveal">
@@ -791,7 +803,7 @@
 
 <!-- ══ BOTTOM BAR — solo mobile, ítems condicionales ═══════════ -->
 <nav class="bottom-bar" id="bottomBar">
-  <a href="#turnos" class="bb-item main">
+  <a href="#turnos" class="bb-item main" id="bbReservar">
     <span class="ic-wrap">
       <svg class="icon" viewBox="0 0 24 24"><path d="M4 5H20V21H4V5Z"/><path d="M4 9H20"/><path d="M8 3V7"/><path d="M16 3V7"/></svg>
     </span>
@@ -1122,7 +1134,20 @@ function resetBooking() {
 //  SECCIÓN SERVICIOS (informativa) — tarjetas visuales por grupo,
 //  misma fuente de datos real de siempre (getAgenda().servicios /
 //  getDefaultServicios()), solo cambia la presentación.
+//
+//  DESCRIPCIONES_GRUPO es copy corto propio (no son datos del
+//  backend) para cada grupo real conocido hoy (Manos/Pies/
+//  Pedicura). Si en el futuro se agrega un grupo nuevo desde
+//  Configuración, cae al fallback genérico automáticamente —
+//  no rompe nada, solo queda menos lindo hasta que se le sume
+//  una descripción acá.
 // ════════════════════════════════════════════════════════════
+const DESCRIPCIONES_GRUPO = {
+  'Manos':    'Manicura clásica, semipermanente o soft gel.',
+  'Pies':     'Esmaltado tradicional o semipermanente para tus pies.',
+  'Pedicura': 'Cuidado completo, con opción de esmaltado.',
+};
+
 function renderServiciosLista() {
   const svcs = (getAgenda().servicios || getDefaultServicios());
   const grupos = {};
@@ -1133,16 +1158,19 @@ function renderServiciosLista() {
 
   document.getElementById('serviciosCards').innerHTML =
     Object.entries(grupos).map(([grupo, items]) => {
-      const minDur = Math.min(...items.map(s => Number(s.duracion) || 0));
+      const desc = DESCRIPCIONES_GRUPO[grupo] || `${items.length} opción${items.length !== 1 ? 'es' : ''} disponible${items.length !== 1 ? 's' : ''}.`;
+      // Foto real opcional: assets/servicios/<grupo-en-minuscula>.jpg — si no existe, se ve el degradé de siempre.
+      const fotoSlug = grupo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       return `
         <a href="#turnos" class="svc-card">
           <div class="bgimg"></div>
+          <img src="assets/servicios/${fotoSlug}.jpg" alt="${grupo}" loading="lazy" onerror="this.remove()">
           <div class="scrim"></div>
           <div class="info">
             <span class="grp">${items.length} opción${items.length !== 1 ? 'es' : ''}</span>
             <h3>${grupo}</h3>
+            <p class="desc">${desc}</p>
             <div class="meta">
-              <span>Desde ${minDur} min</span>
               <span class="go"><svg class="icon" viewBox="0 0 24 24"><path d="M9 6L15 12L9 18"/></svg></span>
             </div>
           </div>
@@ -1229,12 +1257,31 @@ function renderContactoYBottomBar() {
 }
 
 // ════════════════════════════════════════════════════════════
+//  BOTTOM BAR — botón "Reservar": mientras no tengamos calendario
+//  propio (RESERVAS_HABILITADAS=false, definido en js/agenda.js,
+//  no se toca acá), lleva directo al Calendly real. El día que se
+//  active el calendario propio, vuelve solo a #turnos — no hay que
+//  tocar este archivo de nuevo para ese cambio.
+// ════════════════════════════════════════════════════════════
+function configurarBotonReservarBottomBar() {
+  const btn = document.getElementById('bbReservar');
+  if (!btn) return;
+  if (typeof RESERVAS_HABILITADAS !== 'undefined' && !RESERVAS_HABILITADAS && typeof CALENDLY_FALLBACK_URL !== 'undefined') {
+    btn.href = CALENDLY_FALLBACK_URL;
+    btn.target = '_blank';
+    btn.rel = 'noopener';
+  }
+  // Si RESERVAS_HABILITADAS es true, se deja el href="#turnos" que ya trae el HTML.
+}
+
+// ════════════════════════════════════════════════════════════
 //  INIT
 // ════════════════════════════════════════════════════════════
 (async function initTurnos() {
   renderServiciosLista();       // informativo, no depende de RESERVAS_HABILITADAS
   renderInspirate();
   renderContactoYBottomBar();
+  configurarBotonReservarBottomBar();
 
   if (!RESERVAS_HABILITADAS) {
     // Calendly sigue siendo el sistema real — no se muestra el flujo de
