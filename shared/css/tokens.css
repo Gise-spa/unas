@@ -40,22 +40,25 @@
 }
 
 [data-theme="dark"] {
-  --bg:           #1C0F0F;
-  --bg-card:      #2A1515;
-  --bg-yellow:    #3D2A00;
-  --bg-pink:      #3D1525;
-  --bg-nav:       rgba(28,15,15,0.95);
+  --bg:           #140F0B;
+  --bg-card:      #221A12;
+  --bg-yellow:    #4A3410;
+  --bg-pink:      #3A1E28;
+  --bg-nav:       rgba(20,15,11,0.95);
 
-  --text:         #FEF9E8;
-  --text-mid:     #D4B090;
-  --text-muted:   #8A6A60;
+  --gold:         #E8B23D;
+  --gold-light:   #F5C765;
 
-  --border:       #4A2A20;
-  --border-pink:  #5A2535;
+  --text:         #F5EAD8;
+  --text-mid:     #D0A96E;
+  --text-muted:   #8C7358;
 
-  --shadow-sm:    0 2px 12px rgba(0,0,0,0.3);
-  --shadow-md:    0 4px 24px rgba(0,0,0,0.4);
-  --shadow-lg:    0 8px 40px rgba(232,144,144,0.12);
+  --border:       #3A2E1E;
+  --border-pink:  #4A2A30;
+
+  --shadow-sm:    0 2px 12px rgba(0,0,0,0.35);
+  --shadow-md:    0 4px 24px rgba(0,0,0,0.45);
+  --shadow-lg:    0 8px 40px rgba(232,178,61,0.16);
 }
 
 /* Logo real (círculo, .png) — base compartida por admin y sitio
