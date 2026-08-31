@@ -44,9 +44,9 @@
     .hero-photo-note p { font-size: .74rem; line-height: 1.6; opacity: .85; max-width: 260px; }
     .hero-scrim {
       position: absolute; inset: 0;
-      background: linear-gradient(to top, rgba(61,20,20,.72) 0%, rgba(61,20,20,.18) 45%, transparent 68%);
+      background: linear-gradient(to top, rgba(61,20,20,.78) 0%, rgba(61,20,20,.32) 55%, transparent 82%);
     }
-    .hero-photo-content { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 clamp(1.25rem,5vw,3rem) 1.8rem; color: #fff; z-index: 2; }
+    .hero-photo-content { position: absolute; left: 0; right: 0; bottom: 15%; padding: 0 clamp(1.25rem,5vw,3rem); z-index: 2; color: #fff; }
     .hero-tag {
       display: inline-flex; align-items: center; gap: .4rem; background: rgba(255,255,255,.16);
       border: 1px solid rgba(255,255,255,.35); backdrop-filter: blur(6px); border-radius: 50px;
@@ -156,7 +156,7 @@
     /* ── BOTTOM BAR — solo mobile ── */
     .bottom-bar {
       display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 90; align-items: center; justify-content: space-around;
-      background: rgba(255,255,255,.92); backdrop-filter: blur(12px); border-top: 1px solid var(--border);
+      background: var(--bg-nav); backdrop-filter: blur(12px); border-top: 1px solid var(--border);
       padding: .6rem .4rem calc(.6rem + env(safe-area-inset-bottom,0));
     }
     .bb-item { display: flex; flex-direction: column; align-items: center; gap: .26rem; color: var(--text-mid); text-decoration: none; flex: 1; }
