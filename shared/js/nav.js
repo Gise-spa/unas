@@ -33,6 +33,22 @@ function _identityLogoHtml() {
     JSON.stringify(IDENTITY.simbolo + ' ') + ')"> <span>' + IDENTITY.nombre + '</span>';
 }
 
+// Íconos de tema — idénticos a los de admin/script.js, para que el
+// botón se vea y se comporte igual en todo el sitio (público y admin).
+function _iconoTemaSol() {
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="22"/><line x1="4.2" y1="4.2" x2="6" y2="6"/><line x1="18" y1="18" x2="19.8" y2="19.8"/><line x1="2" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="22" y2="12"/><line x1="4.2" y1="19.8" x2="6" y2="18"/><line x1="18" y1="6" x2="19.8" y2="4.2"/></svg>';
+}
+function _iconoTemaLuna() {
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z"/></svg>';
+}
+// Misma convención que el admin: el ícono muestra el modo AL QUE SE
+// PASA al tocarlo (en oscuro se ve el sol, en claro se ve la luna).
+function _actualizarIconoTemaPublico(btn) {
+  if (!btn) return;
+  var esOscuro = html.getAttribute('data-theme') === 'dark';
+  btn.innerHTML = esOscuro ? _iconoTemaSol() : _iconoTemaLuna();
+}
+
 function _navEsPaginaActual(href) {
   var pagina = location.pathname.split('/').pop() || 'index.html';
   var hrefPagina = href.split('#')[0] || 'index.html';
@@ -63,10 +79,12 @@ function renderNav() {
 
   // Wiring — se hace acá porque los elementos recién existen tras el innerHTML
   var themeBtn = cont.querySelector('.theme-btn');
+  _actualizarIconoTemaPublico(themeBtn);
   themeBtn && themeBtn.addEventListener('click', function () {
     var next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     html.setAttribute('data-theme', next);
     localStorage.setItem('theme', next);
+    _actualizarIconoTemaPublico(themeBtn);
   });
 
   var hamburger = cont.querySelector('.hamburger');
