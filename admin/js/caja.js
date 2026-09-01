@@ -55,6 +55,16 @@
  *     refrescaban en el forzarSync() periódico) — si no, el Resumen
  *     diario y la ficha de detalle quedaban con la foto vieja justo
  *     después de cobrar/cargar/editar/eliminar un movimiento.
+ *
+ * Ronda "Editar saldo inicial":
+ *   - se agregó abrirEditarSaldoInicial()/confirmarEditarSaldoInicial(),
+ *     para corregir un error al abrir la caja (ej. $331.000 en vez de
+ *     $0) sin pasar por Sheets ni por el editor de Apps Script — reusa
+ *     mostrarInput() (el mismo modal de "Renombrar categoría"), no crea
+ *     ningún modal nuevo. Accesible desde "Caja abierta" (lápiz junto a
+ *     "Saldo inicial") y desde la fila "Apertura caja" del Resumen
+ *     diario, si ese día tuvo una sola sesión. Backend:
+ *     editarSaldoInicialSesion() en Caja.gs.
  * ------------------------------------------------------------
  */
 
@@ -151,6 +161,27 @@ function _aperturaDelDia(fecha) {
   return sesiones
     .filter(s => s.fechaApertura && fmtDate(new Date(s.fechaApertura)) === fecha)
     .reduce((sum, s) => sum + (Number(s.saldoInicial) || 0), 0);
+}
+
+// Caja "Apertura caja" del Resumen diario: si ese día tuvo una única
+// sesión, queda clickeable para poder corregir el saldoInicial ahí
+// mismo (mismo caso resuelto a mano el 1/9). Con más de una sesión
+// ese día (poco común) no se ofrece el editor, para no adivinar cuál
+// de las dos corregir.
+function _aperturaBoxHTML(fecha) {
+  const sesiones = (typeof getTodasSesiones === 'function' ? getTodasSesiones() : [])
+    .filter(s => s.fechaApertura && fmtDate(new Date(s.fechaApertura)) === fecha);
+  const monto = sesiones.reduce((sum, s) => sum + (Number(s.saldoInicial) || 0), 0);
+  const label = 'Apertura caja';
+  const clickable = sesiones.length === 1;
+  const idEscapado = clickable ? String(sesiones[0].sesionId).replace(/'/g, "\\'") : '';
+  const onclick = clickable
+    ? ` onclick="abrirEditarSaldoInicial('${idEscapado}', ${Number(sesiones[0].saldoInicial) || 0})" style="cursor:pointer"`
+    : '';
+  return `<div class="cdt-box" style="border-left-color:${_colorDetalle(label)}"${onclick}>
+    <span>${label}${clickable ? ' ✎' : ''}</span>
+    <strong class="monto-caja">${fmtMoneda(monto)}</strong>
+  </div>`;
 }
 
 // ════════════════════════════════════════════════════════
@@ -386,10 +417,13 @@ function renderResumenDiaCaja() {
 
   // Detalle total: métodos configurados (con movimientos ese día) +
   // "Apertura caja" siempre al final, aunque sea $0 (para que quede
-  // claro que ese día no se abrió caja, y no falte la fila).
+  // claro que ese día no se abrió caja, y no falte la fila). La caja
+  // de apertura se arma aparte (_aperturaBoxHTML) porque, a diferencia
+  // de los métodos de pago, puede quedar clickeable para corregir el
+  // saldoInicial.
   const filas = _filasPorMetodo(porMetodo);
-  filas.push({ label: 'Apertura caja', monto: _aperturaDelDia(fechaCajaActiva) });
-  document.getElementById('cajaResumenDiaDesglose').innerHTML = _detalleTotalHTML(filas);
+  const cajasHTML = filas.map(f => _cdtBoxHTML(f.label, f.monto)).join('') + _aperturaBoxHTML(fechaCajaActiva);
+  document.getElementById('cajaResumenDiaDesglose').innerHTML = `<div class="caja-detalle-total-grid">${cajasHTML}</div>`;
 
   const movsEl = document.getElementById('cajaResumenDiaMovs');
   if (movs.length) {
@@ -462,7 +496,36 @@ function _renderCajaUI() {
     : '';
   document.getElementById('cajaEstadoInfo').innerHTML =
     `<strong style="color:#16a34a">● Caja abierta</strong>${horaApertura ? ' desde las ' + horaApertura : ''}` +
-    `<br>Saldo inicial: ${fmtMoneda(sesion.saldoInicial)}`;
+    `<br>Saldo inicial: ${fmtMoneda(sesion.saldoInicial)} ` +
+    `<button onclick="abrirEditarSaldoInicial('${String(sesion.sesionId).replace(/'/g, "\\'")}', ${Number(sesion.saldoInicial) || 0})" class="btn btn-sm caja-mov-btn-editar" title="Editar saldo inicial">✎</button>`;
+}
+
+// ════════════════════════════════════════════════════════
+//  EDITAR SALDO INICIAL — corrección de un error al abrir la caja
+//  (ej. cargar $331.000 en vez de $0). Reusa el modal genérico
+//  mostrarInput() (el mismo de "Renombrar categoría"), no crea ningún
+//  modal nuevo. Se llama tanto desde "Caja abierta" como desde la
+//  fila "Apertura caja" del Resumen diario para un día ya cerrado.
+// ════════════════════════════════════════════════════════
+function abrirEditarSaldoInicial(sesionId, saldoActual) {
+  mostrarInput({
+    titulo: 'Editar saldo inicial',
+    label: 'Saldo con el que se abrió la caja',
+    valorActual: String(Math.round(Number(saldoActual) || 0)),
+    onOk: (v) => confirmarEditarSaldoInicial(sesionId, v)
+  });
+}
+
+async function confirmarEditarSaldoInicial(sesionId, valor) {
+  const nuevoSaldo = Number(valor);
+  if (isNaN(nuevoSaldo) || nuevoSaldo < 0) { showToast('Ingresá un monto válido'); return; }
+  const res = await apiPost({ action: 'editarSaldoInicialCaja', sesionId, saldoInicial: nuevoSaldo });
+  if (res.ok) {
+    showToast('✓ Saldo inicial actualizado');
+    await renderCaja();
+  } else {
+    showToast(res.error || 'No se pudo actualizar el saldo inicial');
+  }
 }
 
 // Sub-cuentas fijas para Transferencia/Tarjeta — son la forma en que
