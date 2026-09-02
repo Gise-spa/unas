@@ -528,6 +528,60 @@ async function confirmarEditarSaldoInicial(sesionId, valor) {
   }
 }
 
+// ════════════════════════════════════════════════════════
+//  RESUMEN DEL MES — se abre desde la tarjeta "Resultado mes" de
+//  Inicio. A diferencia del desglose de Caja (_filasPorMetodo, que
+//  neta ingresos y egresos en un solo número por método), acá van
+//  separados en dos listas: es lo que hace falta para ver de un
+//  vistazo qué entró y qué salió de cada cuenta en todo el mes.
+// ════════════════════════════════════════════════════════
+function abrirResumenMes() {
+  const hoy = new Date();
+  const mesActual = todayStr().slice(0, 7);
+  const movsMes = getTodosMovimientos().filter(m => {
+    if (!m.fecha) return false;
+    const d = new Date(m.fecha);
+    return !isNaN(d.getTime()) && fmtDate(d).startsWith(mesActual);
+  });
+
+  const ingresosPorMetodo = {};
+  const egresosPorMetodo = {};
+  let totalIngresos = 0, totalEgresos = 0;
+
+  movsMes.forEach(m => {
+    const importe = Number(m.importe) || 0;
+    const tipo = String(m.tipo || '').toLowerCase();
+    const label = m.cuentaDestino || m.metodoPago || 'Sin especificar';
+    if (tipo === 'ingreso') {
+      totalIngresos += importe;
+      ingresosPorMetodo[label] = (ingresosPorMetodo[label] || 0) + importe;
+    } else if (tipo === 'egreso') {
+      totalEgresos += importe;
+      egresosPorMetodo[label] = (egresosPorMetodo[label] || 0) + importe;
+    }
+  });
+
+  document.getElementById('rmTitulo').textContent = `Resultado de ${MESES[hoy.getMonth()]} ${hoy.getFullYear()}`;
+  document.getElementById('rmNeto').textContent = fmtMoneda(totalIngresos - totalEgresos);
+  document.getElementById('rmIngresos').innerHTML = _detalleMesHTML(ingresosPorMetodo);
+  document.getElementById('rmEgresos').innerHTML = _detalleMesHTML(egresosPorMetodo);
+  document.getElementById('rmTotales').innerHTML =
+    `Total ingresos: <strong class="monto-caja">${fmtMoneda(totalIngresos)}</strong><br>` +
+    `Total egresos: <strong class="monto-caja">${fmtMoneda(totalEgresos)}</strong>`;
+
+  abrirModal('modalResumenMes');
+}
+
+// Igual que _cdtBoxHTML/_detalleTotalHTML, pero para un solo lado
+// (ingresos O egresos) — no neta nada, cada método muestra su monto
+// tal cual quedó cargado.
+function _detalleMesHTML(porMetodo) {
+  const labels = Object.keys(porMetodo);
+  if (!labels.length) return '<p class="today-empty">Sin movimientos</p>';
+  const html = labels.sort().map(label => _cdtBoxHTML(label, porMetodo[label])).join('');
+  return `<div class="caja-detalle-total-grid">${html}</div>`;
+}
+
 // Sub-cuentas fijas para Transferencia/Tarjeta — son la forma en que
 // el cliente pagó, no un "método" nuevo en Configuración, así que van
 // hardcodeadas acá (lista corta, se edita a mano si se suma un banco).
