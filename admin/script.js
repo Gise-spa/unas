@@ -319,16 +319,18 @@ function renderInicio() {
     if (cajaHoyCard) cajaHoyCard.classList.remove('inicio-stat-card-accion');
   }
 
-  // Ingresos del mes
+  // Resultado del mes (ingresos - egresos). El desglose completo por
+  // método, con ingresos y egresos separados (no neteados), se ve al
+  // tocar la tarjeta — abrirResumenMes(), en js/caja.js.
   const mesActual = hoy.slice(0,7);
-  const totalMes = getTodosMovimientos()
-    .filter(m => {
-      if (!m.fecha || String(m.tipo).toLowerCase() !== 'ingreso') return false;
-      const d = new Date(m.fecha);
-      return !isNaN(d.getTime()) && fmtDate(d).startsWith(mesActual);
-    })
-    .reduce((s,m) => s + (Number(m.importe)||0), 0);
-  document.getElementById('stIngresosMes').textContent = fmtMonedaDashboard(totalMes);
+  const movsMes = getTodosMovimientos().filter(m => {
+    if (!m.fecha) return false;
+    const d = new Date(m.fecha);
+    return !isNaN(d.getTime()) && fmtDate(d).startsWith(mesActual);
+  });
+  const ingresosMes = movsMes.filter(m => String(m.tipo).toLowerCase() === 'ingreso').reduce((s,m) => s + (Number(m.importe)||0), 0);
+  const egresosMes  = movsMes.filter(m => String(m.tipo).toLowerCase() === 'egreso').reduce((s,m) => s + (Number(m.importe)||0), 0);
+  document.getElementById('stIngresosMes').textContent = fmtMonedaDashboard(ingresosMes - egresosMes);
   document.getElementById('stIngresosMesSub').textContent = `${MESES[hoyDt.getMonth()]} ${hoyDt.getFullYear()}`;
 
   // Stock bajo
