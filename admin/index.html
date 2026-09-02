@@ -188,9 +188,13 @@
     <div class="admin-section" id="sec-clientes">
       <h2 class="section-title">Clientes</h2>
       <p class="section-subtitle">Buscá una clienta para ver su ficha</p>
+      <div style="display:flex;gap:.5rem;margin-bottom:.75rem">
+        <button type="button" id="clientesTabActivos" class="toggle-vis-btn active-vis" onclick="setFiltroClientes(true)">Activos</button>
+        <button type="button" id="clientesTabInactivos" class="toggle-vis-btn" onclick="setFiltroClientes(false)">Inactivos</button>
+      </div>
       <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem">
         <input type="text" class="input-sm" id="clientesBuscar"
-          placeholder="Buscar por nombre o teléfono…"
+          placeholder="Buscar por nombre, apellido, teléfono o mail…"
           style="flex:1;min-width:180px"
           oninput="renderClientes()">
       </div>
@@ -882,7 +886,29 @@
       <button class="modal-close" onclick="cerrarModal('modalFichaCliente')">×</button>
     </div>
     <div id="fcContacto" style="font-size:.84rem;color:var(--text-muted);margin-bottom:1rem"></div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <button type="button" class="btn btn-outline btn-sm" onclick="abrirModalEditarCliente()">✏️ Editar</button>
+      <div class="switch-activo-wrap">
+        <span id="fcSwitchActivoLabel" class="switch-activo-label">Activo</span>
+        <button type="button" id="fcSwitchActivo" class="switch-activo on" onclick="toggleActivoClienteUI()" aria-label="Activar/desactivar cliente">
+          <span class="switch-activo-knob"></span>
+        </button>
+      </div>
+    </div>
+
     <div id="fcResumen" class="fc-resumen"></div>
+
+    <div class="fc-bloque">
+      <h4>Datos para facturación</h4>
+      <div id="fcFacturacion" class="fc-resumen"></div>
+    </div>
+
+    <div class="fc-bloque">
+      <h4>Datos internos</h4>
+      <div id="fcInternos" class="fc-resumen"></div>
+    </div>
+
     <div class="fc-bloque">
       <h4>Turnos recientes / próximos</h4>
       <div id="fcTurnos" class="fc-lista"></div>
@@ -890,6 +916,66 @@
     <div class="fc-bloque">
       <h4>Historial de pagos</h4>
       <div id="fcPagos" class="fc-lista"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR CLIENTE -->
+<div class="modal-overlay" id="modalEditarCliente">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-header">
+      <h3>Editar cliente</h3>
+      <button class="modal-close" onclick="cerrarModal('modalEditarCliente')">×</button>
+    </div>
+    <input type="hidden" id="ecClienteId">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+      <div class="form-group">
+        <label>Nombre</label>
+        <input type="text" id="ecNombre" placeholder="Nombre">
+      </div>
+      <div class="form-group">
+        <label>Apellido</label>
+        <input type="text" id="ecApellido" placeholder="Apellido">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Mail</label>
+        <input type="email" id="ecMail" placeholder="mail@ejemplo.com">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Teléfono</label>
+        <input type="text" id="ecTelefono" placeholder="+54 9 11...">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label style="margin-bottom:.5rem;display:block">Datos para facturación <span style="font-weight:400;color:var(--text-muted)">(opcional por ahora)</span></label>
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Condición frente al IVA</label>
+        <select id="ecCondicionIVA">
+          <option value="">Sin especificar</option>
+          <option value="Consumidor Final">Consumidor Final</option>
+          <option value="Responsable Inscripto">Responsable Inscripto</option>
+          <option value="Monotributista">Monotributista</option>
+          <option value="Exento">Exento</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Tipo de documento</label>
+        <select id="ecTipoDocumento">
+          <option value="">Sin especificar</option>
+          <option value="DNI">DNI</option>
+          <option value="CUIT">CUIT</option>
+          <option value="CUIL">CUIL</option>
+          <option value="Pasaporte">Pasaporte</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Número de documento</label>
+        <input type="text" id="ecNumeroDocumento" placeholder="Número">
+      </div>
+    </div>
+    <div style="display:flex;gap:.6rem;margin-top:.75rem">
+      <button class="btn btn-primary" style="flex:1" id="ecGuardarBtn" onclick="guardarCliente()">Guardar</button>
+      <button class="btn btn-outline" onclick="cerrarModal('modalEditarCliente')">Cancelar</button>
     </div>
   </div>
 </div>
