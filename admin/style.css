@@ -459,6 +459,35 @@
 .fc-lista-monto { color: #16a34a; font-weight: 600; flex-shrink: 0; }
 .fc-lista-vacio { font-size: .82rem; color: var(--text-muted); padding: .4rem .1rem; }
 
+/* ── Switch Activo/Inactivo (ficha de cliente) ── */
+.switch-activo-wrap { display: flex; align-items: center; gap: .5rem; }
+.switch-activo-label { font-size: .8rem; color: var(--text-muted); }
+.switch-activo {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(0,0,0,.15);
+  cursor: pointer;
+  padding: 0;
+  transition: background .2s;
+  flex-shrink: 0;
+}
+.switch-activo.on { background: #16a34a; }
+.switch-activo-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.25);
+  transition: left .2s;
+}
+.switch-activo.on .switch-activo-knob { left: 20px; }
+
 /* ── Mi Agenda: filas de configuración ── */
 .config-lista { display: flex; flex-direction: column; gap: .55rem; }
 .config-row {
