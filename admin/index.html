@@ -137,8 +137,8 @@
           <div class="inicio-stat-num" id="stCajaHoy">—</div>
           <div class="inicio-stat-sub inicio-stat-sub-accent" id="stCajaHoySub"></div>
         </div>
-        <div class="inicio-stat-card">
-          <div class="inicio-stat-top"><span>Ingresos mes</span><span class="inicio-stat-icon">📈</span></div>
+        <div class="inicio-stat-card" id="inicioResultadoMesCard" onclick="abrirResumenMes()">
+          <div class="inicio-stat-top"><span>Resultado mes</span><span class="inicio-stat-icon">📈</span></div>
           <div class="inicio-stat-num" id="stIngresosMes">—</div>
           <div class="inicio-stat-sub" id="stIngresosMesSub"></div>
         </div>
@@ -562,6 +562,32 @@
     <div style="display:flex;gap:.6rem;margin-top:1rem">
       <button class="btn btn-primary" style="flex:1" onclick="verDetallesCierre()">Ver detalles</button>
       <button class="btn btn-outline" onclick="cerrarModal('modalCierreResultado')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RESUMEN DEL MES — se abre desde la tarjeta "Resultado mes"
+     de Inicio. A diferencia del desglose de Caja (que neta ingresos y
+     egresos en un solo número por método), acá van separados en dos
+     listas — es lo que hace falta para ver de un vistazo qué entró y
+     qué salió de cada cuenta en todo el mes. -->
+<div class="modal-overlay" id="modalResumenMes">
+  <div class="modal-box" style="max-width:380px">
+    <div class="modal-header">
+      <h3 id="rmTitulo">Resultado del mes</h3>
+      <button class="modal-close" onclick="cerrarModal('modalResumenMes')">×</button>
+    </div>
+    <div class="crd-neto-box" style="margin-bottom:.9rem">
+      <span>Resultado neto</span>
+      <strong id="rmNeto" class="monto-caja">—</strong>
+    </div>
+    <div style="font-size:.86rem;color:var(--text-muted);font-weight:600;margin:.6rem 0 .3rem">Ingresos</div>
+    <div id="rmIngresos"></div>
+    <div style="font-size:.86rem;color:var(--text-muted);font-weight:600;margin:.9rem 0 .3rem">Egresos</div>
+    <div id="rmEgresos"></div>
+    <div style="font-size:.86rem;line-height:1.8;margin-top:.9rem" id="rmTotales"></div>
+    <div style="display:flex;gap:.6rem;margin-top:1rem">
+      <button class="btn btn-outline" style="flex:1" onclick="cerrarModal('modalResumenMes')">Cerrar</button>
     </div>
   </div>
 </div>
