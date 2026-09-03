@@ -371,6 +371,9 @@
     <button class="sheet-option" onclick="accionRapida('turno')">
       <span class="sheet-icon">📅</span> Nuevo turno
     </button>
+    <button class="sheet-option" onclick="accionRapida('cliente')">
+      <span class="sheet-icon">👤</span> Nuevo cliente
+    </button>
     <button class="sheet-option" onclick="accionRapida('producto')">
       <span class="sheet-icon">📦</span> Nuevo producto
     </button>
@@ -925,8 +928,8 @@
 <div class="modal-overlay" id="modalEditarCliente">
   <div class="modal-box" style="max-width:440px">
     <div class="modal-header">
-      <h3>Editar cliente</h3>
-      <button class="modal-close" onclick="cerrarModal('modalEditarCliente')">×</button>
+      <h3 id="ecTitulo">Editar cliente</h3>
+      <button class="modal-close" onclick="cerrarModalEditarCliente()">×</button>
     </div>
     <input type="hidden" id="ecClienteId">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
@@ -976,7 +979,7 @@
     </div>
     <div style="display:flex;gap:.6rem;margin-top:.75rem">
       <button class="btn btn-primary" style="flex:1" id="ecGuardarBtn" onclick="guardarCliente()">Guardar</button>
-      <button class="btn btn-outline" onclick="cerrarModal('modalEditarCliente')">Cancelar</button>
+      <button class="btn btn-outline" onclick="cerrarModalEditarCliente()">Cancelar</button>
     </div>
   </div>
 </div>
