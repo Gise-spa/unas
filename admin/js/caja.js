@@ -794,6 +794,25 @@ let _mvEditandoId = null;
 // saber si corresponde exigir/mandar nombreCliente.
 let _mvEditandoTipo = null;
 
+// Etapa "Cliente obligatorio en ingresos": limpia el cliente elegido (y
+// el resto de campos transitorios de esa búsqueda) al cerrar el modal
+// de "Nuevo movimiento"/"Editar movimiento" sin guardar — así un cierre
+// a mitad de camino nunca deja un clienteId de una carga anterior
+// pegado para la próxima vez que se abra. abrirModalMovimiento()/
+// abrirEditarMovimiento() ya resetean todo al ABRIR; esto cubre también
+// el cierre (X o Cancelar) sin guardar.
+function cerrarModalMovimiento() {
+  document.getElementById('mvClienteId').value = '';
+  document.getElementById('mvClienteNombre').value = '';
+  document.getElementById('mvClienteTelefono').value = '';
+  document.getElementById('mvClienteMail').value = '';
+  const cont = document.getElementById('mvClienteResultados');
+  if (cont) { cont.innerHTML = ''; cont.style.display = 'none'; }
+  _mvEditandoId = null;
+  _mvEditandoTipo = null;
+  cerrarModal('modalMovimientoCaja');
+}
+
 function abrirModalMovimiento() {
   _mvEditandoId = null;
   _mvEditandoTipo = null;
@@ -949,10 +968,17 @@ async function confirmarMovimientoCaja() {
   if (isNaN(importe) || importe <= 0) { showToast('Ingresá un importe válido'); return; }
   if (!metodoPago) { showToast('Elegí un método de pago'); return; }
   if (!concepto) { showToast('Ingresá un concepto'); return; }
-  // El nombre del cliente ya no es opcional en un ingreso — es lo que
-  // se muestra como título de cada movimiento (en vez del concepto),
-  // así se puede reconocer de un vistazo quién pagó.
-  if (tipo === 'ingreso' && !nombreCliente) { showToast('Ingresá el nombre del cliente'); return; }
+  // Etapa "Cliente obligatorio en ingresos": un ingreso tiene que quedar
+  // vinculado a un clienteId real de la lista — no alcanza con escribir
+  // un nombre suelto (eso ya no identifica a nadie de forma confiable).
+  // Si escribió algo pero no tocó ningún resultado, clienteId queda
+  // vacío igual, así que el mensaje distingue ambos casos.
+  if (tipo === 'ingreso' && !clienteId) {
+    showToast(nombreCliente
+      ? 'Elegí ese cliente de la lista de resultados (no alcanza con escribir el nombre)'
+      : 'Para un ingreso tenés que elegir un cliente de la lista — si es clienta nueva, cargala primero en Clientes');
+    return;
+  }
 
   _mvGuardando = true;
   _bloquearBoton(btn, 'Guardando…');
@@ -963,7 +989,7 @@ async function confirmarMovimientoCaja() {
         movimientoId: _cajaUuid(),
         sesionId: sesion.sesionId,
         tipo, importe, metodoPago, cuentaDestino, concepto,
-        ...(nombreCliente ? { clienteId, nombreCliente, telefonoCliente, mailCliente } : {})
+        ...(tipo === 'ingreso' ? { clienteId, nombreCliente, telefonoCliente, mailCliente } : {})
       }
     });
 
