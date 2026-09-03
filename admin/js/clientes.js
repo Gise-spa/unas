@@ -204,11 +204,20 @@ async function guardarActivoCliente(clienteId, activo) {
   }
 }
 
-// ── Editar cliente ───────────────────────────────────────────
+// ── Editar / crear cliente (mismo formulario, misma función de guardado) ──
+// _clienteFormOrigen indica qué hacer después de guardar: 'ficha' (edición
+// normal, ya existía) vuelve a la ficha del cliente; 'mas' (alta desde el
+// + central) solo confirma y refresca la lista; 'caja' (alta desde el
+// buscador de Caja cuando no aparece nadie) cierra este formulario y
+// vuelve al modal de Caja con el cliente recién creado ya seleccionado.
+let _clienteFormOrigen = 'ficha';
+
 function abrirModalEditarCliente() {
   const cliente = getClientes().find(c => String(c.clienteId) === String(_fichaClienteId));
   if (!cliente) return;
 
+  _clienteFormOrigen = 'ficha';
+  document.getElementById('ecTitulo').textContent = 'Editar cliente';
   document.getElementById('ecClienteId').value       = cliente.clienteId;
   document.getElementById('ecNombre').value           = cliente.nombre || '';
   document.getElementById('ecApellido').value         = cliente.apellido || '';
@@ -222,6 +231,36 @@ function abrirModalEditarCliente() {
   abrirModal('modalEditarCliente');
 }
 
+// Alta manual — botón "+" central ("Nuevo cliente") o buscador de Caja
+// cuando no aparece nadie ("+ Crear nuevo cliente"). Mismo formulario y
+// misma función guardarCliente() de abajo: al no traer ecClienteId,
+// guardarCliente() sabe que tiene que crear en vez de editar.
+// prefill: { nombre?, telefono?, mail? } — opcional, para precargar lo
+// que ya se haya tipeado antes de abrir el formulario.
+function abrirModalNuevoCliente(prefill, origen) {
+  _clienteFormOrigen = origen || 'mas';
+  document.getElementById('ecTitulo').textContent = 'Nuevo cliente';
+  document.getElementById('ecClienteId').value        = '';
+  document.getElementById('ecNombre').value            = (prefill && prefill.nombre) || '';
+  document.getElementById('ecApellido').value          = '';
+  document.getElementById('ecMail').value               = (prefill && prefill.mail) || '';
+  document.getElementById('ecTelefono').value           = (prefill && prefill.telefono) || '';
+  document.getElementById('ecCondicionIVA').value       = '';
+  document.getElementById('ecTipoDocumento').value      = '';
+  document.getElementById('ecNumeroDocumento').value    = '';
+
+  abrirModal('modalEditarCliente');
+}
+
+// Cierre del formulario (X / Cancelar). Si se había abierto desde el
+// buscador de Caja, vuelve al modal de Caja en vez de dejar todo cerrado
+// — así no se pierde el importe/tipo/método que ya se hubiera cargado.
+function cerrarModalEditarCliente() {
+  const volverACaja = _clienteFormOrigen === 'caja';
+  cerrarModal('modalEditarCliente');
+  if (volverACaja) abrirModal('modalMovimientoCaja');
+}
+
 let _guardandoCliente = false;
 
 async function guardarCliente() {
@@ -230,8 +269,7 @@ async function guardarCliente() {
   const nombre = document.getElementById('ecNombre').value.trim();
   if (!nombre) { showToast('Ingresá al menos el nombre'); return; }
 
-  const cliente = {
-    clienteId,
+  const datosCliente = {
     nombre,
     apellido:        document.getElementById('ecApellido').value.trim(),
     mail:            document.getElementById('ecMail').value.trim(),
@@ -240,21 +278,36 @@ async function guardarCliente() {
     tipoDocumento:   document.getElementById('ecTipoDocumento').value,
     numeroDocumento: document.getElementById('ecNumeroDocumento').value.trim(),
   };
+  const esNuevo = !clienteId;
 
   const btn = document.getElementById('ecGuardarBtn');
   const original = btn ? btn.textContent : '';
   _guardandoCliente = true;
   if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
   try {
-    const res = await apiPost({ action: 'guardarCliente', cliente });
-    if (res.ok) {
-      await _refrescarClientes();
-      cerrarModal('modalEditarCliente');
+    const res = esNuevo
+      ? await apiPost({ action: 'crearCliente', cliente: datosCliente })
+      : await apiPost({ action: 'guardarCliente', cliente: { clienteId, ...datosCliente } });
+
+    if (!res.ok) { showToast(res.error || 'No se pudo guardar el cliente'); return; }
+
+    await _refrescarClientes();
+    cerrarModal('modalEditarCliente');
+
+    if (esNuevo) {
+      showToast('✓ Cliente creado');
+      if (_clienteFormOrigen === 'caja') {
+        // Vuelve al modal de Caja con el cliente recién creado ya
+        // seleccionado — sin tener que buscarlo de nuevo ni perder lo
+        // que ya se hubiera cargado (importe/tipo/método).
+        _mvSeleccionarClienteNuevo(res.clienteId, datosCliente);
+      } else {
+        renderClientes();
+      }
+    } else {
       renderClientes();
       if (_fichaClienteId) abrirFichaCliente(_fichaClienteId);
       showToast('✓ Cliente actualizado');
-    } else {
-      showToast(res.error || 'No se pudo guardar el cliente');
     }
   } finally {
     _guardandoCliente = false;
