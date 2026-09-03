@@ -401,7 +401,7 @@
   <div class="modal-box" style="max-width:400px">
     <div class="modal-header">
       <h3 id="modalMovimientoCajaTitulo">Nuevo movimiento</h3>
-      <button class="modal-close" onclick="cerrarModal('modalMovimientoCaja')">×</button>
+      <button class="modal-close" onclick="cerrarModalMovimiento()">×</button>
     </div>
     <div class="form-group" id="mvTipoWrap">
       <label>Tipo</label>
@@ -412,13 +412,14 @@
       <input type="hidden" id="mvTipo" value="ingreso">
     </div>
     <div class="form-group" id="mvClienteWrap" style="position:relative">
-      <label>Cliente</label>
+      <label>Cliente <span style="color:var(--accent)">*</span></label>
       <input type="text" id="mvClienteNombre" placeholder="Buscar por nombre…" autocomplete="off"
              oninput="mvBuscarCliente()" onfocus="mvBuscarCliente()" onblur="mvOcultarResultadosCliente()">
       <input type="hidden" id="mvClienteId" value="">
       <input type="hidden" id="mvClienteTelefono" value="">
       <input type="hidden" id="mvClienteMail" value="">
       <div id="mvClienteResultados" class="cliente-resultados"></div>
+      <small style="display:block;margin-top:.35rem;color:var(--text-muted);font-size:.75rem">Elegí un cliente de la lista de resultados — es obligatorio para un ingreso. Si es clienta nueva, cargala primero en Clientes.</small>
     </div>
     <div class="form-group">
       <label>Importe</label>
@@ -443,7 +444,7 @@
     </div>
     <div style="display:flex;gap:.6rem;margin-top:.75rem">
       <button class="btn btn-primary" style="flex:1" id="mvConfirmarBtn" onclick="confirmarMovimientoCaja()">Confirmar</button>
-      <button class="btn btn-outline" onclick="cerrarModal('modalMovimientoCaja')">Cancelar</button>
+      <button class="btn btn-outline" onclick="cerrarModalMovimiento()">Cancelar</button>
     </div>
   </div>
 </div>
