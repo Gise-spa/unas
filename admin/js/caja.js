@@ -758,8 +758,53 @@ function mvBuscarCliente() {
           <strong>${c.nombre || 'Sin nombre'}</strong>
           ${c.telefono ? `<span>${c.telefono}</span>` : ''}
         </div>`).join('')
-    : '<div class="cliente-resultado-vacio">Sin coincidencias</div>';
+    : `<div class="cliente-resultado-vacio">No encontramos ningún cliente con esos datos.</div>
+       <div class="cliente-resultado-item cliente-resultado-crear" onmousedown="mvCrearClienteDesdeAqui()">
+         <strong>➕ Crear nuevo cliente</strong>
+       </div>`;
   cont.style.display = 'block';
+}
+
+// Etapa "Nuevo cliente desde Caja": si la búsqueda no encuentra a
+// nadie, se puede dar de alta ahí mismo, sin salir de Caja — abre el
+// mismo formulario de alta que ya usa la sección Clientes
+// (abrirModalNuevoCliente(), en clientes.js), precargado con lo que
+// ya se tipeó. El buscador de Caja es un único campo de texto libre
+// (no tiene inputs separados de teléfono/mail), así que se reparte con
+// una heurística simple: si tiene "@" va a mail, si son mayormente
+// dígitos va a teléfono, si no va a nombre.
+function mvCrearClienteDesdeAqui() {
+  const val = document.getElementById('mvClienteNombre').value.trim();
+  const prefill = { nombre: '', telefono: '', mail: '' };
+  if (val.includes('@')) {
+    prefill.mail = val;
+  } else {
+    const soloDigitos = val.replace(/[^0-9]/g, '');
+    const sinSeparadores = val.replace(/[\s+()-]/g, '');
+    const esMayormenteDigitos = soloDigitos.length >= 6 && sinSeparadores.length > 0 &&
+      soloDigitos.length >= sinSeparadores.length * 0.6;
+    if (esMayormenteDigitos) prefill.telefono = val;
+    else prefill.nombre = val;
+  }
+  document.getElementById('mvClienteResultados').style.display = 'none';
+  // cerrarModal() liso, NO cerrarModalMovimiento(): no queremos perder
+  // el importe/tipo/método/concepto que ya se hubiera cargado — el
+  // formulario de cliente vuelve a este mismo modal al guardar.
+  cerrarModal('modalMovimientoCaja');
+  abrirModalNuevoCliente(prefill, 'caja');
+}
+
+// Llamada desde clientes.js (guardarCliente()) cuando el cliente nuevo
+// se creó con origen='caja' — lo deja seleccionado en el movimiento,
+// tal como si se hubiera elegido de la lista, y reabre el modal de Caja.
+function _mvSeleccionarClienteNuevo(clienteId, datos) {
+  document.getElementById('mvClienteId').value = clienteId;
+  document.getElementById('mvClienteNombre').value = _nombreCompletoCliente(datos);
+  document.getElementById('mvClienteTelefono').value = datos.telefono || '';
+  document.getElementById('mvClienteMail').value = datos.mail || '';
+  const cont = document.getElementById('mvClienteResultados');
+  if (cont) { cont.innerHTML = ''; cont.style.display = 'none'; }
+  abrirModal('modalMovimientoCaja');
 }
 
 // Al elegir un cliente de la lista, se trae también su teléfono/mail
