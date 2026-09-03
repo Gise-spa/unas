@@ -223,6 +223,12 @@ function accionRapida(tipo) {
   } else if (tipo === 'producto') {
     irA('inventario');
     setTimeout(() => abrirModalProducto(), 150);
+  } else if (tipo === 'cliente') {
+    // Etapa "Nuevo cliente desde el +": mismo formulario de alta que
+    // ya usa la sección Clientes (Clientes.js) — no crea ningún turno,
+    // no toca Calendly.
+    irA('clientes');
+    setTimeout(() => abrirModalNuevoCliente(null, 'mas'), 150);
   }
 }
 
