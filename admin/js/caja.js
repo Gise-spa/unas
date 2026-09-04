@@ -748,15 +748,25 @@ function mvBuscarCliente() {
   const cont = document.getElementById('mvClienteResultados');
   if (!val) { cont.innerHTML = ''; cont.style.display = 'none'; return; }
 
+  // Antes solo buscaba en c.nombre — un cliente cuyo apellido ya
+  // estaba separado (o que se busca por mail) no aparecía aunque
+  // existiera. Reusa el mismo criterio que la sección Clientes
+  // (_clienteMatch, en clientes.js) para no duplicar la lógica de
+  // búsqueda ni dejarla desalineada entre las dos pantallas.
   const clientes = getClientes()
-    .filter(c => (c.nombre || '').toLowerCase().includes(val))
+    .filter(c => _clienteMatch(c, val))
     .slice(0, 8);
 
+  // El resultado mostraba nombre + teléfono; ahora muestra nombre
+  // completo (nombre + apellido, vía _nombreCompletoCliente en
+  // clientes.js) + mail, que es lo que sirve para diferenciar
+  // clientas con nombres parecidos. El teléfono se sigue trayendo
+  // igual al elegir (mvElegirCliente), solo cambia qué se ve acá.
   cont.innerHTML = clientes.length
     ? clientes.map(c => `
         <div class="cliente-resultado-item" onmousedown="mvElegirCliente('${String(c.clienteId).replace(/'/g, "\\'")}')">
-          <strong>${c.nombre || 'Sin nombre'}</strong>
-          ${c.telefono ? `<span>${c.telefono}</span>` : ''}
+          <strong>${_nombreCompletoCliente(c)}</strong>
+          ${c.mail ? `<span>${c.mail}</span>` : ''}
         </div>`).join('')
     : `<div class="cliente-resultado-vacio">No encontramos ningún cliente con esos datos.</div>
        <div class="cliente-resultado-item cliente-resultado-crear" onmousedown="mvCrearClienteDesdeAqui()">
