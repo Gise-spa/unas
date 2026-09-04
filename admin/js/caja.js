@@ -935,7 +935,12 @@ function abrirEditarMovimiento(movimientoId) {
   document.getElementById('mvTipoWrap').style.display = 'none';
 
   document.getElementById('mvClienteWrap').style.display = esIngreso ? '' : 'none';
-  document.getElementById('mvClienteNombre').value = m.nombreCliente || '';
+  // Antes precargaba m.nombreCliente (el snapshot guardado en el
+  // movimiento, que en ingresos viejos quedó solo con el primer
+  // nombre — ver mvElegirCliente). Reusa _nombreListaMovimiento(),
+  // que si hay clienteId busca el nombre+apellido actual del cliente;
+  // si el cliente ya no existe, cae de nuevo al snapshot.
+  document.getElementById('mvClienteNombre').value = _nombreListaMovimiento(m);
   document.getElementById('mvClienteId').value = m.clienteId || '';
   document.getElementById('mvClienteTelefono').value = m.telefonoCliente || '';
   document.getElementById('mvClienteMail').value = m.mailCliente || '';
