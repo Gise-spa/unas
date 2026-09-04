@@ -331,6 +331,22 @@ function irAHoyCaja() {
 // (cruza todas las sesiones) como en la lista "Movimientos" de la
 // sesión abierta. Único lugar que arma este markup, para no repetir
 // la lógica de edición/eliminación en dos partes distintas.
+// Nombre a mostrar en la fila del listado: si el movimiento tiene
+// clienteId, busca el cliente actual en getClientes() y usa nombre +
+// apellido (_nombreCompletoCliente, de clientes.js) — así la lista
+// muestra el apellido aunque el movimiento se haya guardado antes de
+// que ese cliente tuviera el apellido cargado. m.nombreCliente (el
+// snapshot guardado en el movimiento) queda como respaldo si el
+// cliente ya no existe, y es lo único que sigue usando el detalle
+// (abrirDetalleMovimiento), que no se tocó.
+function _nombreListaMovimiento(m) {
+  if (m.clienteId) {
+    const c = getClientes().find(x => String(x.clienteId) === String(m.clienteId));
+    if (c) return _nombreCompletoCliente(c);
+  }
+  return m.nombreCliente || '';
+}
+
 function _movItemHTML(m) {
   const hora = m.creadoEn ? new Date(m.creadoEn).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '';
   const signo = m.tipo === 'ingreso' ? '+' : '−';
@@ -341,7 +357,7 @@ function _movItemHTML(m) {
   // vistazo ("¿ya cobré a Dora?"), el servicio queda en el detalle al
   // tocar la fila. Si no hay cliente (movimiento manual), se usa el
   // concepto como antes.
-  const titulo = m.nombreCliente || m.concepto || (m.tipo === 'ingreso' ? 'Ingreso' : 'Egreso');
+  const titulo = _nombreListaMovimiento(m) || m.concepto || (m.tipo === 'ingreso' ? 'Ingreso' : 'Egreso');
   return `<li class="caja-mov-item" onclick="abrirDetalleMovimiento('${idEscapado}')">
     <span style="color:var(--text-muted);flex-shrink:0">${hora}</span>
     <div style="flex:1;min-width:0">
