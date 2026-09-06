@@ -424,6 +424,17 @@
       <div id="mvClienteResultados" class="cliente-resultados"></div>
       <small style="display:block;margin-top:.35rem;color:var(--text-muted);font-size:.75rem">Elegí un cliente de la lista de resultados — es obligatorio para un ingreso. Si es clienta nueva, cargala primero en Clientes.</small>
     </div>
+    <!-- Decisión de facturación: solo aplica a ingresos nuevos, no a
+         edición (ver abrirEditarMovimiento, que oculta este bloque) ni
+         a egresos (ver setMovTipo). Apagado por defecto. -->
+    <div class="form-group" id="mvFacturaWrap">
+      <label>Facturación</label>
+      <div style="display:flex;gap:.5rem;margin-top:.3rem">
+        <button type="button" id="mvFacturarSi" class="toggle-vis-btn" onclick="_setFacturar('mv', true)">🧾 Emitir factura</button>
+        <button type="button" id="mvFacturarNo" class="toggle-vis-btn active-vis" onclick="_setFacturar('mv', false)">Sin factura</button>
+      </div>
+      <input type="hidden" id="mvFacturar" value="">
+    </div>
     <div class="form-group">
       <label>Importe</label>
       <input type="number" id="mvImporte" min="0" step="0.01" placeholder="0.00">
@@ -508,6 +519,17 @@
         <input type="text" id="cbCuentaOtro" placeholder="Nombre de la cuenta" oninput="_cuentaOtroInput('cb')">
       </div>
       <input type="hidden" id="cbCuenta" value="">
+    </div>
+    <!-- Decisión de facturación — apagado por defecto; con Mercado Pago/
+         Transferencia/Tarjeta, _elegirMetodo() muestra un popup que la
+         prende o la deja apagada (ver caja.js). -->
+    <div class="form-group" id="cbFacturaWrap">
+      <label>Facturación</label>
+      <div style="display:flex;gap:.5rem;margin-top:.3rem">
+        <button type="button" id="cbFacturarSi" class="toggle-vis-btn" onclick="_setFacturar('cb', true)">🧾 Emitir factura</button>
+        <button type="button" id="cbFacturarNo" class="toggle-vis-btn active-vis" onclick="_setFacturar('cb', false)">Sin factura</button>
+      </div>
+      <input type="hidden" id="cbFacturar" value="">
     </div>
     <div class="form-group">
       <label>Concepto</label>
