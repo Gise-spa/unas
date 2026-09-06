@@ -398,12 +398,66 @@ function abrirDetalleMovimiento(movimientoId) {
   document.getElementById('dmCuerpo').innerHTML = filas.map(([label, val]) =>
     `<div class="dm-fila"><span>${label}</span><strong${label === 'Importe' ? ' class="monto-caja"' : ''}>${val}</strong></div>`
   ).join('');
+  document.getElementById('dmFacturaBloque').innerHTML = _renderFacturaBloque(m);
 
   const idEscapado = String(movimientoId).replace(/'/g, "\\'");
   document.getElementById('dmEditarBtn').setAttribute('onclick', `cerrarModal('modalDetalleMovimiento');abrirEditarMovimiento('${idEscapado}')`);
   document.getElementById('dmEliminarBtn').setAttribute('onclick', `cerrarModal('modalDetalleMovimiento');pedirEliminarMovimiento('${idEscapado}')`);
 
   abrirModal('modalDetalleMovimiento');
+}
+
+// Bloque de facturación dentro del detalle de un movimiento — solo
+// aplica a ingresos. NO_FACTURADO o egresos no muestran nada (igual
+// que hoy). El botón de emisión real se conecta en confirmarEmisionFactura().
+function _renderFacturaBloque(m) {
+  if (m.tipo !== 'ingreso' || !m.facturaEstado || m.facturaEstado === 'NO_FACTURADO') return '';
+
+  const idEscapado = String(m.movimientoId).replace(/'/g, "\\'");
+
+  if (m.facturaEstado === 'EMITIDA') {
+    return `<div class="dm-fila"><span>Factura</span><strong>CAE ${m.facturaCae || '—'}</strong></div>
+      <div class="dm-fila"><span>Comprobante</span><strong>N° ${m.facturaNumero || '—'}</strong></div>`;
+  }
+
+  if (m.facturaEstado === 'ERROR_EMISION') {
+    return `<div class="dm-fila" style="color:var(--danger,#c0392b)"><span>Factura</span><strong>No se pudo emitir</strong></div>
+      <button class="btn btn-sm" style="width:100%;margin-top:.5rem" onclick="_pedirEmisionFactura('${idEscapado}')">🧾 Reintentar emisión</button>`;
+  }
+
+  // PENDIENTE
+  return `<button class="btn btn-sm" style="width:100%;margin-top:.5rem" onclick="_pedirEmisionFactura('${idEscapado}')">🧾 Emitir factura</button>`;
+}
+
+// Confirmación antes de emitir de verdad — reusa mostrarConfirm, mismo
+// componente que el resto de la app. Esta acción SÍ dispara la
+// emisión real ante ARCA (a diferencia del switch de Caja, que solo
+// decide PENDIENTE/NO_FACTURADO).
+function _pedirEmisionFactura(movimientoId) {
+  const m = getTodosMovimientos().find(x => String(x.movimientoId) === String(movimientoId));
+  if (!m) { showToast('No se encontró el movimiento'); return; }
+
+  mostrarConfirm({
+    icon: '🧾',
+    titulo: 'Emitir Factura C',
+    msg: `Consumidor Final — ${fmtMoneda(m.importe)}. Se va a emitir y autorizar ante ARCA. Esta acción no se puede deshacer.`,
+    btnTxt: 'Emitir factura',
+    btnColor: 'var(--accent)',
+    onOk: () => confirmarEmisionFactura(movimientoId)
+  });
+}
+
+async function confirmarEmisionFactura(movimientoId) {
+  showToast('Emitiendo factura...');
+  try {
+    const res = await apiPost({ action: 'emitirFacturaMovimiento', movimientoId });
+    if (!res.ok) { showToast(res.error || 'No se pudo emitir la factura'); return; }
+    showToast('✓ Factura emitida — CAE ' + res.cae);
+    cerrarModal('modalDetalleMovimiento');
+    await renderCaja();
+  } catch (err) {
+    showToast('No se pudo emitir la factura, intentá de nuevo');
+  }
 }
 
 function renderResumenDiaCaja() {
