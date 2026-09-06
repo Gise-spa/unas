@@ -630,11 +630,20 @@ function _renderChips(prefix, seleccionado, cuentaActual) {
 }
 
 function _elegirMetodo(prefix, metodo) {
+  const anterior = document.getElementById(prefix + 'Metodo').value;
   document.getElementById(prefix + 'Metodo').value = metodo;
   document.querySelectorAll(`#${prefix}MetodoChips .chip`).forEach(ch => {
     ch.classList.toggle('on', ch.textContent === metodo);
   });
   _actualizarCuentaWrap(prefix, metodo, '');
+
+  // Recomendación de factura: solo si este modal tiene el switch (no
+  // existe para egresos, ver mvFacturaWrap en setMovTipo) y el método
+  // recién elegido es distinto del anterior — así no se repite el
+  // popup si se vuelve a tocar el mismo chip ya seleccionado.
+  if (metodo !== anterior && document.getElementById(prefix + 'Facturar') && _metodoRecomiendaFactura(metodo)) {
+    _mostrarPopupFactura(prefix, metodo);
+  }
 }
 
 // Arma "Cuenta destino" según el método:
@@ -694,6 +703,41 @@ function _cuentaSelectCambio(prefix) {
 
 function _cuentaOtroInput(prefix) {
   document.getElementById(prefix + 'Cuenta').value = document.getElementById(prefix + 'CuentaOtro').value.trim();
+}
+
+// ════════════════════════════════════════════════════════
+//  DECISIÓN DE FACTURACIÓN — switch "Emitir factura" en Cobrar turno
+//  (prefix 'cb') y Nuevo movimiento/ingreso (prefix 'mv'). Puramente
+//  local: solo arma el booleano `emitirFactura` que viaja en el
+//  movimiento — no llama a Facturacion.gs/WSFE.gs, no genera PDF, no
+//  manda mail. Con Mercado Pago/Transferencia/Tarjeta se recomienda
+//  facturar con un popup; con Efectivo el switch está igual disponible
+//  pero sin ese aviso.
+// ════════════════════════════════════════════════════════
+function _metodoRecomiendaFactura(metodo) {
+  const m = String(metodo || '').toLowerCase();
+  return m === 'mercado pago' || m === 'transferencia' || m === 'tarjeta';
+}
+
+function _setFacturar(prefix, on) {
+  const input = document.getElementById(prefix + 'Facturar');
+  if (!input) return;
+  input.value = on ? '1' : '';
+  document.getElementById(prefix + 'FacturarSi')?.classList.toggle('active-vis', !!on);
+  document.getElementById(prefix + 'FacturarNo')?.classList.toggle('active-vis', !on);
+}
+
+function _mostrarPopupFactura(prefix, metodo) {
+  mostrarConfirm({
+    icon: '💳',
+    titulo: `Pago con ${metodo}`,
+    msg: '¿Querés emitir factura?',
+    btnTxt: 'Emitir factura',
+    btnColor: 'var(--accent)',
+    btnSecTxt: 'No ahora',
+    onOk: () => _setFacturar(prefix, true),
+    onSec: () => _setFacturar(prefix, false)
+  });
 }
 
 // ════════════════════════════════════════════════════════
@@ -902,6 +946,8 @@ function abrirModalMovimiento() {
   document.getElementById('mvClienteResultados').innerHTML = '';
   document.getElementById('mvClienteResultados').style.display = 'none';
   document.getElementById('mvClienteWrap').style.display = '';
+  document.getElementById('mvFacturaWrap').style.display = '';
+  _setFacturar('mv', false);
   _renderChips('mv', '');
   abrirModal('modalMovimientoCaja');
 }
@@ -911,6 +957,10 @@ function setMovTipo(tipo) {
   document.getElementById('mvTipoIngreso').classList.toggle('active-vis', tipo === 'ingreso');
   document.getElementById('mvTipoEgreso').classList.toggle('active-vis', tipo === 'egreso');
   document.getElementById('mvClienteWrap').style.display = tipo === 'ingreso' ? '' : 'none';
+  // La decisión de facturar solo tiene sentido en un ingreso (a un
+  // egreso no se le emite factura a nadie) — se esconde junto al
+  // buscador de cliente, mismo criterio que ya usa ese bloque.
+  document.getElementById('mvFacturaWrap').style.display = tipo === 'ingreso' ? '' : 'none';
 }
 
 // ════════════════════════════════════════════════════════
@@ -935,6 +985,9 @@ function abrirEditarMovimiento(movimientoId) {
   document.getElementById('mvTipoWrap').style.display = 'none';
 
   document.getElementById('mvClienteWrap').style.display = esIngreso ? '' : 'none';
+  // La decisión de facturación se toma solo al cobrar/cargar un ingreso
+  // nuevo — editar un movimiento ya cargado no la modifica en esta etapa.
+  document.getElementById('mvFacturaWrap').style.display = 'none';
   // Antes precargaba m.nombreCliente (el snapshot guardado en el
   // movimiento, que en ingresos viejos quedó solo con el primer
   // nombre — ver mvElegirCliente). Reusa _nombreListaMovimiento(),
@@ -1040,6 +1093,7 @@ async function confirmarMovimientoCaja() {
   const nombreCliente = tipo === 'ingreso' ? document.getElementById('mvClienteNombre').value.trim() : '';
   const telefonoCliente = tipo === 'ingreso' ? document.getElementById('mvClienteTelefono').value.trim() : '';
   const mailCliente = tipo === 'ingreso' ? document.getElementById('mvClienteMail').value.trim() : '';
+  const emitirFactura = tipo === 'ingreso' ? document.getElementById('mvFacturar').value === '1' : false;
 
   if (isNaN(importe) || importe <= 0) { showToast('Ingresá un importe válido'); return; }
   if (!metodoPago) { showToast('Elegí un método de pago'); return; }
@@ -1065,7 +1119,7 @@ async function confirmarMovimientoCaja() {
         movimientoId: _cajaUuid(),
         sesionId: sesion.sesionId,
         tipo, importe, metodoPago, cuentaDestino, concepto,
-        ...(tipo === 'ingreso' ? { clienteId, nombreCliente, telefonoCliente, mailCliente } : {})
+        ...(tipo === 'ingreso' ? { clienteId, nombreCliente, telefonoCliente, mailCliente, emitirFactura } : {})
       }
     });
 
@@ -1101,6 +1155,7 @@ function abrirCobrar(turnoId) {
   document.getElementById('cbImporte').value = '';
   document.getElementById('cbConcepto').value = t.servicio || '';
   _renderChips('cb', '');
+  _setFacturar('cb', false);
 
   abrirModal('modalCobrar');
 }
@@ -1130,6 +1185,8 @@ async function confirmarCobro() {
   _cobroEnProceso = true;
   _bloquearBoton(btn, 'Registrando…');
   try {
+    const emitirFactura = document.getElementById('cbFacturar').value === '1';
+
     const res = await apiPost({
       action: 'registrarMovimientoCaja',
       movimiento: {
@@ -1137,7 +1194,8 @@ async function confirmarCobro() {
         sesionId: sesion.sesionId,
         tipo: 'ingreso',
         turnoId, clienteId, importe, metodoPago, cuentaDestino, concepto,
-        nombreCliente, telefonoCliente, mailCliente
+        nombreCliente, telefonoCliente, mailCliente,
+        emitirFactura
       }
     });
 
