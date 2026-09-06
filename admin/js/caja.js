@@ -716,7 +716,7 @@ function _cuentaOtroInput(prefix) {
 // ════════════════════════════════════════════════════════
 function _metodoRecomiendaFactura(metodo) {
   const m = String(metodo || '').toLowerCase();
-  return m === 'mercado pago' || m === 'transferencia' || m === 'tarjeta';
+  return m === 'mercado pago' || m === 'transferencia';
 }
 
 function _setFacturar(prefix, on) {
