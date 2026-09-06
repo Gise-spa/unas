@@ -1030,6 +1030,21 @@ function abrirEditarMovimiento(movimientoId) {
   const m = getTodosMovimientos().find(x => String(x.movimientoId) === String(movimientoId));
   if (!m) { showToast('No se encontró el movimiento'); return; }
 
+  // Un movimiento con factura EMITIDA queda protegido: si se pudiera
+  // cambiar el importe/método después, la factura ya autorizada ante
+  // ARCA quedaría desvinculada del monto real. Se corta acá, antes de
+  // abrir el formulario, con un aviso explícito (ver también el mismo
+  // chequeo en editarMovimiento(), en Caja.gs, del lado del backend).
+  if (m.facturaEstado === 'EMITIDA') {
+    mostrarConfirm({
+      icon: '🔒',
+      titulo: 'Movimiento facturado',
+      msg: 'Este movimiento tiene una factura emitida y no puede modificarse.',
+      btnTxt: 'Entendido'
+    });
+    return;
+  }
+
   _mvEditandoId = movimientoId;
   _mvEditandoTipo = String(m.tipo || '').toLowerCase();
   const esIngreso = _mvEditandoTipo === 'ingreso';
@@ -1061,6 +1076,19 @@ function abrirEditarMovimiento(movimientoId) {
 }
 
 function pedirEliminarMovimiento(movimientoId) {
+  // Mismo criterio que abrirEditarMovimiento(): una factura ya emitida
+  // ante ARCA no puede quedar huérfana de su movimiento en Caja.
+  const m = getTodosMovimientos().find(x => String(x.movimientoId) === String(movimientoId));
+  if (m && m.facturaEstado === 'EMITIDA') {
+    mostrarConfirm({
+      icon: '🔒',
+      titulo: 'Movimiento facturado',
+      msg: 'Este movimiento tiene una factura emitida y no puede eliminarse.',
+      btnTxt: 'Entendido'
+    });
+    return;
+  }
+
   mostrarConfirm({
     icon: '🗑',
     titulo: 'Eliminar movimiento',
