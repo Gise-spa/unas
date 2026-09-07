@@ -360,6 +360,11 @@ function renderInicio() {
           <span class="inicio-badge inicio-badge-${t.estado === 'confirmado' ? 'confirmado' : 'pendiente'}">${t.estado === 'confirmado' ? 'Confirmado' : 'Pendiente'}</span>
         </li>`).join('')
     : '<p class="today-empty">Sin turnos próximos</p>';
+
+  // Control de facturación (monotributo) — ver FacturaControl.gs y
+  // js/caja.js. Guardado detrás de typeof por si alguna vez se
+  // despliega este script.js sin el caja.js correspondiente.
+  if (typeof renderControlFacturacion === 'function') renderControlFacturacion();
 }
 
 // ════════════════════════════════════════════════════════
