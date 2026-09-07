@@ -149,6 +149,18 @@
         </div>
       </div>
 
+      <div class="inicio-factura-card" id="inicioFacturaCard" onclick="abrirControlFacturacion()">
+        <div class="inicio-stat-top"><span>Control de facturación</span><span class="inicio-stat-icon">🧾</span></div>
+        <div class="inicio-factura-montos">
+          <span class="inicio-factura-monto-actual" id="cfMontoMes">—</span>
+          <span class="inicio-factura-monto-ref" id="cfRefMes"></span>
+        </div>
+        <div class="inicio-factura-bar-track">
+          <div class="inicio-factura-bar-fill" id="cfBarraMes"></div>
+        </div>
+        <div class="inicio-stat-sub" id="cfSubMes"></div>
+      </div>
+
       <div class="panel-card">
         <div class="panel-card-header">
           <h3>Próximos turnos</h3>
@@ -619,6 +631,46 @@
     <div style="font-size:.86rem;line-height:1.8;margin-top:.9rem" id="rmTotales"></div>
     <div style="display:flex;gap:.6rem;margin-top:1rem">
       <button class="btn btn-outline" style="flex:1" onclick="cerrarModal('modalResumenMes')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONTROL DE FACTURACIÓN (monotributo) -->
+<div class="modal-overlay" id="modalControlFacturacion">
+  <div class="modal-box" style="max-width:380px">
+    <div class="modal-header">
+      <h3>🧾 Control de facturación</h3>
+      <button class="modal-close" onclick="cerrarModal('modalControlFacturacion')">×</button>
+    </div>
+
+    <div class="crd-neto-box" style="margin-bottom:.9rem">
+      <span>Últimos 12 meses · Categoría <strong id="cfCategoria">A</strong></span>
+      <strong id="cfAcumuladoAnual" class="monto-caja">—</strong>
+    </div>
+
+    <div class="inicio-factura-bar-track" style="margin-bottom:.3rem">
+      <div class="inicio-factura-bar-fill" id="cfBarraAnual"></div>
+    </div>
+    <div class="dm-fila"><span id="cfPorcentajeAnualLabel"></span><span></span></div>
+
+    <div class="dm-fila"><span>Límite anual vigente</span><strong id="cfLimiteAnual">—</strong></div>
+    <div class="dm-fila"><span>Restante</span><strong id="cfRestante">—</strong></div>
+
+    <div style="border-top:1px solid var(--border);margin:.8rem 0"></div>
+
+    <div class="dm-fila"><span>Facturación de este mes</span><strong id="cfFacturacionMes">—</strong></div>
+    <div class="dm-fila"><span>Referencia mensual (~)</span><strong id="cfReferenciaMensualModal">—</strong></div>
+    <div class="dm-fila"><span>Representa del acumulado anual</span><strong id="cfPorcentajeMesDentroAnual">—</strong></div>
+
+    <p style="font-size:.76rem;color:var(--text-muted);line-height:1.5;margin-top:.8rem">
+      La referencia mensual es solo una guía preventiva para mantener el ritmo — no es un tope legal mensual. Lo que determina la categoría del monotributo es el acumulado de los últimos 12 meses de arriba.
+    </p>
+    <p style="font-size:.7rem;color:var(--text-muted);line-height:1.5;margin-top:.5rem;font-style:italic">
+      Indicador preventivo interno — no reemplaza el cálculo oficial de recategorización de ARCA.
+    </p>
+
+    <div style="display:flex;gap:.6rem;margin-top:1rem">
+      <button class="btn btn-outline" style="flex:1" onclick="cerrarModal('modalControlFacturacion')">Cerrar</button>
     </div>
   </div>
 </div>
