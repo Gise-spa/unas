@@ -417,7 +417,8 @@ function _renderFacturaBloque(m) {
 
   if (m.facturaEstado === 'EMITIDA') {
     return `<div class="dm-fila"><span>Factura</span><strong>CAE ${m.facturaCae || '—'}</strong></div>
-      <div class="dm-fila"><span>Comprobante</span><strong>N° ${m.facturaNumero || '—'}</strong></div>`;
+      <div class="dm-fila"><span>Comprobante</span><strong>N° ${m.facturaNumero || '—'}</strong></div>
+      <button class="btn btn-sm" style="width:100%;margin-top:.5rem" onclick="_previsualizarFactura('${idEscapado}')">👁 Vista previa PDF</button>`;
   }
 
   if (m.facturaEstado === 'ERROR_EMISION') {
@@ -458,6 +459,43 @@ async function confirmarEmisionFactura(movimientoId) {
   } catch (err) {
     showToast('No se pudo emitir la factura, intentá de nuevo');
   }
+}
+
+// Vista previa del PDF — abre el comprobante real de un movimiento ya
+// EMITIDA en una pestaña nueva. Solo lee lo que ya está guardado en
+// Caja; no vuelve a llamar a ARCA para nada.
+async function _previsualizarFactura(movimientoId) {
+  showToast('Generando vista previa...');
+  try {
+    const res = await apiPost({ action: 'previsualizarFacturaPDF', movimientoId });
+    _abrirPdfBase64(res);
+  } catch (err) {
+    showToast('No se pudo generar la vista previa');
+  }
+}
+
+// Vista previa de DISEÑO — con datos de ejemplo, sin movimiento real
+// y sin tocar ARCA. Pensada solo para esta etapa (iterar el diseño
+// del PDF); se puede borrar este link y _previsualizarFacturaMock()
+// una vez que el diseño quede aprobado y cerrado.
+async function _previsualizarFacturaMock() {
+  showToast('Generando vista previa de diseño...');
+  try {
+    const res = await apiPost({ action: 'previsualizarFacturaPDF', movimientoId: null });
+    _abrirPdfBase64(res);
+  } catch (err) {
+    showToast('No se pudo generar la vista previa');
+  }
+}
+
+function _abrirPdfBase64(res) {
+  if (!res || !res.ok) { showToast((res && res.error) || 'No se pudo generar el PDF'); return; }
+  const bytes = atob(res.pdfBase64);
+  const arr = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+  const blob = new Blob([arr], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
 }
 
 function renderResumenDiaCaja() {
