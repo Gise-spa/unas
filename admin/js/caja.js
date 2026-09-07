@@ -779,6 +779,90 @@ function _detalleMesHTML(porMetodo) {
   return `<div class="caja-detalle-total-grid">${html}</div>`;
 }
 
+// ════════════════════════════════════════════════════════
+//  CONTROL DE FACTURACIÓN (monotributo) — tarjeta del Dashboard +
+//  modal de desglose anual. Ver FacturaControl.gs: solo lee
+//  caja_movimientos (tipo=ingreso, facturaEstado=EMITIDA), nunca
+//  modifica nada. Indicador preventivo interno, no el cálculo
+//  oficial de ARCA (aviso repetido en el propio modal).
+// ════════════════════════════════════════════════════════
+
+// Se cachea la última respuesta para que abrirControlFacturacion()
+// no tenga que pedirla de nuevo si la tarjeta ya la trajo hace un
+// instante — se refresca sola en cada renderInicio().
+let _ultimoControlFacturacion = null;
+
+async function renderControlFacturacion() {
+  const card = document.getElementById('inicioFacturaCard');
+  if (!card) return; // por si esta versión del HTML todavía no tiene la tarjeta
+
+  try {
+    const res = await apiPost({ action: 'obtenerControlFacturacion' });
+    if (!res || !res.ok) return;
+    _ultimoControlFacturacion = res;
+
+    document.getElementById('cfMontoMes').textContent = fmtMonedaDashboard(res.facturacionMesActual);
+    document.getElementById('cfRefMes').textContent = `/ ~${fmtMonedaDashboard(res.referenciaMensual)}`;
+    document.getElementById('cfSubMes').textContent = `${Math.round(res.porcentajeMensual)}% · Este mes`;
+
+    const barra = document.getElementById('cfBarraMes');
+    barra.style.width = `${res.porcentajeMensualVisual}%`;
+    barra.className = `inicio-factura-bar-fill ${_nivelClaseFacturacion(res.nivelMensual)}`;
+  } catch (err) {
+    // Silencioso — si falla, la tarjeta simplemente no se actualiza
+    // esta vez; no tiene sentido interrumpir el Dashboard por esto.
+  }
+}
+
+function _nivelClaseFacturacion(nivel) {
+  return nivel > 1 ? `nivel-${nivel}` : '';
+}
+
+// Textos del semáforo, distintos según si se habla del acumulado
+// anual (el que de verdad importa fiscalmente) o de la referencia
+// mensual (preventiva) — mismo nivel numérico, wording distinto.
+function _labelNivelFacturacion(nivel, contexto) {
+  const textos = {
+    anual:   { 1: 'Normal', 2: 'Atención', 3: 'Cerca del límite', 4: 'Muy cerca del límite' },
+    mensual: { 1: 'Normal', 2: 'Atención', 3: 'Cerca de la referencia', 4: 'Muy por encima de la referencia' }
+  };
+  const iconos = { 1: '🟢', 2: '🟡', 3: '🟠', 4: '🔴' };
+  return `${iconos[nivel] || ''} ${textos[contexto][nivel] || ''}`;
+}
+
+async function abrirControlFacturacion() {
+  // Reusa el último dato ya traído por la tarjeta si es reciente;
+  // si por lo que sea no hay nada todavía, lo pide en el momento.
+  let res = _ultimoControlFacturacion;
+  if (!res) {
+    showToast('Cargando...');
+    try {
+      res = await apiPost({ action: 'obtenerControlFacturacion' });
+      if (!res || !res.ok) { showToast('No se pudo cargar el control de facturación'); return; }
+      _ultimoControlFacturacion = res;
+    } catch (err) {
+      showToast('No se pudo cargar el control de facturación');
+      return;
+    }
+  }
+
+  document.getElementById('cfCategoria').textContent = res.categoria;
+  document.getElementById('cfAcumuladoAnual').textContent = fmtMoneda(res.acumulado12Meses);
+  document.getElementById('cfLimiteAnual').textContent = fmtMoneda(res.limiteAnual);
+  document.getElementById('cfRestante').textContent = fmtMoneda(res.restanteAnual);
+  document.getElementById('cfFacturacionMes').textContent = fmtMoneda(res.facturacionMesActual);
+  document.getElementById('cfReferenciaMensualModal').textContent = fmtMoneda(res.referenciaMensual);
+  document.getElementById('cfPorcentajeMesDentroAnual').textContent = `${Math.round(res.porcentajeMesDentroDeAnual)}%`;
+  document.getElementById('cfPorcentajeAnualLabel').textContent =
+    `${Math.round(res.porcentajeAnual)}% utilizado · ${_labelNivelFacturacion(res.nivelAnual, 'anual')}`;
+
+  const barraAnual = document.getElementById('cfBarraAnual');
+  barraAnual.style.width = `${Math.min(res.porcentajeAnual, 100)}%`;
+  barraAnual.className = `inicio-factura-bar-fill ${_nivelClaseFacturacion(res.nivelAnual)}`;
+
+  abrirModal('modalControlFacturacion');
+}
+
 // Sub-cuentas fijas para Transferencia/Tarjeta — son la forma en que
 // el cliente pagó, no un "método" nuevo en Configuración, así que van
 // hardcodeadas acá (lista corta, se edita a mano si se suma un banco).
