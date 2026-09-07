@@ -566,7 +566,6 @@ function _mostrarConfirmacionFinalEnvio(movimientoId, mail, guardarEnFicha) {
     titulo: 'Enviar factura',
     msg: `Cliente: ${m.nombreCliente || 'Consumidor Final'} · Email: ${mail} · Factura N° ${numeroFormateado} · Importe: ${fmtMoneda(m.importe)}`,
     btnTxt: 'Enviar',
-    btnSecTxt: 'Cancelar',
     onOk: () => _confirmarEnvioFactura(movimientoId, mail, guardarEnFicha)
   });
 }
