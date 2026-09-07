@@ -416,9 +416,24 @@ function _renderFacturaBloque(m) {
   const idEscapado = String(m.movimientoId).replace(/'/g, "\\'");
 
   if (m.facturaEstado === 'EMITIDA') {
+    const idEnvio = idEscapado;
+    let botonEnvio;
+    if (m.facturaEnvioError) {
+      botonEnvio = `📧 Reintentar envío`;
+    } else if (m.facturaEnviadaEn) {
+      botonEnvio = `📧 Reenviar factura`;
+    } else {
+      botonEnvio = `📧 Enviar factura por mail`;
+    }
+    const envioInfo = m.facturaEnviadaEn
+      ? `<div class="dm-fila" style="color:var(--text-muted)"><span></span><small>Enviada el ${new Date(m.facturaEnviadaEn).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}</small></div>`
+      : '';
+
     return `<div class="dm-fila"><span>Factura</span><strong>CAE ${m.facturaCae || '—'}</strong></div>
       <div class="dm-fila"><span>Comprobante</span><strong>N° ${m.facturaNumero || '—'}</strong></div>
-      <button class="btn btn-sm" style="width:100%;margin-top:.5rem" onclick="_previsualizarFactura('${idEscapado}')">👁 Vista previa PDF</button>`;
+      ${envioInfo}
+      <button class="btn btn-sm" style="width:100%;margin-top:.5rem" onclick="_previsualizarFactura('${idEscapado}')">👁 Vista previa PDF</button>
+      <button class="btn btn-sm" style="width:100%;margin-top:.4rem" onclick="_iniciarEnvioFactura('${idEnvio}')">${botonEnvio}</button>`;
   }
 
   if (m.facturaEstado === 'ERROR_EMISION') {
@@ -474,20 +489,6 @@ async function _previsualizarFactura(movimientoId) {
   }
 }
 
-// Vista previa de DISEÑO — con datos de ejemplo, sin movimiento real
-// y sin tocar ARCA. Pensada solo para esta etapa (iterar el diseño
-// del PDF); se puede borrar este link y _previsualizarFacturaMock()
-// una vez que el diseño quede aprobado y cerrado.
-async function _previsualizarFacturaMock() {
-  showToast('Generando vista previa de diseño...');
-  try {
-    const res = await apiPost({ action: 'previsualizarFacturaPDF', movimientoId: null });
-    _abrirPdfBase64(res);
-  } catch (err) {
-    showToast('No se pudo generar la vista previa');
-  }
-}
-
 function _abrirPdfBase64(res) {
   if (!res || !res.ok) { showToast((res && res.error) || 'No se pudo generar el PDF'); return; }
   const bytes = atob(res.pdfBase64);
@@ -496,6 +497,95 @@ function _abrirPdfBase64(res) {
   const blob = new Blob([arr], { type: 'application/pdf' });
   const url = URL.createObjectURL(blob);
   window.open(url, '_blank');
+}
+
+// Mismo formato que _formatearNumeroComprobante_ en FacturaPDF.gs —
+// duplicado acá a propósito porque este lado corre en el navegador,
+// no en Apps Script; no hay forma de compartir la función entre los
+// dos sin un archivo común, y es una sola línea de lógica.
+function _formatearNumeroFactura(ptoVta, numero) {
+  const pv = String(ptoVta || 0).padStart(4, '0');
+  const nr = String(numero || 0).padStart(8, '0');
+  return `${pv}-${nr}`;
+}
+
+// ════════════════════════════════════════════════════════
+//  ENVÍO DE FACTURA POR MAIL — Drive + Gmail (FacturaEnvio.gs)
+//  Flujo: 1) traer/editar el mail  2) si cambió, preguntar aparte si
+//  se guarda en la ficha  3) confirmación final con los 4 datos
+//  pedidos  4) recién ahí se llama al backend.
+// ════════════════════════════════════════════════════════
+
+async function _iniciarEnvioFactura(movimientoId) {
+  const m = getTodosMovimientos().find(x => String(x.movimientoId) === String(movimientoId));
+  if (!m) { showToast('No se encontró el movimiento'); return; }
+
+  let mailFicha = '';
+  try {
+    const res = await apiPost({ action: 'obtenerMailClienteParaFactura', clienteId: m.clienteId });
+    mailFicha = (res && res.mail) || '';
+  } catch (err) { /* sigue con el snapshot del movimiento si falla */ }
+
+  const mailDefault = mailFicha || m.mailCliente || '';
+
+  mostrarInput({
+    titulo: 'Email de destino',
+    label: '¿A qué mail enviamos la factura?',
+    valorActual: mailDefault,
+    onOk: (mailIngresado) => _decidirGuardarMailFactura(movimientoId, mailIngresado.trim(), mailFicha)
+  });
+}
+
+function _decidirGuardarMailFactura(movimientoId, mailIngresado, mailFicha) {
+  // Solo se pregunta si el mail cambió respecto de la ficha — si es
+  // el mismo que ya estaba guardado, no tiene sentido preguntar.
+  if (mailIngresado === mailFicha) {
+    _mostrarConfirmacionFinalEnvio(movimientoId, mailIngresado, false);
+    return;
+  }
+
+  mostrarConfirm({
+    icon: '💾',
+    titulo: 'Guardar este mail',
+    msg: '¿Guardamos este mail en la ficha del cliente para la próxima vez, o es solo para este envío?',
+    btnTxt: 'Guardar en la ficha',
+    btnSecTxt: 'Solo esta vez',
+    onOk: () => _mostrarConfirmacionFinalEnvio(movimientoId, mailIngresado, true),
+    onSec: () => _mostrarConfirmacionFinalEnvio(movimientoId, mailIngresado, false)
+  });
+}
+
+function _mostrarConfirmacionFinalEnvio(movimientoId, mail, guardarEnFicha) {
+  const m = getTodosMovimientos().find(x => String(x.movimientoId) === String(movimientoId));
+  if (!m) { showToast('No se encontró el movimiento'); return; }
+
+  const numeroFormateado = _formatearNumeroFactura(m.facturaPtoVta, m.facturaNumero);
+
+  mostrarConfirm({
+    icon: '📧',
+    titulo: 'Enviar factura',
+    msg: `Cliente: ${m.nombreCliente || 'Consumidor Final'} · Email: ${mail} · Factura N° ${numeroFormateado} · Importe: ${fmtMoneda(m.importe)}`,
+    btnTxt: 'Enviar',
+    btnSecTxt: 'Cancelar',
+    onOk: () => _confirmarEnvioFactura(movimientoId, mail, guardarEnFicha)
+  });
+}
+
+async function _confirmarEnvioFactura(movimientoId, mailDestino, guardarEnFicha) {
+  showToast('Enviando factura...');
+  try {
+    const res = await apiPost({
+      action: 'enviarFacturaPorMail',
+      movimientoId,
+      opciones: { mailDestino, guardarEnFicha }
+    });
+    if (!res.ok) { showToast(res.error || 'No se pudo enviar la factura'); return; }
+    showToast('✓ Factura enviada');
+    cerrarModal('modalDetalleMovimiento');
+    await renderCaja();
+  } catch (err) {
+    showToast('No se pudo enviar la factura, intentá de nuevo');
+  }
 }
 
 function renderResumenDiaCaja() {
