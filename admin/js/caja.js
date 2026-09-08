@@ -902,13 +902,29 @@ function _elegirMetodo(prefix, metodo) {
   });
   _actualizarCuentaWrap(prefix, metodo, '');
 
-  // Recomendación de factura: solo si este modal tiene el switch (no
-  // existe para egresos, ver mvFacturaWrap en setMovTipo) y el método
-  // recién elegido es distinto del anterior — así no se repite el
-  // popup si se vuelve a tocar el mismo chip ya seleccionado.
-  if (metodo !== anterior && document.getElementById(prefix + 'Facturar') && _metodoRecomiendaFactura(metodo)) {
+  // Recomendación de factura: solo si el movimiento es realmente un
+  // ingreso (un egreso nunca se factura) y el método recién elegido
+  // es distinto del anterior — así no se repite el popup si se
+  // vuelve a tocar el mismo chip ya seleccionado.
+  //
+  // OJO: antes acá se chequeaba document.getElementById(prefix +
+  // 'Facturar') para saber si "este modal tiene el switch" — pero
+  // ese input oculto existe en el HTML siempre, esté visible o no
+  // (mvFacturaWrap solo lo esconde con display:none), así que el
+  // popup igual se disparaba al elegir Transferencia/Mercado Pago
+  // en un EGRESO. Ahora se chequea el tipo real del movimiento.
+  if (metodo !== anterior && _facturaDisponibleEnModal(prefix) && _metodoRecomiendaFactura(metodo)) {
     _mostrarPopupFactura(prefix, metodo);
   }
+}
+
+// El cobro de un turno (prefix 'cb') siempre es un ingreso. En el
+// alta manual (prefix 'mv') depende del toggle Ingreso/Egreso que
+// haya elegido el usuario en ese momento.
+function _facturaDisponibleEnModal(prefix) {
+  if (prefix === 'cb') return true;
+  const tipoInput = document.getElementById('mvTipo');
+  return !!tipoInput && tipoInput.value === 'ingreso';
 }
 
 // Arma "Cuenta destino" según el método:
