@@ -476,6 +476,35 @@ async function confirmarEmisionFactura(movimientoId) {
   }
 }
 
+// Cuando se marca "Emitir factura" al cobrar/cargar un ingreso NUEVO
+// (switch en el modal de cobro/alta, ver confirmarCobro/
+// confirmarMovimientoCaja), en vez de dejar solo la decisión
+// guardada (PENDIENTE) y que Gise tenga que volver a buscar el
+// movimiento después, se encadena acá mismo: emitir de verdad ante
+// ARCA y, si sale bien, seguir directo al flujo de envío por mail
+// (mismo _iniciarEnvioFactura de siempre, con su chequeo/edición de
+// mail y confirmación final — ver más abajo). Si la emisión falla,
+// se corta ahí: el movimiento queda registrado igual (ver
+// EmisionFactura.gs: ERROR_EMISION, reintentable después desde el
+// detalle del movimiento) — simplemente no continúa al mail porque
+// todavía no hay ninguna factura que enviar.
+async function _emitirYEnviarFactura(movimientoId) {
+  showToast('Emitiendo factura...');
+  try {
+    const res = await apiPost({ action: 'emitirFacturaMovimiento', movimientoId });
+    if (!res.ok) {
+      showToast(res.error || 'No se pudo emitir la factura. Podés reintentarlo después desde el movimiento.');
+      await renderCaja();
+      return;
+    }
+    showToast('✓ Factura emitida — CAE ' + res.cae);
+    await renderCaja();
+    _iniciarEnvioFactura(movimientoId);
+  } catch (err) {
+    showToast('No se pudo emitir la factura. Podés reintentarlo después desde el movimiento.');
+  }
+}
+
 // Vista previa del PDF — abre el comprobante real de un movimiento ya
 // EMITIDA en una pestaña nueva. Solo lee lo que ya está guardado en
 // Caja; no vuelve a llamar a ARCA para nada.
@@ -1422,10 +1451,11 @@ async function confirmarMovimientoCaja() {
   _mvGuardando = true;
   _bloquearBoton(btn, 'Guardando…');
   try {
+    const movimientoId = _cajaUuid();
     const res = await apiPost({
       action: 'registrarMovimientoCaja',
       movimiento: {
-        movimientoId: _cajaUuid(),
+        movimientoId,
         sesionId: sesion.sesionId,
         tipo, importe, metodoPago, cuentaDestino, concepto,
         ...(tipo === 'ingreso' ? { clienteId, nombreCliente, telefonoCliente, mailCliente, emitirFactura } : {})
@@ -1436,6 +1466,11 @@ async function confirmarMovimientoCaja() {
       showToast(tipo === 'ingreso' ? '✓ Ingreso registrado' : '✓ Egreso registrado');
       cerrarModal('modalMovimientoCaja');
       await renderCaja();
+      // Mismo criterio que en confirmarCobro(): si se tildó "Emitir
+      // factura", seguir directo a emitirla de verdad y al envío por
+      // mail (nunca aplica a egresos — emitirFactura siempre es
+      // false para tipo='egreso', ver más arriba).
+      if (emitirFactura) _emitirYEnviarFactura(movimientoId);
     } else {
       showToast(res.error || 'No se pudo registrar el movimiento');
     }
@@ -1495,11 +1530,12 @@ async function confirmarCobro() {
   _bloquearBoton(btn, 'Registrando…');
   try {
     const emitirFactura = document.getElementById('cbFacturar').value === '1';
+    const movimientoId = _cajaUuid();
 
     const res = await apiPost({
       action: 'registrarMovimientoCaja',
       movimiento: {
-        movimientoId: _cajaUuid(),
+        movimientoId,
         sesionId: sesion.sesionId,
         tipo: 'ingreso',
         turnoId, clienteId, importe, metodoPago, cuentaDestino, concepto,
@@ -1515,6 +1551,10 @@ async function confirmarCobro() {
       // Refrescar donde puede estar visible el turno (badge "Cobrado")
       if (typeof renderInicio === 'function' && seccionActiva === 'inicio') renderInicio();
       if (typeof renderTurnos === 'function' && seccionActiva === 'turnos') renderTurnos();
+      // Si se tildó "Emitir factura", seguir directo a emitirla de
+      // verdad y, si sale bien, al flujo de envío por mail — sin
+      // esperar a que Gise vuelva a buscar el movimiento después.
+      if (emitirFactura) _emitirYEnviarFactura(movimientoId);
     } else {
       showToast(res.error || 'No se pudo registrar el cobro');
     }
