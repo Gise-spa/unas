@@ -411,7 +411,12 @@ function abrirDetalleMovimiento(movimientoId) {
 // aplica a ingresos. NO_FACTURADO o egresos no muestran nada (igual
 // que hoy). El botón de emisión real se conecta en confirmarEmisionFactura().
 function _renderFacturaBloque(m) {
-  if (m.tipo !== 'ingreso' || !m.facturaEstado || m.facturaEstado === 'NO_FACTURADO') return '';
+  // NO_FACTURADO ya no es un "nunca más": si Gise dijo que no al
+  // cobrar, puede decidir facturarlo después igual — cae al mismo
+  // botón "Emitir factura" que ya usa PENDIENTE, más abajo. Un
+  // egreso o un movimiento sin ningún facturaEstado (de antes de
+  // esta etapa) sigue sin mostrar nada.
+  if (m.tipo !== 'ingreso' || !m.facturaEstado) return '';
 
   const idEscapado = String(m.movimientoId).replace(/'/g, "\\'");
 
@@ -441,7 +446,7 @@ function _renderFacturaBloque(m) {
       <button class="btn btn-sm" style="width:100%;margin-top:.5rem" onclick="_pedirEmisionFactura('${idEscapado}')">🧾 Reintentar emisión</button>`;
   }
 
-  // PENDIENTE
+  // PENDIENTE o NO_FACTURADO — mismo botón para los dos.
   return `<button class="btn btn-sm" style="width:100%;margin-top:.5rem" onclick="_pedirEmisionFactura('${idEscapado}')">🧾 Emitir factura</button>`;
 }
 
