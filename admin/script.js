@@ -560,6 +560,7 @@ function renderAgenda() {
   agTemp = JSON.parse(JSON.stringify(getAgenda()));
   renderDias(); renderSlots(); renderDuraciones(); renderBloqueadas();
   actualizarResumenesAgenda();
+  cargarSena().then(actualizarResumenSena); // Paso 5a: viene del servidor, no de la copia local
 }
 function actualizarResumenesAgenda() {
   const ag = getAgenda();
@@ -634,6 +635,112 @@ function guardarDuraciones() {
   apiPost({ action: 'saveConfiguracion', config: ag });
   actualizarResumenesAgenda();
   showToast('✓ Duraciones guardadas');
+}
+// ── Seña y reservas (Paso 5a) ────────────────────────────
+// A diferencia del resto de la agenda, esto NO usa la copia local (DB):
+// la fuente de verdad es el servidor, y lo que se muestra después de
+// guardar es siempre lo que el servidor devolvió.
+let senaDatos = null;
+
+function _senaEsc(t) {
+  return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+function _senaFmt(n) { return '$' + Number(n).toLocaleString('es-AR'); }
+
+// apiGet devuelve [] si algo falla; un objeto válido nunca es un array.
+async function cargarSena() {
+  const data = await apiGet('getReservasConfigAdmin');
+  if (!data || Array.isArray(data)) return null;
+  senaDatos = data;
+  return data;
+}
+function actualizarResumenSena() {
+  const el = document.getElementById('resumenSena');
+  if (!el) return;
+  if (!senaDatos) { el.textContent = '—'; return; }
+  el.textContent = senaDatos.senaMonto > 0
+    ? `Seña ${_senaFmt(senaDatos.senaMonto)} · reserva ${senaDatos.retencionMin} min`
+    : 'Seña sin definir';
+}
+async function abrirModalSena() {
+  const cargando = document.getElementById('senaCargando');
+  const form     = document.getElementById('senaForm');
+  form.style.display = 'none';
+  cargando.style.display = '';
+  cargando.textContent = 'Cargando…';
+  abrirModal('modalSena');
+  const data = await cargarSena();
+  if (!data) {
+    cargando.textContent = 'No se pudo cargar la configuración. Revisá la conexión e intentá de nuevo.';
+    return;
+  }
+  renderSena();
+  actualizarResumenSena();
+  cargando.style.display = 'none';
+  form.style.display = '';
+}
+function renderSena() {
+  const d = senaDatos;
+  document.getElementById('senaMonto').value     = d.senaMonto > 0 ? d.senaMonto : '';
+  document.getElementById('senaRetencion').value = d.retencionMin;
+  document.getElementById('senaProrroga').value  = d.prorrogaEnProcesoMin;
+  document.getElementById('senaError').textContent = '';
+  document.getElementById('senaEstadoReservas').textContent = d.habilitadas
+    ? 'Reservas online: encendidas.'
+    : 'Reservas online: todavía apagadas. Se encienden desde la hoja de configuración cuando todo esté probado.';
+
+  const grupos = {};
+  (d.servicios || []).forEach(s => { const g = s.grupo || 'Servicios'; (grupos[g] = grupos[g] || []).push(s); });
+  const propias = d.senaPorServicio || {};
+  const wrap = document.getElementById('senaServiciosWrap');
+  if (!Object.keys(grupos).length) {
+    wrap.innerHTML = '<div style="font-size:.8rem;color:var(--text-muted)">No hay servicios cargados en la agenda.</div>';
+    return;
+  }
+  wrap.innerHTML = Object.entries(grupos).map(([g, items]) => `
+    <div style="margin-bottom:.9rem">
+      <div style="font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.4rem">${_senaEsc(g)}</div>
+      ${items.map(s => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem .75rem;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:.35rem">
+          <span style="font-size:.85rem">${_senaEsc(s.nombre)}</span>
+          <div style="display:flex;align-items:center;gap:.35rem">
+            <span style="font-size:.75rem;color:var(--text-muted)">$</span>
+            <input type="number" class="input-sm sena-svc-input" data-svc="${_senaEsc(s.id)}" value="${propias[s.id] != null ? _senaEsc(propias[s.id]) : ''}" placeholder="general" min="1" step="100" inputmode="decimal" style="width:100px;text-align:center">
+          </div>
+        </div>`).join('')}
+    </div>`).join('');
+}
+async function guardarSena() {
+  const btn = document.getElementById('btnGuardarSena');
+  const err = document.getElementById('senaError');
+  err.textContent = '';
+
+  const porServicio = {};
+  document.querySelectorAll('#senaServiciosWrap .sena-svc-input').forEach(inp => {
+    porServicio[inp.dataset.svc] = inp.value.trim();
+  });
+  const config = {
+    senaMonto:            document.getElementById('senaMonto').value.trim(),
+    senaPorServicio:      porServicio,
+    retencionMin:         document.getElementById('senaRetencion').value.trim(),
+    prorrogaEnProcesoMin: document.getElementById('senaProrroga').value.trim(),
+  };
+
+  const textoOriginal = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Guardando…';
+  const r = await apiPost({ action: 'saveReservasConfig', config });
+  btn.disabled = false;
+  btn.textContent = textoOriginal;
+
+  if (!r || r.ok !== true || !r.data) {
+    err.textContent = (r && r.error) || 'No se pudo guardar. Intentá de nuevo.';
+    return;
+  }
+  senaDatos = r.data;      // lo que quedó guardado de verdad
+  renderSena();
+  actualizarResumenSena();
+  showToast('✓ Seña y reservas guardadas');
 }
 function bloquearFecha() {
   const v = document.getElementById('fechaBloqueo').value; if (!v) return;
