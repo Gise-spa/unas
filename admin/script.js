@@ -689,39 +689,16 @@ function renderSena() {
     ? 'Reservas online: encendidas.'
     : 'Reservas online: todavía apagadas. Se encienden desde la hoja de configuración cuando todo esté probado.';
 
-  const grupos = {};
-  (d.servicios || []).forEach(s => { const g = s.grupo || 'Servicios'; (grupos[g] = grupos[g] || []).push(s); });
-  const propias = d.senaPorServicio || {};
-  const wrap = document.getElementById('senaServiciosWrap');
-  if (!Object.keys(grupos).length) {
-    wrap.innerHTML = '<div style="font-size:.8rem;color:var(--text-muted)">No hay servicios cargados en la agenda.</div>';
-    return;
-  }
-  wrap.innerHTML = Object.entries(grupos).map(([g, items]) => `
-    <div style="margin-bottom:.9rem">
-      <div style="font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.4rem">${_senaEsc(g)}</div>
-      ${items.map(s => `
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem .75rem;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:.35rem">
-          <span style="font-size:.85rem">${_senaEsc(s.nombre)}</span>
-          <div style="display:flex;align-items:center;gap:.35rem">
-            <span style="font-size:.75rem;color:var(--text-muted)">$</span>
-            <input type="number" class="input-sm sena-svc-input" data-svc="${_senaEsc(s.id)}" value="${propias[s.id] != null ? _senaEsc(propias[s.id]) : ''}" placeholder="general" min="1" step="100" inputmode="decimal" style="width:100px;text-align:center">
-          </div>
-        </div>`).join('')}
-    </div>`).join('');
+  document.getElementById('senaDuracion').textContent =
+    `Cada turno dura ${d.duracionTurnoMin} minutos, sin importar los servicios que elija la clienta (ya incluye el descanso).`;
 }
 async function guardarSena() {
   const btn = document.getElementById('btnGuardarSena');
   const err = document.getElementById('senaError');
   err.textContent = '';
 
-  const porServicio = {};
-  document.querySelectorAll('#senaServiciosWrap .sena-svc-input').forEach(inp => {
-    porServicio[inp.dataset.svc] = inp.value.trim();
-  });
   const config = {
     senaMonto:            document.getElementById('senaMonto').value.trim(),
-    senaPorServicio:      porServicio,
     retencionMin:         document.getElementById('senaRetencion').value.trim(),
     prorrogaEnProcesoMin: document.getElementById('senaProrroga').value.trim(),
   };
