@@ -958,17 +958,13 @@
     </div>
     <div id="senaCargando" style="font-size:.85rem;color:var(--text-muted);padding:.5rem 0">Cargando…</div>
     <div id="senaForm" style="display:none">
-      <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem">La seña es lo que paga la clienta online para asegurar su turno. Los cambios valen para las reservas nuevas; las que ya están en curso conservan el monto que se les pidió.</p>
+      <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem">La seña es un solo monto por turno, sin importar qué servicios elija la clienta. Es lo que paga online para asegurar su turno. Los cambios valen para las reservas nuevas; las que ya están en curso conservan el monto que se les pidió.</p>
 
       <label style="display:block;font-size:.68rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:.4rem" for="senaMonto">Seña general</label>
       <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:1.1rem">
         <span style="font-size:.85rem;color:var(--text-muted)">$</span>
         <input type="number" class="input-sm" id="senaMonto" min="1" step="100" inputmode="decimal" style="width:120px">
       </div>
-
-      <div style="font-size:.68rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:.3rem">Seña por servicio (opcional)</div>
-      <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:.6rem">Si dejás un servicio vacío, usa la seña general.</p>
-      <div id="senaServiciosWrap" style="max-height:34vh;overflow-y:auto;margin-bottom:1.1rem"></div>
 
       <label style="display:block;font-size:.68rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:.3rem" for="senaRetencion">Minutos que se guarda el horario</label>
       <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:.4rem">Tiempo que tiene la clienta para pagar antes de que el horario se libere.</p>
@@ -984,6 +980,7 @@
         <span style="font-size:.75rem;color:var(--text-muted)">min</span>
       </div>
 
+      <p id="senaDuracion" style="font-size:.78rem;color:var(--text-muted);margin-bottom:.4rem"></p>
       <p id="senaEstadoReservas" style="font-size:.78rem;color:var(--text-muted);margin-bottom:.6rem"></p>
       <p id="senaError" style="font-size:.82rem;color:var(--danger, #c0392b);min-height:1.1em;margin-bottom:.4rem"></p>
       <button class="btn btn-primary btn-sm" id="btnGuardarSena" onclick="guardarSena()">Guardar</button>
