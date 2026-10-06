@@ -558,15 +558,14 @@ let agTemp = null;
 
 function renderAgenda() {
   agTemp = JSON.parse(JSON.stringify(getAgenda()));
-  renderDias(); renderSlots(); renderDuraciones(); renderBloqueadas();
+  renderDuraciones(); renderBloqueadas();
   actualizarResumenesAgenda();
   cargarSena().then(actualizarResumenSena); // Paso 5a: viene del servidor, no de la copia local
 }
 function actualizarResumenesAgenda() {
   const ag = getAgenda();
-  const dias = [...ag.diasHabilitados].sort((a,b)=>a-b).map(i => DIAS_N[i]);
-  document.getElementById('resumenDias').textContent = dias.length ? dias.join(', ') : 'Sin días configurados';
-  document.getElementById('resumenSlots').textContent = ag.slots.length ? `${ag.slots.length} horario${ag.slots.length>1?'s':''} configurado${ag.slots.length>1?'s':''}` : 'Sin horarios configurados';
+  document.getElementById('resumenHorarios').textContent = _hrResumen(_hrEfectivos(ag));
+  document.getElementById('resumenPeriodo').textContent  = _periodoResumen(ag.periodo);
   const svcs = ag.servicios || getDefaultServicios();
   document.getElementById('resumenDuraciones').textContent = `${svcs.length} servicios`;
   document.getElementById('resumenBloqueos').textContent = ag.diasBloqueados.length ? `${ag.diasBloqueados.length} fecha${ag.diasBloqueados.length>1?'s':''} bloqueada${ag.diasBloqueados.length>1?'s':''}` : 'Sin fechas bloqueadas';
@@ -636,6 +635,254 @@ function guardarDuraciones() {
   actualizarResumenesAgenda();
   showToast('✓ Duraciones guardadas');
 }
+// ── Horarios por día y período de reservas ───────────────
+// Se guardan dentro del mismo bloque "agenda" (saveConfiguracion):
+//   horarios: { 0..6: { activo, rangos:[{desde,hasta}] } }  (0 = domingo; hasta 2 tramos por día)
+//   periodo:  { desde, hasta }  ('YYYY-MM-DD' o '')
+// Además se mantienen diasHabilitados y slots al guardar, para no romper lo que
+// todavía los lee (sitio público viejo, "Cambiar turno").
+// A diferencia de otros guardados de agenda, acá solo se actualiza la copia local
+// DESPUÉS de que el servidor confirma.
+const HR_ORDEN   = [1, 2, 3, 4, 5, 6, 0];
+const HR_NOMBRES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+let hrTemp = null;
+
+function _hrPaso() { return (typeof senaDatos !== 'undefined' && senaDatos && senaDatos.duracionTurnoMin) || 60; }
+function _hrMin(t) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(t == null ? '' : t).trim());
+  if (!m) return NaN;
+  const h = +m[1], mi = +m[2];
+  return (h > 23 || mi > 59) ? NaN : h * 60 + mi;
+}
+function _hrTxt(min) { return String(Math.floor(min / 60)).padStart(2, '0') + ':' + String(min % 60).padStart(2, '0'); }
+
+// Mismo cálculo que el backend (Reservas.gs): paso = duración del turno; el turno tiene que terminar a la hora de cierre o antes.
+function _hrSlotsDeRangos(rangos, paso) {
+  const vistos = {}, out = [];
+  (rangos || []).forEach(r => {
+    const ini = _hrMin(r.desde), fin = _hrMin(r.hasta);
+    if (isNaN(ini) || isNaN(fin) || fin <= ini) return;
+    for (let m = ini; m + paso <= fin; m += paso) {
+      const t = _hrTxt(m);
+      if (!vistos[t]) { vistos[t] = true; out.push(t); }
+    }
+  });
+  return out.sort();
+}
+
+function _hrNormalizar(hs) {
+  const out = {};
+  for (let d = 0; d <= 6; d++) {
+    const h = hs && hs[d];
+    out[d] = {
+      activo: !!(h && h.activo === true),
+      rangos: (h && Array.isArray(h.rangos) ? h.rangos : []).map(r => ({ desde: r.desde || '', hasta: r.hasta || '' })),
+    };
+  }
+  return out;
+}
+
+// Primera vez (todavía no hay "horarios"): se arma desde lo que ya había (días + lista de horarios),
+// agrupando horarios consecutivos en tramos. Así lo que se ve es exactamente lo que ya se ofrecía.
+function _hrDesdeLegacy(ag, paso) {
+  const mins = [...new Set((ag.slots || []).map(_hrMin).filter(n => !isNaN(n)))].sort((a, b) => a - b);
+  const tramos = [];
+  mins.forEach(m => {
+    const ult = tramos[tramos.length - 1];
+    if (ult && m === ult.fin) ult.fin = m + paso; else tramos.push({ ini: m, fin: m + paso });
+  });
+  const hs = {};
+  for (let d = 0; d <= 6; d++) {
+    const activo = (ag.diasHabilitados || []).includes(d);
+    hs[d] = {
+      activo: activo && tramos.length > 0,
+      rangos: tramos.slice(0, 2).map(t => ({ desde: _hrTxt(t.ini), hasta: _hrTxt(Math.min(t.fin, 23 * 60 + 59)) })),
+    };
+  }
+  return { horarios: hs, excede: tramos.length > 2 };
+}
+
+function _hrEfectivos(ag) {
+  return ag.horarios ? _hrNormalizar(ag.horarios) : _hrDesdeLegacy(ag, _hrPaso()).horarios;
+}
+function _hrResumen(hs) {
+  const act = HR_ORDEN.filter(d => hs[d].activo);
+  if (!act.length) return 'Sin días configurados';
+  return act.map(d => {
+    const tr = hs[d].rangos.filter(r => r.desde && r.hasta).map(r => `${r.desde}–${r.hasta}`).join(' y ');
+    return `${DIAS_N[d]} ${tr}`;
+  }).join(' · ');
+}
+
+function abrirModalAgendaHorarios() {
+  const ag = getAgenda();
+  const aviso = document.getElementById('hrAviso');
+  aviso.style.display = 'none';
+  if (ag.horarios) {
+    hrTemp = _hrNormalizar(ag.horarios);
+  } else {
+    const pre = _hrDesdeLegacy(ag, _hrPaso());
+    hrTemp = pre.horarios;
+    if (pre.excede) {
+      aviso.textContent = 'Los horarios que tenías cargados tenían más de dos tramos por día. Se muestran los dos primeros: revisalos antes de guardar.';
+      aviso.style.display = '';
+    }
+  }
+  document.getElementById('hrError').textContent = '';
+  document.getElementById('hrDuracion').textContent =
+    `Cada turno dura ${_hrPaso()} minutos: el último turno del tramo tiene que terminar a la hora de cierre o antes.`;
+  renderHorarios();
+  abrirModal('modalAgendaHorarios');
+}
+
+function _hrDetalle(h) {
+  const slots = _hrSlotsDeRangos(h.rangos, _hrPaso());
+  return slots.length ? `${slots.length} turno${slots.length > 1 ? 's' : ''}: ${slots.join(' · ')}` : 'Completá las horas para ver los turnos';
+}
+
+function renderHorarios() {
+  document.getElementById('hrLista').innerHTML = HR_ORDEN.map(d => {
+    const h = hrTemp[d];
+    const tramos = h.rangos.map((r, i) => `
+      <div style="display:flex;align-items:center;gap:.4rem;margin-top:.45rem;flex-wrap:wrap">
+        <input type="time" class="input-sm" value="${r.desde}" onchange="hrCambiar(${d},${i},'desde',this.value)">
+        <span style="font-size:.78rem;color:var(--text-muted)">a</span>
+        <input type="time" class="input-sm" value="${r.hasta}" onchange="hrCambiar(${d},${i},'hasta',this.value)">
+        <span onclick="hrQuitarTramo(${d},${i})" style="cursor:pointer;color:var(--text-muted);font-size:1.1rem;line-height:1;padding:0 .3rem" title="Quitar tramo">×</span>
+      </div>`).join('');
+    const agregar = h.rangos.length < 2
+      ? `<div style="margin-top:.5rem"><span class="chip" onclick="hrAgregarTramo(${d})">+ Agregar tramo</span></div>` : '';
+    const detalle = `<div id="hrDet${d}" style="font-size:.75rem;color:var(--text-muted);margin-top:.45rem">${_hrDetalle(h)}</div>`;
+    return `
+      <div style="padding:.7rem .8rem;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:.5rem;background:var(--bg)">
+        <label style="display:flex;align-items:center;gap:.55rem;font-size:.9rem;font-weight:500;cursor:pointer">
+          <input type="checkbox" ${h.activo ? 'checked' : ''} onchange="hrToggle(${d},this.checked)"> ${HR_NOMBRES[d]}
+        </label>
+        ${h.activo ? tramos + agregar + detalle : ''}
+      </div>`;
+  }).join('');
+}
+
+function hrToggle(d, activo) {
+  hrTemp[d].activo = activo;
+  if (activo && !hrTemp[d].rangos.length) hrTemp[d].rangos.push({ desde: '', hasta: '' });
+  renderHorarios();
+}
+function hrAgregarTramo(d) {
+  if (hrTemp[d].rangos.length >= 2) return;
+  hrTemp[d].rangos.push({ desde: '', hasta: '' });
+  renderHorarios();
+}
+function hrQuitarTramo(d, i) {
+  hrTemp[d].rangos.splice(i, 1);
+  renderHorarios();
+}
+function hrCambiar(d, i, campo, valor) {
+  hrTemp[d].rangos[i][campo] = valor;
+  const el = document.getElementById('hrDet' + d);
+  if (el) el.textContent = _hrDetalle(hrTemp[d]);
+}
+
+// Devuelve '' si está todo bien o el texto del problema (el servidor vuelve a validar igual).
+function _hrValidar() {
+  for (const d of HR_ORDEN) {
+    const h = hrTemp[d];
+    if (!h.activo) continue;
+    const nombre = HR_NOMBRES[d];
+    if (!h.rangos.length) return `El ${nombre} está activo pero no tiene horario.`;
+    const tr = [];
+    for (const r of h.rangos) {
+      const ini = _hrMin(r.desde), fin = _hrMin(r.hasta);
+      if (isNaN(ini) || isNaN(fin)) return `Completá la hora de apertura y de cierre del ${nombre}.`;
+      if (fin <= ini) return `En el ${nombre}, el cierre tiene que ser después de la apertura.`;
+      tr.push([ini, fin]);
+    }
+    tr.sort((a, b) => a[0] - b[0]);
+    if (tr.length === 2 && tr[1][0] < tr[0][1]) return `Los dos tramos del ${nombre} se pisan entre sí.`;
+    if (!_hrSlotsDeRangos(h.rangos, _hrPaso()).length) return `Los tramos del ${nombre} son más cortos que un turno de ${_hrPaso()} minutos.`;
+  }
+  return '';
+}
+
+async function guardarHorarios() {
+  const err = document.getElementById('hrError');
+  const btn = document.getElementById('btnGuardarHorarios');
+  err.textContent = '';
+  const problema = _hrValidar();
+  if (problema) { err.textContent = problema; return; }
+
+  const nuevo = JSON.parse(JSON.stringify(getAgenda()));
+  nuevo.horarios = {};
+  const dias = [], todos = new Set();
+  for (let d = 0; d <= 6; d++) {
+    const h = hrTemp[d];
+    const rangos = h.rangos.filter(r => r.desde && r.hasta).map(r => ({ desde: r.desde, hasta: r.hasta }));
+    nuevo.horarios[d] = { activo: h.activo, rangos };
+    if (h.activo) { dias.push(d); _hrSlotsDeRangos(rangos, _hrPaso()).forEach(t => todos.add(t)); }
+  }
+  nuevo.diasHabilitados = dias;
+  nuevo.slots = [...todos].sort();
+
+  const textoOriginal = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  const r = await apiPost({ action: 'saveConfiguracion', config: nuevo });
+  btn.disabled = false; btn.textContent = textoOriginal;
+
+  if (!r || r.ok !== true) { err.textContent = (r && r.error) || 'No se pudo guardar. Intentá de nuevo.'; return; }
+  DB.set('agenda_config', nuevo);
+  actualizarResumenesAgenda();
+  cerrarModal('modalAgendaHorarios');
+  showToast('✓ Horarios guardados');
+}
+
+function _fechaCorta(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : '';
+}
+function _periodoResumen(p) {
+  const d = p && p.desde, h = p && p.hasta;
+  if (d && h) return `Del ${_fechaCorta(d)} al ${_fechaCorta(h)}`;
+  if (h) return `Hasta el ${_fechaCorta(h)}`;
+  if (d) return `Desde el ${_fechaCorta(d)} (con el límite de anticipación de siempre)`;
+  return 'Sin período: rige el límite de anticipación de siempre';
+}
+function abrirModalAgendaPeriodo() {
+  const p = getAgenda().periodo || {};
+  document.getElementById('periodoDesde').value = p.desde || '';
+  document.getElementById('periodoHasta').value = p.hasta || '';
+  document.getElementById('periodoError').textContent = '';
+  abrirModal('modalAgendaPeriodo');
+}
+async function guardarPeriodo(quitar) {
+  const err = document.getElementById('periodoError');
+  const btn = document.getElementById('btnGuardarPeriodo');
+  err.textContent = '';
+  const desde = quitar ? '' : document.getElementById('periodoDesde').value;
+  const hasta = quitar ? '' : document.getElementById('periodoHasta').value;
+
+  if (!quitar) {
+    if (!desde && !hasta) { err.textContent = 'Elegí al menos una fecha, o usá "Quitar período".'; return; }
+    if (desde && hasta && hasta < desde) { err.textContent = 'La fecha "Hasta" no puede ser anterior a "Desde".'; return; }
+    const t = new Date();
+    const hoy = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+    if (hasta && hasta < hoy) { err.textContent = 'La fecha "Hasta" ya pasó.'; return; }
+  }
+
+  const nuevo = JSON.parse(JSON.stringify(getAgenda()));
+  nuevo.periodo = { desde, hasta };
+
+  const textoOriginal = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  const r = await apiPost({ action: 'saveConfiguracion', config: nuevo });
+  btn.disabled = false; btn.textContent = textoOriginal;
+
+  if (!r || r.ok !== true) { err.textContent = (r && r.error) || 'No se pudo guardar. Intentá de nuevo.'; return; }
+  DB.set('agenda_config', nuevo);
+  actualizarResumenesAgenda();
+  cerrarModal('modalAgendaPeriodo');
+  showToast(quitar ? '✓ Período quitado' : '✓ Período guardado');
+}
+
 // ── Seña y reservas (Paso 5a) ────────────────────────────
 // A diferencia del resto de la agenda, esto NO usa la copia local (DB):
 // la fuente de verdad es el servidor, y lo que se muestra después de
