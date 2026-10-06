@@ -112,7 +112,7 @@ function generateICS({ fecha, horario, duracion, servicio, nombre }) {
 
   return [
     'BEGIN:VCALENDAR', 'VERSION:2.0',
-    'PRODID:-//Gise Spa//Turnos//ES',
+    'PRODID:-//Spa Sosiego//Turnos//ES',
     'BEGIN:VEVENT',
     `DTSTART:${fmt(start)}`,
     `DTEND:${fmt(end)}`,
