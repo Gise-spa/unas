@@ -218,19 +218,19 @@
       <h2 class="section-title">Mi Agenda</h2>
       <p class="section-subtitle">Configurá tu disponibilidad</p>
       <div class="config-lista">
-        <div class="config-row" onclick="abrirModalAgendaDias()">
-          <div class="config-row-icon">📆</div>
+        <div class="config-row" onclick="abrirModalAgendaHorarios()">
+          <div class="config-row-icon">🕐</div>
           <div class="config-row-body">
-            <div class="config-row-title">Días habilitados</div>
-            <div class="config-row-sub" id="resumenDias">—</div>
+            <div class="config-row-title">Horarios por día</div>
+            <div class="config-row-sub" id="resumenHorarios">—</div>
           </div>
           <div class="config-row-arrow">›</div>
         </div>
-        <div class="config-row" onclick="abrirModalAgendaSlots()">
-          <div class="config-row-icon">🕐</div>
+        <div class="config-row" onclick="abrirModalAgendaPeriodo()">
+          <div class="config-row-icon">📆</div>
           <div class="config-row-body">
-            <div class="config-row-title">Horarios disponibles</div>
-            <div class="config-row-sub" id="resumenSlots">—</div>
+            <div class="config-row-title">Período de reservas</div>
+            <div class="config-row-sub" id="resumenPeriodo">—</div>
           </div>
           <div class="config-row-arrow">›</div>
         </div>
@@ -933,6 +933,42 @@
       <button class="btn btn-outline btn-sm" onclick="agregarSlot()">+ Agregar</button>
     </div>
     <button class="btn btn-primary btn-sm" onclick="guardarSlots()">Guardar horarios</button>
+  </div>
+</div>
+
+<!-- MODAL AGENDA: HORARIOS POR DÍA -->
+<div class="modal-overlay" id="modalAgendaHorarios">
+  <div class="modal-box" style="max-width:460px">
+    <div class="modal-header">
+      <h3>Horarios por día</h3>
+      <button class="modal-close" onclick="cerrarModal('modalAgendaHorarios')">×</button>
+    </div>
+    <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:.6rem">Tildá los días que atendés y elegí de qué hora a qué hora. Si cortás al mediodía, agregá un segundo tramo.</p>
+    <p id="hrDuracion" style="font-size:.78rem;color:var(--text-muted);margin-bottom:.8rem"></p>
+    <p id="hrAviso" style="font-size:.78rem;color:var(--text-muted);margin-bottom:.8rem;display:none"></p>
+    <div id="hrLista" style="max-height:52vh;overflow-y:auto;margin-bottom:.9rem"></div>
+    <p id="hrError" style="font-size:.82rem;color:var(--danger, #c0392b);min-height:1.1em;margin-bottom:.4rem"></p>
+    <button class="btn btn-primary btn-sm" id="btnGuardarHorarios" onclick="guardarHorarios()">Guardar horarios</button>
+  </div>
+</div>
+
+<!-- MODAL AGENDA: PERÍODO DE RESERVAS -->
+<div class="modal-overlay" id="modalAgendaPeriodo">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header">
+      <h3>Período de reservas</h3>
+      <button class="modal-close" onclick="cerrarModal('modalAgendaPeriodo')">×</button>
+    </div>
+    <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem">Elegí hasta cuándo se pueden sacar turnos (y desde cuándo, si querés). Fuera de ese período no se ofrece ningún horario. Si dejás "Hasta" vacío, rige el límite de anticipación de siempre.</p>
+    <label style="display:block;font-size:.68rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:.4rem" for="periodoDesde">Desde</label>
+    <input type="date" class="input-sm" id="periodoDesde" style="margin-bottom:1rem">
+    <label style="display:block;font-size:.68rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:.4rem" for="periodoHasta">Hasta</label>
+    <input type="date" class="input-sm" id="periodoHasta" style="margin-bottom:1rem">
+    <p id="periodoError" style="font-size:.82rem;color:var(--danger, #c0392b);min-height:1.1em;margin-bottom:.4rem"></p>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <button class="btn btn-primary btn-sm" id="btnGuardarPeriodo" onclick="guardarPeriodo(false)">Guardar período</button>
+      <button class="btn btn-outline btn-sm" onclick="guardarPeriodo(true)">Quitar período</button>
+    </div>
   </div>
 </div>
 
