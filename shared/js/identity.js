@@ -2,7 +2,7 @@
    shared/js/identity.js
    Identidad comercial global. Un solo lugar para nombre, símbolo
    de logo y datos de contacto — cambiar el nombre del comercio
-   (ej. si "Eva Spa" pasa a llamarse "Gise Spa") se hace acá,
+   (ej. si "Spa Sosiego" cambia de nombre) se hace acá,
    una sola vez, y se propaga a todas las páginas que lo consuman.
 
    Script plano (sin type="module"), para no romper el patrón que
@@ -10,7 +10,7 @@
    ============================================================ */
 
 var IDENTITY = {
-  nombre:  'Eva Spa',
+  nombre:  'Spa Sosiego',
   simbolo: '✦',
   // Logo real (círculo, .png) — ruta relativa a la RAÍZ del repo.
   // Cada consumidor la resuelve según su propia ubicación: las páginas
@@ -26,6 +26,6 @@ var IDENTITY = {
     // ('' o ausente), el ícono/botón correspondiente no se muestra en
     // ningún lado — no rompe nada mientras tanto.
     whatsapp:  '', // solo números, con código de país, ej: '5491122334455'
-    instagram: '', // usuario sin @, ej: 'evaspa.unas'
+    instagram: '', // usuario sin @, ej: 'tu_usuario'
   },
 };
