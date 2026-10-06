@@ -1016,6 +1016,14 @@
         <span style="font-size:.75rem;color:var(--text-muted)">min</span>
       </div>
 
+      <label style="display:block;font-size:.68rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:.3rem" for="senaHoras">Horas para cambiar o cancelar sin perder la seña</label>
+      <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:.4rem">Con cuánta anticipación tiene que avisar la clienta. Si avisa con menos tiempo, o no avisa, pierde la seña. Cambiar el turno a tiempo lo hacés vos, sin cobrar otra seña.</p>
+      <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.5rem">
+        <input type="number" class="input-sm" id="senaHoras" min="1" max="168" step="1" inputmode="numeric" style="width:90px;text-align:center" oninput="actualizarAvisoSena()">
+        <span style="font-size:.75rem;color:var(--text-muted)">horas antes del turno</span>
+      </div>
+      <p id="senaAvisoTexto" style="font-size:.78rem;color:var(--text-muted);font-style:italic;margin-bottom:1.1rem"></p>
+
       <p id="senaDuracion" style="font-size:.78rem;color:var(--text-muted);margin-bottom:.4rem"></p>
       <p id="senaEstadoReservas" style="font-size:.78rem;color:var(--text-muted);margin-bottom:.6rem"></p>
       <p id="senaError" style="font-size:.82rem;color:var(--danger, #c0392b);min-height:1.1em;margin-bottom:.4rem"></p>
