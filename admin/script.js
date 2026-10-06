@@ -906,8 +906,22 @@ function actualizarResumenSena() {
   if (!el) return;
   if (!senaDatos) { el.textContent = '—'; return; }
   el.textContent = senaDatos.senaMonto > 0
-    ? `Seña ${_senaFmt(senaDatos.senaMonto)} · reserva ${senaDatos.retencionMin} min`
+    ? `Seña ${_senaFmt(senaDatos.senaMonto)} · reserva ${senaDatos.retencionMin} min` +
+      (senaDatos.horasPerderSena > 0 ? ` · cambios hasta ${senaDatos.horasPerderSena} h antes` : ' · plazo de cambios sin definir')
     : 'Seña sin definir';
+}
+
+// Texto previsto para el aviso al público (se muestra en el sitio cuando la reserva online esté lista).
+function _senaTextoAviso(horas) {
+  return `Si necesitás cambiar o cancelar tu turno, avisanos con al menos ${horas} horas de anticipación: el cambio se hace sin cobrar otra seña. Si avisás con menos tiempo, o no te presentás, la seña se pierde.`;
+}
+function actualizarAvisoSena() {
+  const el = document.getElementById('senaAvisoTexto');
+  if (!el) return;
+  const n = Number(document.getElementById('senaHoras').value);
+  el.textContent = (Number.isInteger(n) && n >= 1)
+    ? 'Texto previsto para el sitio: “' + _senaTextoAviso(n) + '”'
+    : 'Cargá las horas para ver el texto previsto para el sitio.';
 }
 async function abrirModalSena() {
   const cargando = document.getElementById('senaCargando');
@@ -931,6 +945,8 @@ function renderSena() {
   document.getElementById('senaMonto').value     = d.senaMonto > 0 ? d.senaMonto : '';
   document.getElementById('senaRetencion').value = d.retencionMin;
   document.getElementById('senaProrroga').value  = d.prorrogaEnProcesoMin;
+  document.getElementById('senaHoras').value     = d.horasPerderSena > 0 ? d.horasPerderSena : '';
+  actualizarAvisoSena();
   document.getElementById('senaError').textContent = '';
   document.getElementById('senaEstadoReservas').textContent = d.habilitadas
     ? 'Reservas online: encendidas.'
@@ -949,6 +965,9 @@ async function guardarSena() {
     retencionMin:         document.getElementById('senaRetencion').value.trim(),
     prorrogaEnProcesoMin: document.getElementById('senaProrroga').value.trim(),
   };
+  // Si el campo está vacío (todavía sin definir) no se manda: el servidor deja lo que había.
+  const horas = document.getElementById('senaHoras').value.trim();
+  if (horas !== '') config.horasPerderSena = horas;
 
   const textoOriginal = btn.textContent;
   btn.disabled = true;
