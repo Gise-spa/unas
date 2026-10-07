@@ -256,9 +256,11 @@ function abrirModalNuevoCliente(prefill, origen) {
 // buscador de Caja, vuelve al modal de Caja en vez de dejar todo cerrado
 // — así no se pierde el importe/tipo/método que ya se hubiera cargado.
 function cerrarModalEditarCliente() {
-  const volverACaja = _clienteFormOrigen === 'caja';
+  const volverACaja  = _clienteFormOrigen === 'caja';
+  const volverATurno = _clienteFormOrigen === 'turno';   // Paso 5c: Nuevo turno
   cerrarModal('modalEditarCliente');
   if (volverACaja) abrirModal('modalMovimientoCaja');
+  if (volverATurno) abrirModal('modalNuevoTurno');
 }
 
 let _guardandoCliente = false;
@@ -301,9 +303,16 @@ async function guardarCliente() {
         // seleccionado — sin tener que buscarlo de nuevo ni perder lo
         // que ya se hubiera cargado (importe/tipo/método).
         _mvSeleccionarClienteNuevo(res.clienteId, datosCliente);
+      } else if (_clienteFormOrigen === 'turno') {
+        // Paso 5c: vuelve a "Nuevo turno" con la clienta nueva ya elegida.
+        _ntClienteListo(res.clienteId);
       } else {
         renderClientes();
       }
+    } else if (_clienteFormOrigen === 'turno') {
+      // Paso 5c: se editó desde "Nuevo turno" — vuelve ahí, sin abrir la ficha.
+      showToast('✓ Cliente actualizado');
+      _ntClienteListo(clienteId);
     } else {
       renderClientes();
       if (_fichaClienteId) abrirFichaCliente(_fichaClienteId);
