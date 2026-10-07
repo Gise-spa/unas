@@ -216,10 +216,9 @@ function accionRapida(tipo) {
       showToast('Primero tenés que abrir la caja');
     }
   } else if (tipo === 'turno') {
-    // Todavía no existe un flujo de carga manual de turno (hoy
-    // los turnos entran solo por Calendly) — por ahora lleva a
-    // la sección de Turnos. Queda pendiente para una próxima etapa.
+    // Paso 5c: carga manual de turno (sin seña) — js/turnos-nuevo.js.
     irA('turnos');
+    setTimeout(() => abrirModalNuevoTurno(), 150);
   } else if (tipo === 'producto') {
     irA('inventario');
     setTimeout(() => abrirModalProducto(), 150);
@@ -446,10 +445,10 @@ function renderTurnos() {
         ${t.estado==='pendiente'&&!pasado?`
           <button onclick="cambiarEstadoTurno('${t.id}','confirmado')" class="btn btn-sm" style="background:rgba(34,197,94,.12);color:#16a34a;border:none;padding:.28rem .7rem">✓ Confirmar</button>
           <button onclick="cambiarEstadoTurno('${t.id}','cancelado')"  class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#dc2626;border:none;padding:.28rem .7rem">✗ Cancelar</button>`:''}
-        ${t.estado!=='cancelado'&&!tieneSena&&!pasado?`
+        ${t.estado!=='cancelado'&&!tieneSena&&!pasado&&t.origen==='calendly'?`
           <button onclick="abrirCambiarTurno('${t.id}')" class="btn btn-sm" style="background:none;border:1px solid var(--border);color:var(--text-muted);padding:.28rem .7rem">↺ Cambiar</button>`:''}
         ${t.fecha===hoy && typeof botonCobrarHTML === 'function' ? botonCobrarHTML(t) : ''}
-        <button onclick="pedirEliminarTurno('${t.id}')" class="btn btn-sm" style="background:rgba(239,68,68,.08);color:#dc2626;border:none;padding:.28rem .7rem">🗑</button>
+        ${t.origen==='calendly'?`<button onclick="pedirEliminarTurno('${t.id}')" class="btn btn-sm" style="background:rgba(239,68,68,.08);color:#dc2626;border:none;padding:.28rem .7rem">🗑</button>`:''}
       </div>
     </div>`;
   }).join('');
