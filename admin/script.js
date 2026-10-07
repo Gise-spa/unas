@@ -447,6 +447,8 @@ function renderTurnos() {
           <button onclick="cambiarEstadoTurno('${t.id}','cancelado')"  class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#dc2626;border:none;padding:.28rem .7rem">✗ Cancelar</button>`:''}
         ${t.estado!=='cancelado'&&!tieneSena&&!pasado&&t.origen==='calendly'?`
           <button onclick="abrirCambiarTurno('${t.id}')" class="btn btn-sm" style="background:none;border:1px solid var(--border);color:var(--text-muted);padding:.28rem .7rem">↺ Cambiar</button>`:''}
+        ${t.origen==='admin'&&t.estado==='confirmado'&&!tieneSena&&!pasado?`
+          <button onclick="pedirCancelarTurnoAdmin('${t.id}')" class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#dc2626;border:none;padding:.28rem .7rem">✗ Cancelar</button>`:''}
         ${t.fecha===hoy && typeof botonCobrarHTML === 'function' ? botonCobrarHTML(t) : ''}
         ${t.origen==='calendly'?`<button onclick="pedirEliminarTurno('${t.id}')" class="btn btn-sm" style="background:rgba(239,68,68,.08);color:#dc2626;border:none;padding:.28rem .7rem">🗑</button>`:''}
       </div>
@@ -486,6 +488,35 @@ function cambiarEstadoTurno(id, estado) {
   apiPost({ action: 'updateEstado', id, estado });
   renderTurnos(); actualizarBadges();
   if (estado !== 'confirmado') showToast(estado === 'cancelado' ? '✗ Turno cancelado' : '✓ Turno confirmado');
+}
+
+// ── Cancelar un turno cargado desde el panel (Paso 5c-bis) ──
+// No es optimista como el flujo de Calendly: espera la respuesta del servidor,
+// que cancela la fila y borra el evento del calendario "Spa Sosiego - Turnos".
+let _cancelandoTurnoAdmin = false;
+function pedirCancelarTurnoAdmin(id) {
+  const t = getTurnos().find(x => String(x.id) === String(id));
+  if (!t) return;
+  mostrarConfirm({
+    icon: '✗', titulo: 'Cancelar turno',
+    msg: `¿Cancelás el turno de ${t.nombre} el ${t.fecha} a las ${t.horario}? El horario queda libre y el turno queda en el historial.`,
+    btnTxt: 'Sí, cancelar', btnColor: 'rgba(239,68,68,.85)',
+    onOk: () => cancelarTurnoAdminUI(id)
+  });
+}
+async function cancelarTurnoAdminUI(id) {
+  if (_cancelandoTurnoAdmin) return;
+  _cancelandoTurnoAdmin = true;
+  try {
+    const r = await apiPost({ action: 'cancelarTurnoAdmin', id });
+    if (!r || r.ok !== true) { showToast('⚠ ' + ((r && r.error) || 'No se pudo cancelar el turno')); return; }
+    await syncTurnos();
+    renderTurnos(); actualizarBadges();
+    showToast(r.calendar ? '✗ Turno cancelado y horario liberado'
+                         : '✗ Turno cancelado — ⚠ no se pudo borrar del calendario, borralo a mano', r.calendar ? 3000 : 7000);
+  } finally {
+    _cancelandoTurnoAdmin = false;
+  }
 }
 
 // ── Eliminar turno ────────────────────────────────────────
