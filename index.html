@@ -512,11 +512,136 @@
       gap: 1rem;
     }
 
+
+    /* ── Reserva con seña (paso 6) ── */
+    .banner-prueba {
+      background: var(--bg-yellow);
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.78rem;
+      text-align: center;
+      padding: 0.55rem 1rem;
+    }
+    .banner-prueba[hidden] { display: none; }
+    .cal-error {
+      text-align: center;
+      padding: 1.5rem 0.5rem;
+      color: var(--text-mid);
+      font-size: 0.86rem;
+    }
+    .cal-error p { margin-bottom: 0.9rem; }
+    .field-hint { font-size: 0.74rem; color: var(--text-muted); margin-top: 0.35rem; }
+    .booking-container .form-group input.invalid {
+      border-color: var(--accent-dark);
+      box-shadow: 0 0 0 3px rgba(232,144,144,0.18);
+    }
+    .datos-error {
+      grid-column: 1 / -1;
+      font-size: 0.82rem;
+      color: var(--accent-dark);
+      margin-bottom: 0.5rem;
+    }
+    .datos-error[hidden] { display: none; }
+    .hp-field { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+    .pay-box {
+      background: rgba(232,144,144,0.07);
+      border: 1px solid var(--border-pink);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    .pay-box .pay-label {
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+    .pay-box .pay-monto {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.3rem;
+      line-height: 1.1;
+      color: var(--text);
+      margin: 0.15rem 0 0.6rem;
+    }
+    .pay-box p { font-size: 0.82rem; color: var(--text-mid); line-height: 1.6; }
+    .pay-box p + p { margin-top: 0.4rem; }
+    .politica-box {
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-md);
+      padding: 0.9rem 1.1rem;
+      margin-bottom: 1.25rem;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+    .politica-box .politica-tag {
+      display: inline-block;
+      font-size: 0.62rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold);
+      border: 1px solid var(--gold);
+      border-radius: 999px;
+      padding: 0.05rem 0.6rem;
+      margin-bottom: 0.4rem;
+    }
+    .en-retorno .booking-progress { display: none; }
+    .retorno-wrap { text-align: center; padding: 2rem 0.5rem; }
+    .retorno-titulo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.8rem;
+      margin-bottom: 0.75rem;
+    }
+    .retorno-texto {
+      color: var(--text-muted);
+      max-width: 400px;
+      margin: 0 auto;
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+    .retorno-detalle {
+      display: inline-block;
+      text-align: left;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 0.9rem 1.25rem;
+      margin-top: 1.25rem;
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+    .retorno-spin {
+      width: 34px; height: 34px;
+      border: 3px solid var(--border-pink);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      margin: 0 auto 1.25rem;
+    }
+    .success-icon.espera { background: var(--bg-yellow); border-color: var(--border); }
+    .success-icon.aviso  { background: var(--bg); border-color: var(--border-pink); color: var(--accent-dark); }
+    @media (prefers-reduced-motion: reduce) { .retorno-spin { animation-duration: 3s; } }
+
     /* ── Responsive (wizard de turnos — sin cambios) ── */
     @media (max-width: 860px) {
       .cal-wrap { grid-template-columns: 1fr; }
       .slots-panel { border-left: none; padding-left: 0; border-top: 1px solid var(--border); padding-top: 1.25rem; }
       .datos-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 520px) {
+      .booking-body { padding: 1.25rem 1rem; }
+      .booking-footer { flex-direction: column-reverse; align-items: stretch; }
+      .booking-footer .btn { width: 100%; justify-content: center; }
+      .slot-btn { min-height: 44px; }
+      .svc-option { padding: 0.9rem 1rem; }
+      .booking-container .form-group input { font-size: 16px; }   /* evita el zoom automático del celular */
+      .progress-step { padding: 0.8rem 0.25rem; }
+      .progress-step .step-label { font-size: 0.64rem; }
+      .pay-box .pay-monto { font-size: 2rem; }
     }
     @media (max-width: 500px) {
       .servicios-select-grid { grid-template-columns: 1fr; }
@@ -646,6 +771,10 @@
 
     <div class="booking-container reveal" id="bookingContainer">
 
+      <div class="banner-prueba" id="bannerPrueba" hidden>
+        Modo de prueba · esta pantalla usa Mercado Pago de prueba y las reservas no son reales.
+      </div>
+
       <!-- Progress -->
       <div class="booking-progress">
         <div class="progress-step active" id="ps-1">
@@ -698,7 +827,7 @@
         <!-- ─ Panel 2: Servicio ─ -->
         <div class="booking-panel" id="panel-2">
           <h3 class="booking-panel-title">¿Qué servicio querés?</h3>
-          <p class="booking-panel-sub">Cada servicio tiene una duración estimada.</p>
+          <p class="booking-panel-sub">Elegí el servicio que te querés hacer.</p>
           <div class="servicios-select-grid" id="svcSelectGrid"></div>
           <div class="booking-footer">
             <button class="btn btn-ghost" onclick="goPanel(1)">← Volver</button>
@@ -711,23 +840,24 @@
         <!-- ─ Panel 3: Datos ─ -->
         <div class="booking-panel" id="panel-3">
           <h3 class="booking-panel-title">Tus datos</h3>
-          <p class="booking-panel-sub">Para enviarte la confirmación por mail.</p>
+          <p class="booking-panel-sub">Los usamos para identificar tu turno y avisarte si hace falta. Los tres son obligatorios.</p>
           <div class="datos-grid">
+            <div class="datos-error" id="datosError" role="alert" hidden></div>
             <div class="form-group">
-              <label>Nombre</label>
-              <input type="text" id="inputNombre" placeholder="María García">
+              <label for="inputNombre">Nombre</label>
+              <input type="text" id="inputNombre" placeholder="María García" autocomplete="name" maxlength="80" required>
             </div>
             <div class="form-group">
-              <label>Mail</label>
-              <input type="email" id="inputMail" placeholder="hola@mail.com">
+              <label for="inputMail">Mail</label>
+              <input type="email" id="inputMail" placeholder="hola@mail.com" autocomplete="email" inputmode="email" maxlength="120" required>
             </div>
             <div class="form-group">
-              <label>Teléfono (opcional)</label>
-              <input type="tel" id="inputTel" placeholder="11 1234-5678">
+              <label for="inputTel">Teléfono</label>
+              <input type="tel" id="inputTel" placeholder="11 1234-5678" autocomplete="tel" inputmode="tel" maxlength="30" required>
+              <div class="field-hint">Con código de área, para poder contactarte.</div>
             </div>
-            <div class="form-group">
-              <label>Nota (opcional)</label>
-              <input type="text" id="inputNota" placeholder="Ej: uñas cortas, alergia...">
+            <div class="hp-field" aria-hidden="true">
+              <label>No completar este campo<input type="text" id="inputSitioWeb" tabindex="-1" autocomplete="off"></label>
             </div>
           </div>
           <div class="booking-footer">
@@ -736,46 +866,31 @@
           </div>
         </div>
 
-        <!-- ─ Panel 4: Confirmar ─ -->
+        <!-- ─ Panel 4: Revisar y pagar la seña ─ -->
         <div class="booking-panel" id="panel-4">
           <h3 class="booking-panel-title">Revisá tu reserva</h3>
-          <p class="booking-panel-sub">Confirmá y te mandamos el mail al instante.</p>
+          <p class="booking-panel-sub">Revisá que esté todo bien antes de pagar la seña.</p>
           <div class="confirm-box" id="confirmBox"></div>
+          <div class="pay-box" id="payBox"></div>
+          <div class="politica-box" id="politicaBox"></div>
           <div class="booking-footer">
             <button class="btn btn-ghost" onclick="goPanel(3)">← Volver</button>
-            <button class="btn btn-primary btn-lg" onclick="confirmarTurno()" id="btnConfirmar">
-              Confirmar reserva
+            <button class="btn btn-primary btn-lg" onclick="iniciarPago()" id="btnConfirmar">
+              Reservar y pagar seña
             </button>
           </div>
         </div>
 
-        <!-- ─ Panel 5: Éxito ─ -->
+        <!-- ─ Panel 5: Vuelta de Mercado Pago (muestra lo que informa el servidor) ─ -->
         <div class="booking-panel" id="panel-5">
-          <div class="success-wrap">
-            <div class="success-icon">✦</div>
-            <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;margin-bottom:.75rem">
-              ¡Reserva confirmada!
-            </h3>
-            <p style="color:var(--text-muted);max-width:380px;margin:0 auto;font-size:.9rem;line-height:1.7" id="successMsg"></p>
-            <div class="success-actions">
-              <button class="btn btn-secondary" onclick="downloadTurnoICS()">
-                📅 Agregar al calendario
-              </button>
-              <button class="btn btn-outline" onclick="resetBooking()">
-                Hacer otra reserva
-              </button>
-            </div>
-            <p style="font-size:.75rem;color:var(--text-muted);margin-top:1.5rem">
-              El archivo .ics se abre directamente en el Calendario de tu iPhone
-            </p>
-          </div>
+          <div class="retorno-wrap" id="retornoWrap" aria-live="polite"></div>
         </div>
 
       </div><!-- /booking-body -->
     </div><!-- /booking-container -->
 
     <!-- Fallback mientras Calendly sigue siendo el sistema real de reservas.
-         Lo muestra/oculta js/agenda.js según RESERVAS_HABILITADAS. -->
+         Lo muestra/oculta js/agenda.js según RESERVAS_ACTIVAS. -->
     <div class="booking-container reveal" id="turnosFallback" style="display:none; text-align:center; padding:3rem 1.5rem">
       <h3 class="booking-panel-title">Reservá tu turno</h3>
       <p class="booking-panel-sub" style="margin-bottom:1.5rem">
@@ -827,39 +942,51 @@ const booking = {
   nombre:   '',
   mail:     '',
   tel:      '',
-  nota:     '',
 };
 
 let currentPanel = 1;
 let calYear  = new Date().getFullYear();
 let calMonth = new Date().getMonth();
+let calSeq   = 0;        // descarta respuestas viejas al cambiar de mes rápido
+let slotsSeq = 0;
+let enviando = false;    // evita doble envío al reservar
+let retornoSeq = 0;      // identifica la consulta de retorno vigente
+
+const $ = id => document.getElementById(id);
+
+// Todo lo que escribe la clienta se muestra escapado.
+function esc(s) {
+  return String(s === undefined || s === null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function fmtMoneda(n) { return '$' + Number(n).toLocaleString('es-AR'); }
 
 // ════════════════════════════════════════════════════════════
 //  NAVEGACIÓN ENTRE PANELES
 // ════════════════════════════════════════════════════════════
 function goPanel(n) {
-  document.getElementById('panel-' + currentPanel).classList.remove('active');
-  document.getElementById('ps-' + currentPanel)?.classList.remove('active');
+  $('panel-' + currentPanel)?.classList.remove('active');
+  $('ps-' + currentPanel)?.classList.remove('active');
 
   if (n > currentPanel) {
-    document.getElementById('ps-' + currentPanel)?.classList.add('done');
+    $('ps-' + currentPanel)?.classList.add('done');
   } else {
     // volver: quitar done del actual
-    document.getElementById('ps-' + currentPanel)?.classList.remove('done');
+    $('ps-' + currentPanel)?.classList.remove('done');
   }
 
   currentPanel = n;
-  document.getElementById('panel-' + n).classList.add('active');
-  document.getElementById('ps-' + n)?.classList.add('active');
+  $('panel-' + n).classList.add('active');
+  $('ps-' + n)?.classList.add('active');
 
   if (n === 2) renderSvcSelect();
   if (n === 4) renderConfirm();
 
-  window.scrollTo({ top: document.getElementById('turnos').offsetTop - 80, behavior: 'smooth' });
+  window.scrollTo({ top: $('turnos').offsetTop - 80, behavior: 'smooth' });
 }
 
 // ════════════════════════════════════════════════════════════
-//  PANEL 1 — CALENDARIO
+//  PANEL 1 — CALENDARIO (los horarios libres los decide el backend)
 // ════════════════════════════════════════════════════════════
 function changeMonth(dir) {
   calMonth += dir;
@@ -868,27 +995,32 @@ function changeMonth(dir) {
   renderCal();
 }
 
-// Rango de disponibilidad a pedir: todo el mes visible (con margen de
-// un día a cada lado por huso horario). Se vuelve a pedir cada vez que
-// se cambia de mes o justo antes de confirmar — nunca se confía en un
-// fetch viejo para decidir si un horario está libre.
-async function refrescarDisponibilidadMes() {
-  const desde = fmtDate(new Date(calYear, calMonth, 1));
-  const hasta = fmtDate(new Date(calYear, calMonth + 1, 0));
-  await fetchDisponibilidad(desde, hasta);
+function actualizarBannerPrueba() {
+  const b = $('bannerPrueba');
+  if (b) b.hidden = !_reservaInfo.modoPrueba;
 }
 
-async function renderCal() {
-  document.getElementById('calGrid').innerHTML = '<p class="slots-empty">Cargando disponibilidad…</p>';
-  await refrescarDisponibilidadMes();
+// Mensaje cuando no se puede mostrar la agenda (sin conexión, reservas cerradas, error del servidor).
+function mostrarErrorAgenda(r) {
+  const cerrada = r && r.code === 'RESERVAS_CERRADAS';
+  const msg = cerrada
+    ? 'Las reservas online todavía no están habilitadas. Mientras tanto, podés reservar por Calendly.'
+    : (esErrorDeRed(r)
+        ? 'No pudimos cargar la agenda. Revisá tu conexión e intentá de nuevo.'
+        : esc((r && r.error) || 'No pudimos cargar la agenda. Intentá de nuevo en unos minutos.'));
+  const accion = cerrada
+    ? `<a class="btn btn-primary btn-sm" href="${esc(CALENDLY_FALLBACK_URL)}" target="_blank" rel="noopener">Reservar por Calendly →</a>`
+    : `<button class="btn btn-outline btn-sm" onclick="renderCal()">Reintentar</button>`;
+  $('calGrid').innerHTML = `<div class="cal-error" style="grid-column:1/-1"><p>${msg}</p>${accion}</div>`;
+}
 
-  const agenda = getAgenda();
-  const today  = new Date(); today.setHours(0,0,0,0);
-  const first  = new Date(calYear, calMonth, 1);
-  const last   = new Date(calYear, calMonth + 1, 0);
+// Pinta el calendario con lo que ya se pidió (no consulta nada).
+function pintarCal() {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const first = new Date(calYear, calMonth, 1);
+  const last  = new Date(calYear, calMonth + 1, 0);
 
-  document.getElementById('calTitle').textContent =
-    MESES[calMonth] + ' ' + calYear;
+  $('calTitle').textContent = MESES[calMonth] + ' ' + calYear;
 
   let html = DIAS.map(d => `<div class="cal-dow">${d}</div>`).join('');
   for (let i = 0; i < first.getDay(); i++) html += '<div class="cal-day empty"></div>';
@@ -896,68 +1028,82 @@ async function renderCal() {
   for (let d = 1; d <= last.getDate(); d++) {
     const dt  = new Date(calYear, calMonth, d);
     const key = fmtDate(dt);
-    const past     = dt < today;
-    const blocked  = agenda.diasBloqueados.includes(key);
-    const enabled  = agenda.diasHabilitados.includes(dt.getDay());
-    const disabled = past || blocked || !enabled;
+    const hasSlots = getHorariosLibresDia(key).length > 0;
+    const disabled = dt < today || !hasSlots;
     const isToday  = dt.getTime() === today.getTime();
     const isSel    = booking.fecha === key;
 
-    const slots     = agenda.slots;
-    const takenDay  = getHorariosOcupados(key);
-    const hasSlots  = !disabled && slots.some(s => !takenDay.includes(s));
-
     let cls = 'cal-day';
-    if (disabled)  cls += ' disabled';
-    if (isToday)   cls += ' today';
-    if (isSel)     cls += ' selected';
-    if (hasSlots)  cls += ' has-slots';
+    if (disabled) cls += ' disabled';
+    if (isToday)  cls += ' today';
+    if (isSel)    cls += ' selected';
+    if (hasSlots && !disabled) cls += ' has-slots';
 
-    const click = disabled ? '' : `onclick="selectDate('${key}')"`;
-    html += `<div class="${cls}" ${click}>${d}</div>`;
+    const attrs = disabled ? '' : `role="button" tabindex="0" onclick="selectDate('${key}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectDate('${key}')}"`;
+    html += `<div class="${cls}" ${attrs}>${d}</div>`;
   }
-  document.getElementById('calGrid').innerHTML = html;
+  $('calGrid').innerHTML = html;
+}
+
+async function renderCal() {
+  const seq = ++calSeq;
+  $('calGrid').innerHTML = '<p class="slots-empty" style="grid-column:1/-1">Cargando disponibilidad…</p>';
+  $('calTitle').textContent = MESES[calMonth] + ' ' + calYear;
+
+  const desde = fmtDate(new Date(calYear, calMonth, 1));
+  const hasta = fmtDate(new Date(calYear, calMonth + 1, 0));
+  const r = await fetchHorariosLibres(desde, hasta);
+  if (seq !== calSeq) return;               // llegó una respuesta vieja: se descarta
+
+  if (!r || r.ok !== true) { mostrarErrorAgenda(r); return; }
+  actualizarBannerPrueba();
+  pintarCal();
 }
 
 async function selectDate(key) {
   booking.fecha = key;
   booking.slot  = null;
-  document.getElementById('btnP1').disabled = true;
-  renderSlots(key); // refresca disponibilidad puntual de ese día antes de pintar
-  renderCal();
+  $('btnP1').disabled = true;
+  pintarCal();
+  await renderSlots(key); // refresca disponibilidad puntual de ese día antes de pintar
 }
 
 async function renderSlots(key) {
-  document.getElementById('slotsWrap').innerHTML = '<p class="slots-empty">Cargando horarios…</p>';
-  await fetchDisponibilidad(key, key); // chequeo puntual y fresco del día elegido
+  const seq = ++slotsSeq;
+  $('slotsWrap').innerHTML = '<p class="slots-empty">Cargando horarios…</p>';
+  const r = await fetchHorariosLibres(key, key); // chequeo fresco del día elegido
+  if (seq !== slotsSeq) return;
 
-  const agenda = getAgenda();
-  const taken  = getHorariosOcupados(key);
-  const slots  = agenda.slots;
-  const dt     = new Date(key + 'T00:00:00');
+  if (!r || r.ok !== true) {
+    $('slotsWrap').innerHTML = `<div class="cal-error"><p>${esErrorDeRed(r) ? 'No pudimos cargar los horarios. Revisá tu conexión.' : esc((r && r.error) || 'No pudimos cargar los horarios.')}</p>
+      <button class="btn btn-outline btn-sm" onclick="renderSlots('${key}')">Reintentar</button></div>`;
+    return;
+  }
+  actualizarBannerPrueba();
 
+  const slots = getHorariosLibresDia(key);
+  const dt = new Date(key + 'T00:00:00');
   let html = `<p class="slots-date">${fmtDateHuman(dt)}</p>`;
 
   if (!slots.length) {
-    html += '<p class="slots-empty">Sin horarios para este día.</p>';
+    html += '<p class="slots-empty">Ya no quedan horarios este día. Elegí otro.</p>';
+    booking.slot = null;
+    $('btnP1').disabled = true;
+    pintarCal();
   } else {
-    html += '<div class="slots-grid">';
-    html += slots.map(s => {
-      const isTaken = taken.includes(s);
-      const isSel   = booking.slot === s;
-      return `<button class="slot-btn ${isTaken ? 'taken' : ''} ${isSel ? 'selected' : ''}"
-        ${isTaken ? 'disabled' : `onclick="selectSlot('${s}')"`}>${s}</button>`;
-    }).join('');
-    html += '</div>';
+    if (booking.slot && !slots.includes(booking.slot)) booking.slot = null;   // se ocupó mientras miraba
+    $('btnP1').disabled = !booking.slot;
+    html += '<div class="slots-grid">' + slots.map(s =>
+      `<button class="slot-btn ${booking.slot === s ? 'selected' : ''}" onclick="selectSlot('${s}')">${s}</button>`
+    ).join('') + '</div>';
   }
-
-  document.getElementById('slotsWrap').innerHTML = html;
+  $('slotsWrap').innerHTML = html;
 }
 
 function selectSlot(s) {
   booking.slot = s;
-  document.getElementById('btnP1').disabled = false;
-  renderSlots(booking.fecha);
+  $('btnP1').disabled = false;
+  document.querySelectorAll('#slotsWrap .slot-btn').forEach(b => b.classList.toggle('selected', b.textContent === s));
 }
 
 // ════════════════════════════════════════════════════════════
@@ -976,142 +1122,336 @@ function renderSvcSelect() {
 
   let html = '';
   Object.entries(grupos).forEach(([grupo, items]) => {
-    html += `<div style="grid-column:1/-1;font-size:.7rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-top:.5rem">${grupo}</div>`;
+    html += `<div style="grid-column:1/-1;font-size:.7rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-top:.5rem">${esc(grupo)}</div>`;
     html += items.map(s => `
       <div class="svc-option ${booking.servicio?.id === s.id ? 'selected' : ''}"
-           onclick="selectServicio('${s.id}')">
-        <div class="svc-option-grupo">${s.grupo}</div>
-        <div class="svc-option-nombre">${s.nombre}</div>
-        <div class="svc-option-dur">⏱ ${s.duracion} min</div>
+           role="button" tabindex="0" data-id="${esc(s.id)}" onclick="selectServicio(this.dataset.id)"
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectServicio(this.dataset.id)}">
+        <div class="svc-option-nombre">${esc(s.nombre)}</div>
       </div>
     `).join('');
   });
 
-  document.getElementById('svcSelectGrid').innerHTML = html;
+  $('svcSelectGrid').innerHTML = html;
 }
 
 function selectServicio(id) {
   const svcs = (getAgenda().servicios || getDefaultServicios());
-  booking.servicio = svcs.find(s => s.id === id);
-  document.getElementById('btnP2').disabled = false;
+  booking.servicio = svcs.find(s => String(s.id) === String(id));
+  $('btnP2').disabled = !booking.servicio;
   renderSvcSelect();
 }
 
 // ════════════════════════════════════════════════════════════
-//  PANEL 3 — DATOS
+//  PANEL 3 — DATOS (nombre, mail y teléfono obligatorios)
+//  Misma regla que el servidor; el servidor vuelve a validar todo.
 // ════════════════════════════════════════════════════════════
+function marcarInvalido(id, invalido) {
+  const el = $(id);
+  if (!el) return;
+  el.classList.toggle('invalid', invalido);
+  el.setAttribute('aria-invalid', invalido ? 'true' : 'false');
+}
+
 function validateDatos() {
-  const nombre = document.getElementById('inputNombre').value.trim();
-  const mail   = document.getElementById('inputMail').value.trim();
-  if (!nombre) { showToast('⚠ Ingresá tu nombre'); return; }
-  if (!mail || !mail.includes('@')) { showToast('⚠ Ingresá un mail válido'); return; }
+  const nombre = $('inputNombre').value.trim().replace(/\s+/g, ' ');
+  const mail   = $('inputMail').value.trim().toLowerCase();
+  const tel    = $('inputTel').value.trim();
+
+  let digitos = tel.replace(/\D/g, '');
+  if (digitos.indexOf('54') === 0) digitos = digitos.slice(2);
+  if (digitos.indexOf('9') === 0)  digitos = digitos.slice(1);
+
+  const errores = [];
+  const nombreMal = nombre.length < 2;
+  const mailMal   = !/^[a-z0-9][^\s@]*@[^\s@]+\.[^\s@]{2,}$/.test(mail);
+  const telMal    = digitos.length < 8 || digitos.length > 13;
+  marcarInvalido('inputNombre', nombreMal);
+  marcarInvalido('inputMail',   mailMal);
+  marcarInvalido('inputTel',    telMal);
+  if (nombreMal) errores.push('Ingresá tu nombre.');
+  if (mailMal)   errores.push('Ingresá un mail válido.');
+  if (telMal)    errores.push('Ingresá un teléfono válido, con código de área.');
+
+  const box = $('datosError');
+  if (errores.length) {
+    box.innerHTML = errores.map(esc).join('<br>');
+    box.hidden = false;
+    $(nombreMal ? 'inputNombre' : (mailMal ? 'inputMail' : 'inputTel')).focus();
+    return;
+  }
+  box.hidden = true;
   booking.nombre = nombre;
   booking.mail   = mail;
-  booking.tel    = document.getElementById('inputTel').value.trim();
-  booking.nota   = document.getElementById('inputNota').value.trim();
+  booking.tel    = tel;
   goPanel(4);
 }
 
 // ════════════════════════════════════════════════════════════
-//  PANEL 4 — CONFIRMAR
+//  PANEL 4 — REVISAR Y PAGAR LA SEÑA
 // ════════════════════════════════════════════════════════════
 function renderConfirm() {
   const dt = new Date(booking.fecha + 'T00:00:00');
-  document.getElementById('confirmBox').innerHTML = `
-    <div class="confirm-row">
-      <span class="cl">Fecha</span>
-      <span class="cv">${fmtDateHuman(dt)}</span>
-    </div>
-    <div class="confirm-row">
-      <span class="cl">Horario</span>
-      <span class="cv">${booking.slot} hs</span>
-    </div>
-    <div class="confirm-row">
-      <span class="cl">Servicio</span>
-      <span class="cv">${booking.servicio.nombre}</span>
-    </div>
-    <div class="confirm-row">
-      <span class="cl">Duración estimada</span>
-      <span class="cv">${booking.servicio.duracion} min</span>
-    </div>
-    <div class="confirm-row">
-      <span class="cl">Nombre</span>
-      <span class="cv">${booking.nombre}</span>
-    </div>
-    <div class="confirm-row">
-      <span class="cl">Mail de confirmación</span>
-      <span class="cv">${booking.mail}</span>
-    </div>
-    ${booking.nota ? `
-    <div class="confirm-row">
-      <span class="cl">Nota</span>
-      <span class="cv">${booking.nota}</span>
-    </div>` : ''}
+  const sena = _reservaInfo.senaMonto;
+  const ret  = _reservaInfo.retencionMin;
+  $('confirmBox').innerHTML = `
+    <div class="confirm-row"><span class="cl">Fecha</span><span class="cv">${fmtDateHuman(dt)}</span></div>
+    <div class="confirm-row"><span class="cl">Horario</span><span class="cv">${esc(booking.slot)} hs</span></div>
+    <div class="confirm-row"><span class="cl">Servicio</span><span class="cv">${esc(booking.servicio.nombre)}</span></div>
+    <div class="confirm-row"><span class="cl">Nombre</span><span class="cv">${esc(booking.nombre)}</span></div>
+    <div class="confirm-row"><span class="cl">Mail</span><span class="cv">${esc(booking.mail)}</span></div>
+    <div class="confirm-row"><span class="cl">Teléfono</span><span class="cv">${esc(booking.tel)}</span></div>
   `;
+
+  // Cuánto paga ahora y cuánto queda para el día del servicio. Los precios de los
+  // servicios no están cargados en el sistema, por eso no se muestra una cifra del resto.
+  $('payBox').innerHTML = sena > 0 ? `
+    <div class="pay-label">Hoy pagás la seña</div>
+    <div class="pay-monto">${fmtMoneda(sena)}</div>
+    <p>El resto del valor del servicio se abona el día de tu turno.</p>
+    <p>Al tocar el botón te llevamos a Mercado Pago. Tenés ${ret} minutos para completar el pago; si no, el horario vuelve a quedar disponible.</p>
+  ` : `<p>Las reservas online no están disponibles por el momento. Reservá por Calendly.</p>`;
+
+  // Política de la seña: mientras no esté aprobada se muestra un aviso provisorio.
+  $('politicaBox').innerHTML = (POLITICA_SENA_APROBADA && TEXTO_POLITICA_SENA)
+    ? `<p>${esc(TEXTO_POLITICA_SENA)}</p>`
+    : `<span class="politica-tag">Pendiente de aprobación</span>
+       <p>Las condiciones de cambio, cancelación y devolución de la seña todavía no están definidas. Este aviso es provisorio y no es una política vigente.</p>`;
+
+  const btn = $('btnConfirmar');
+  btn.disabled = !(sena > 0);
+  btn.textContent = sena > 0 ? `Reservar y pagar seña de ${fmtMoneda(sena)}` : 'No disponible';
 }
 
 // ════════════════════════════════════════════════════════════
-//  CONFIRMAR TURNO
+//  RESERVAR → mandar a pagar. Nada se confirma acá: el turno se
+//  confirma recién cuando el servidor verifica el pago en Mercado Pago.
 // ════════════════════════════════════════════════════════════
-async function confirmarTurno() {
-  const btn = document.getElementById('btnConfirmar');
+const URL_MP_PERMITIDA = /^https:\/\/([a-z0-9-]+\.)*mercadopago\.com(\.ar)?\//i;
+
+function restaurarBotonPagar() {
+  enviando = false;
+  const btn = $('btnConfirmar');
+  if (btn) { btn.disabled = false; renderConfirm(); }
+}
+
+async function iniciarPago() {
+  if (enviando) return;
+  // Defensa: sin fecha, horario o servicio elegidos no se puede reservar (la pantalla no deja llegar acá).
+  if (!booking.fecha || !booking.slot || !booking.servicio) { goPanel(1); return; }
+  enviando = true;
+  const btn = $('btnConfirmar');
   btn.innerHTML = '<span class="loader"></span>';
   btn.disabled  = true;
 
-  const turno = {
-    id:       Date.now().toString(),
-    fecha:    booking.fecha,
-    horario:  booking.slot,
-    servicio: booking.servicio.nombre,
-    duracion: booking.servicio.duracion,
-    nombre:   booking.nombre,
-    mail:     booking.mail,
-    tel:      booking.tel,
-    nota:     booking.nota,
-    estado:   'pendiente',
-    origen:   'web',
-    creadoEn: new Date().toISOString(),
-  };
+  const r = await crearReservaBackend({
+    nombre:      booking.nombre,
+    mail:        booking.mail,
+    telefono:    booking.tel,
+    servicioIds: [booking.servicio.id],
+    fecha:       booking.fecha,
+    horario:     booking.slot,
+    sitioWeb:    $('inputSitioWeb').value,      // campo trampa: una persona lo deja vacío
+  });
 
-  // El backend es quien decide de verdad — revalida conflicto con LockService
-  // antes de guardar. Recién con su respuesta sabemos si el turno quedó.
-  const r = await confirmarTurnoBackend(turno);
-
-  if (!r || r.error || r.ok === false) {
-    btn.innerHTML = 'Confirmar turno';
-    btn.disabled  = false;
-
-    if (r && r.code === 'SLOT_TAKEN') {
-      showToast('⚠ Ese horario se acaba de ocupar. Elegí otro.');
+  if (esErrorDeRed(r)) {
+    restaurarBotonPagar();
+    showToast('⚠ No pudimos conectarnos. Revisá tu conexión e intentá de nuevo.', 4500);
+    return;
+  }
+  if (!r.ok) {
+    restaurarBotonPagar();
+    if (r.code === 'SLOT_TAKEN' || r.code === 'HORARIO_NO_DISPONIBLE') {
+      showToast('⚠ Ese horario ya no está disponible. Elegí otro.', 4500);
       booking.slot = null;
-      document.getElementById('btnP1').disabled = true;
-      await renderSlots(booking.fecha); // refresca con la disponibilidad real
+      $('btnP1').disabled = true;
       goPanel(1);
+      await renderSlots(booking.fecha);
+      renderCal();
+    } else if (r.code === 'DATOS_INVALIDOS') {
+      showToast('⚠ ' + (r.error || 'Revisá tus datos.'), 4500);
+      goPanel(3);
     } else {
-      showToast('⚠ No pudimos confirmar el turno. Probá de nuevo.');
+      showToast('⚠ ' + (r.error || 'No pudimos iniciar el pago. Probá de nuevo.'), 5000);
     }
     return;
   }
 
-  // Guardar cache local solo para UI (historial visual), nunca como fuente
-  // de disponibilidad — eso ya lo decidió el backend arriba.
-  DB.push('turnos', turno);
+  // Solo se redirige a Mercado Pago. Cualquier otra dirección se rechaza.
+  if (!URL_MP_PERMITIDA.test(String(r.checkoutUrl || ''))) {
+    restaurarBotonPagar();
+    showToast('⚠ No pudimos iniciar el pago. Probá de nuevo en unos minutos.', 5000);
+    return;
+  }
+  try { sessionStorage.setItem('sosiego_checkout_' + r.token, r.checkoutUrl); } catch (e) {}
+  btn.innerHTML = 'Llevándote a Mercado Pago…';
+  window.location.assign(r.checkoutUrl);
+}
 
-  // Mensaje de éxito
-  const dt = new Date(turno.fecha + 'T00:00:00');
-  document.getElementById('successMsg').innerHTML =
-    `Te esperamos el <strong>${fmtDateHuman(dt)}</strong> a las <strong>${turno.horario} hs</strong> para tu <strong>${turno.servicio}</strong>.<br><br>
-    Guardá el turno en tu calendario para no olvidarlo.`;
+// Si vuelve con "atrás" desde Mercado Pago, la página puede quedar con el botón trabado.
+window.addEventListener('pageshow', e => { if (e.persisted && enviando) restaurarBotonPagar(); });
 
-  // Guardar para el .ics
-  window._lastTurno = turno;
+// ════════════════════════════════════════════════════════════
+//  PANTALLA DE RETORNO — volver de Mercado Pago NO significa que el pago
+//  esté acreditado. Acá solo se MUESTRA lo que el servidor informa;
+//  esta pantalla nunca confirma nada por su cuenta.
+// ════════════════════════════════════════════════════════════
+const RETORNO_INTERVALO_MS = 4000;
+const RETORNO_MAX_MS       = 120000;   // pasado este tiempo se deja de consultar
+const RETORNO_MAX_FALLOS   = 4;        // fallos de conexión seguidos
 
+function leerRetornoDeUrl() {
+  try {
+    const p = new URLSearchParams(window.location.search);
+    const t = (p.get('t') || '').toLowerCase();
+    const hint = p.get('reserva');
+    // El valor de "reserva" solo orienta el mensaje; se acepta únicamente uno de estos tres.
+    if (hint && /^[a-f0-9]{64}$/.test(t)) return { token: t, hint: ['ok', 'pendiente', 'error'].includes(hint) ? hint : 'ok' };
+  } catch (e) {}
+  return null;
+}
+
+function iniciarRetorno(token, hint) {
+  retornoSeq++;
+  $('bookingContainer').classList.add('en-retorno');
   goPanel(5);
-  // Marcar steps como done
-  ['ps-1','ps-2','ps-3','ps-4'].forEach(id => {
-    document.getElementById(id)?.classList.add('done');
-    document.getElementById(id)?.classList.remove('active');
-  });
+  pintarRetorno('consultando', {});
+  consultarRetorno(token, hint, retornoSeq, 0, Date.now());
+}
+
+async function consultarRetorno(token, hint, seq, fallos, t0) {
+  if (seq !== retornoSeq) return;
+  if (document.hidden) {                      // pestaña en segundo plano: se espera, sin gastar el tiempo de consulta
+    setTimeout(() => consultarRetorno(token, hint, seq, fallos, t0 + 2000), 2000);
+    return;
+  }
+  const r = await getEstadoReservaBackend(token);
+  if (seq !== retornoSeq) return;
+
+  if (esErrorDeRed(r)) {
+    if (fallos + 1 >= RETORNO_MAX_FALLOS) { pintarRetorno('sinConexion', { token, hint }); return; }
+    pintarRetorno('reintentando', {});
+    setTimeout(() => consultarRetorno(token, hint, seq, fallos + 1, t0), RETORNO_INTERVALO_MS);
+    return;
+  }
+  if (!r.ok) { pintarRetorno('noDisponible', { r }); return; }
+
+  const enEspera = (r.estado === 'pendiente' || r.estado === 'procesando');
+  if (enEspera && Date.now() - t0 > RETORNO_MAX_MS) { pintarRetorno('agotado', { r, token, hint }); return; }
+  pintarRetorno(r.estado, { r, token, hint });
+  if (enEspera) setTimeout(() => consultarRetorno(token, hint, seq, 0, t0), RETORNO_INTERVALO_MS);
+}
+
+function consultarOtraVez(token, hint) {
+  retornoSeq++;
+  pintarRetorno('consultando', {});
+  consultarRetorno(token, hint, retornoSeq, 0, Date.now());
+}
+
+function volverAMercadoPago(token) {
+  let url = '';
+  try { url = sessionStorage.getItem('sosiego_checkout_' + token) || ''; } catch (e) {}
+  if (URL_MP_PERMITIDA.test(url)) window.location.assign(url);
+  else showToast('⚠ No encontramos el enlace de pago. Elegí el horario de nuevo.', 4500);
+}
+
+function detalleRetorno(r) {
+  if (!r || !r.fecha) return '';
+  const dt = new Date(r.fecha + 'T00:00:00');
+  return `<div class="retorno-detalle">
+    <div><strong>${fmtDateHuman(dt)}</strong> · ${esc(r.horario)} hs</div>
+    ${r.servicio ? `<div>${esc(r.servicio)}</div>` : ''}
+  </div>`;
+}
+
+function horaDeVencimiento(iso) {
+  const d = new Date(iso);
+  return isNaN(d) ? '' : String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+
+// Un solo lugar con todos los textos de la pantalla de retorno.
+function pintarRetorno(estado, ctx) {
+  const wrap = $('retornoWrap');
+  const r = ctx.r || {};
+  const btnOtra = '<button class="btn btn-outline" onclick="volverAReservar()">Elegir otro horario</button>';
+  let icono = '✦', clase = '', titulo = '', texto = '', extra = '', acciones = '', spin = false;
+
+  switch (estado) {
+    case 'consultando':
+      spin = true; titulo = 'Estamos verificando tu pago…';
+      texto = 'Volviste de Mercado Pago. Estamos consultando el estado de tu reserva; puede tardar unos segundos.';
+      break;
+    case 'reintentando':
+      spin = true; titulo = 'Estamos verificando tu pago…';
+      texto = 'Tuvimos un problema de conexión y volvemos a intentar.';
+      break;
+    case 'sinConexion':
+      icono = '!'; clase = 'aviso'; titulo = 'No pudimos consultar tu reserva';
+      texto = 'Parece que hay un problema de conexión. Tu reserva no se pierde: volvé a intentar cuando tengas señal.';
+      acciones = `<button class="btn btn-primary" onclick="consultarOtraVez('${ctx.token}','${esc(ctx.hint)}')">Volver a consultar</button>`;
+      break;
+    case 'noDisponible':
+      icono = '!'; clase = 'aviso'; titulo = 'No pudimos mostrar tu reserva';
+      texto = esc(r.error || 'No encontramos esa reserva.') + ' Si ya pagaste, escribinos y lo resolvemos.';
+      acciones = btnOtra;
+      break;
+    case 'procesando':
+      spin = true; titulo = 'Tu pago está en proceso';
+      texto = 'Mercado Pago todavía lo está verificando; puede demorar unos minutos. Mantené esta pantalla abierta.';
+      extra = detalleRetorno(r);
+      break;
+    case 'pendiente': {
+      spin = true; titulo = 'Todavía no vemos tu pago';
+      const hasta = r.venceEn ? horaDeVencimiento(r.venceEn) : '';
+      texto = (hint => hint === 'error'
+        ? 'Parece que el pago no se completó.'
+        : 'Si recién pagaste, puede tardar unos instantes en reflejarse.')(ctx.hint)
+        + (hasta ? ` Tu horario queda reservado hasta las ${hasta} hs.` : '');
+      extra = detalleRetorno(r);
+      acciones = `<button class="btn btn-primary" onclick="volverAMercadoPago('${ctx.token}')">Volver a Mercado Pago</button>`;
+      break;
+    }
+    case 'agotado':
+      icono = '✧'; clase = 'espera'; titulo = 'Seguimos sin ver tu pago';
+      texto = 'Dejamos de consultar para no sobrecargar. Si ya pagaste, no hace falta que pagues de nuevo: puede tardar unos minutos en reflejarse.';
+      extra = detalleRetorno(r);
+      acciones = `<button class="btn btn-primary" onclick="consultarOtraVez('${ctx.token}','${esc(ctx.hint)}')">Volver a consultar</button>`;
+      break;
+    case 'confirmada':
+      titulo = '¡Tu turno está confirmado!';
+      texto = 'Verificamos tu pago y tu horario quedó reservado. Te esperamos.';
+      extra = detalleRetorno(r);
+      window._lastTurno = { fecha: r.fecha, horario: r.horario, servicio: r.servicio || 'Turno en Spa Sosiego', duracion: r.duracion || 60, nombre: '' };
+      acciones = `<button class="btn btn-secondary" onclick="downloadTurnoICS()">📅 Agregar al calendario</button>
+                  <button class="btn btn-outline" onclick="volverAReservar()">Hacer otra reserva</button>`;
+      break;
+    case 'en_revision':
+      icono = '✧'; clase = 'espera'; titulo = 'Recibimos tu pago y estamos revisando tu turno';
+      texto = 'Necesitamos verificar tu horario antes de confirmarlo. Nos vamos a comunicar con vos. No hace falta que hagas nada más.';
+      extra = detalleRetorno(r);
+      break;
+    case 'vencida':
+      icono = '✧'; clase = 'espera'; titulo = 'Se terminó el tiempo para pagar';
+      texto = 'El horario volvió a quedar disponible. Si pagaste igual, escribinos y lo resolvemos.';
+      acciones = btnOtra;
+      break;
+    case 'cancelada':
+      icono = '✕'; clase = 'aviso'; titulo = 'Esta reserva fue cancelada';
+      texto = 'Si tenés dudas, escribinos.';
+      acciones = btnOtra;
+      break;
+    default:
+      icono = '!'; clase = 'aviso'; titulo = 'No pudimos mostrar tu reserva';
+      acciones = btnOtra;
+  }
+
+  wrap.innerHTML = `
+    ${spin ? '<div class="retorno-spin" aria-hidden="true"></div>' : `<div class="success-icon ${clase}" aria-hidden="true">${icono}</div>`}
+    <h3 class="retorno-titulo">${titulo}</h3>
+    <p class="retorno-texto">${texto}</p>
+    ${extra}
+    ${acciones ? `<div class="success-actions">${acciones}</div>` : ''}
+  `;
 }
 
 function downloadTurnoICS() {
@@ -1119,11 +1459,29 @@ function downloadTurnoICS() {
   downloadICS(window._lastTurno);
 }
 
+// Vuelve al inicio del flujo (cierra la pantalla de retorno si estaba abierta).
+function volverAReservar() {
+  retornoSeq++;                                   // corta cualquier consulta de retorno en curso
+  $('bookingContainer').classList.remove('en-retorno');
+  try {
+    const url = new URL(window.location.href);
+    ['reserva', 't'].forEach(k => url.searchParams.delete(k));
+    window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+  } catch (e) {}
+  resetBooking();
+}
+
 function resetBooking() {
-  Object.assign(booking, { fecha: null, slot: null, servicio: null, nombre: '', mail: '', tel: '', nota: '' });
+  Object.assign(booking, { fecha: null, slot: null, servicio: null, nombre: '', mail: '', tel: '' });
   window._lastTurno = null;
+  enviando = false;
+  ['inputNombre', 'inputMail', 'inputTel', 'inputSitioWeb'].forEach(id => { if ($(id)) { $(id).value = ''; marcarInvalido(id, false); } });
+  $('datosError').hidden = true;
+  $('btnP1').disabled = true;
+  $('btnP2').disabled = true;
+  $('slotsWrap').innerHTML = '<p class="slots-empty" style="padding:3rem 0">← Elegí un día para ver los horarios</p>';
   ['ps-1','ps-2','ps-3','ps-4'].forEach(id => {
-    document.getElementById(id)?.classList.remove('done','active');
+    $(id)?.classList.remove('done','active');
   });
   currentPanel = 0;
   goPanel(1);
@@ -1258,7 +1616,7 @@ function renderContactoYBottomBar() {
 
 // ════════════════════════════════════════════════════════════
 //  BOTTOM BAR — botón "Reservar": mientras no tengamos calendario
-//  propio (RESERVAS_HABILITADAS=false, definido en js/agenda.js,
+//  propio (RESERVAS_ACTIVAS=false, definido en js/agenda.js,
 //  no se toca acá), lleva directo al Calendly real. El día que se
 //  active el calendario propio, vuelve solo a #turnos — no hay que
 //  tocar este archivo de nuevo para ese cambio.
@@ -1266,27 +1624,27 @@ function renderContactoYBottomBar() {
 function configurarBotonReservarBottomBar() {
   const btn = document.getElementById('bbReservar');
   if (!btn) return;
-  if (typeof RESERVAS_HABILITADAS !== 'undefined' && !RESERVAS_HABILITADAS && typeof CALENDLY_FALLBACK_URL !== 'undefined') {
+  if (typeof RESERVAS_ACTIVAS !== 'undefined' && !RESERVAS_ACTIVAS && typeof CALENDLY_FALLBACK_URL !== 'undefined') {
     btn.href = CALENDLY_FALLBACK_URL;
     btn.target = '_blank';
     btn.rel = 'noopener';
   }
-  // Si RESERVAS_HABILITADAS es true, se deja el href="#turnos" que ya trae el HTML.
+  // Si RESERVAS_ACTIVAS es true, se deja el href="#turnos" que ya trae el HTML.
 }
 
 // ════════════════════════════════════════════════════════════
 //  INIT
 // ════════════════════════════════════════════════════════════
 (async function initTurnos() {
-  renderServiciosLista();       // informativo, no depende de RESERVAS_HABILITADAS
+  renderServiciosLista();       // informativo, no depende de RESERVAS_ACTIVAS
   renderInspirate();
   renderContactoYBottomBar();
   configurarBotonReservarBottomBar();
 
-  if (!RESERVAS_HABILITADAS) {
+  if (!RESERVAS_ACTIVAS) {
     // Calendly sigue siendo el sistema real — no se muestra el flujo de
-    // reserva pública. El motor de disponibilidad (fetchDisponibilidad,
-    // Turnos.gs, etc.) sigue intacto y se puede seguir probando aparte.
+    // reserva pública (ni con el interruptor de abajo apagado, ni mientras la
+    // política de la seña esté pendiente). El backend sigue intacto.
     document.getElementById('bookingContainer').style.display = 'none';
     const fallback = document.getElementById('turnosFallback');
     document.getElementById('turnosFallbackLink').href = CALENDLY_FALLBACK_URL;
@@ -1294,8 +1652,15 @@ function configurarBotonReservarBottomBar() {
     return;
   }
 
-  await fetchConfiguracion(); // trae agenda_config real del backend (o cache si falla)
-  await renderCal();          // ya pide disponibilidad del mes visible adentro
+  await fetchConfiguracion(); // trae la lista de servicios real del backend (o cache si falla)
+
+  // ¿Vuelve de Mercado Pago? Se muestra el estado real de ESA reserva (lo informa el servidor).
+  const retorno = leerRetornoDeUrl();
+  if (retorno) {
+    iniciarRetorno(retorno.token, retorno.hint);
+    return;
+  }
+  await renderCal();          // pide los horarios libres del mes visible
 })();
 </script>
 </body>
