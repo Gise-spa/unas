@@ -602,6 +602,13 @@
       font-size: 0.9rem;
       line-height: 1.7;
     }
+    .retorno-nota {
+      color: var(--text-muted);
+      max-width: 400px;
+      margin: 0.9rem auto 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
     .retorno-detalle {
       display: inline-block;
       text-align: left;
@@ -1434,6 +1441,35 @@ function pintarRetorno(estado, ctx) {
       window._lastTurno = { fecha: r.fecha, horario: r.horario, servicio: r.servicio || 'Turno en Spa Sosiego', duracion: r.duracion || 60, nombre: '' };
       acciones = `<button class="btn btn-secondary" onclick="downloadTurnoICS()">📅 Agregar al calendario</button>
                   <button class="btn btn-outline" onclick="volverAReservar()">Hacer otra reserva</button>`;
+      // Cancelar: solo si el servidor dice que todavía está dentro del plazo (y lo vuelve a validar al cancelar).
+      if (r.puedeCancelar) {
+        extra += `<p class="retorno-nota">Podés cancelar hasta el ${esc(fmtLimiteCancelar(r.limiteCancelar))} y se te devuelve la seña.</p>`;
+        acciones += `<button class="btn btn-ghost" onclick="pintarRetorno('confirmarCancelar', { token: '${ctx.token}', hint: '${esc(ctx.hint)}' })">Cancelar mi turno</button>`;
+      } else if (r.plazoHoras > 0) {
+        extra += `<p class="retorno-nota">Ya pasó el plazo para cancelar o cambiar el turno desde la web (${r.plazoHoras} h antes). Si necesitás hacer un cambio, escribinos.</p>`;
+      }
+      break;
+    case 'confirmarCancelar':
+      icono = '?'; clase = 'aviso'; titulo = '¿Querés cancelar tu turno?';
+      texto = 'Como avisás a tiempo, el spa te devuelve la seña por Mercado Pago, y el horario vuelve a quedar disponible. Esto no se puede deshacer.';
+      acciones = `<button class="btn btn-primary" onclick="cancelarTurnoClienta('${ctx.token}','${esc(ctx.hint)}')">Sí, cancelar mi turno</button>
+                  <button class="btn btn-outline" onclick="consultarOtraVez('${ctx.token}','${esc(ctx.hint)}')">No, volver</button>`;
+      break;
+    case 'cancelando':
+      spin = true; titulo = 'Cancelando tu turno…';
+      texto = 'Estamos cancelando el turno. No cierres esta pantalla.';
+      break;
+    case 'canceladaOk':
+      icono = '✓'; titulo = 'Tu turno quedó cancelado';
+      texto = 'Ya avisamos al spa para que te devuelva la seña por Mercado Pago. Si no ves la devolución en unos días, escribinos.';
+      acciones = '<button class="btn btn-outline" onclick="volverAReservar()">Reservar otro turno</button>';
+      break;
+    case 'errorCancelar':
+      icono = '!'; clase = 'aviso'; titulo = 'No pudimos cancelar tu turno';
+      texto = ctx.red
+        ? 'Hubo un problema de conexión y no sabemos si se llegó a cancelar. Consultá el estado de tu reserva antes de intentar de nuevo.'
+        : esc((r && r.error) || 'Probá de nuevo en unos segundos.');
+      acciones = `<button class="btn btn-primary" onclick="consultarOtraVez('${ctx.token}','${esc(ctx.hint)}')">Ver el estado de mi reserva</button>`;
       break;
     case 'en_revision':
       icono = '✧'; clase = 'espera'; titulo = 'Recibimos tu pago y estamos revisando tu turno';
@@ -1462,6 +1498,24 @@ function pintarRetorno(estado, ctx) {
     ${extra}
     ${acciones ? `<div class="success-actions">${acciones}</div>` : ''}
   `;
+}
+
+// "sábado 10 de octubre a las 09:00 hs", a partir de un ISO que informa el servidor.
+function fmtLimiteCancelar(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  const dia = d.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
+  return `${dia} a las ${horaDeVencimiento(iso)} hs`;
+}
+
+// Cancelar con seña (5h): el servidor revalida el plazo y cancela; la devolución la hace el spa a mano.
+async function cancelarTurnoClienta(token, hint) {
+  retornoSeq++;                                   // corta cualquier consulta de retorno en curso
+  pintarRetorno('cancelando', {});
+  const r = await cancelarReservaBackend(token);
+  if (esErrorDeRed(r)) { pintarRetorno('errorCancelar', { token, hint, red: true }); return; }
+  if (!r.ok)           { pintarRetorno('errorCancelar', { token, hint, r }); return; }
+  pintarRetorno('canceladaOk', { r, token, hint });
 }
 
 function downloadTurnoICS() {
