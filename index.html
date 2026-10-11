@@ -827,7 +827,7 @@
         <!-- ─ Panel 2: Servicio ─ -->
         <div class="booking-panel" id="panel-2">
           <h3 class="booking-panel-title">¿Qué servicio querés?</h3>
-          <p class="booking-panel-sub">Elegí el servicio que te querés hacer.</p>
+          <p class="booking-panel-sub">Elegí el servicio que te querés hacer. Podés combinar uno de manos con uno de pies.</p>
           <div class="servicios-select-grid" id="svcSelectGrid"></div>
           <div class="booking-footer">
             <button class="btn btn-ghost" onclick="goPanel(1)">← Volver</button>
@@ -938,7 +938,7 @@
 const booking = {
   fecha:    null,   // 'YYYY-MM-DD'
   slot:     null,   // '10:00'
-  servicio: null,   // objeto servicio
+  servicios: [],    // servicios elegidos (máx. uno por grupo)
   nombre:   '',
   mail:     '',
   tel:      '',
@@ -1124,7 +1124,7 @@ function renderSvcSelect() {
   Object.entries(grupos).forEach(([grupo, items]) => {
     html += `<div style="grid-column:1/-1;font-size:.7rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-top:.5rem">${esc(grupo)}</div>`;
     html += items.map(s => `
-      <div class="svc-option ${booking.servicio?.id === s.id ? 'selected' : ''}"
+      <div class="svc-option ${booking.servicios.some(x => String(x.id) === String(s.id)) ? 'selected' : ''}"
            role="button" tabindex="0" data-id="${esc(s.id)}" onclick="selectServicio(this.dataset.id)"
            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectServicio(this.dataset.id)}">
         <div class="svc-option-nombre">${esc(s.nombre)}</div>
@@ -1137,8 +1137,18 @@ function renderSvcSelect() {
 
 function selectServicio(id) {
   const svcs = (getAgenda().servicios || getDefaultServicios());
-  booking.servicio = svcs.find(s => String(s.id) === String(id));
-  $('btnP2').disabled = !booking.servicio;
+  const sv = svcs.find(s => String(s.id) === String(id));
+  if (!sv) return;
+  const ya = booking.servicios.findIndex(x => String(x.id) === String(sv.id));
+  if (ya >= 0) {
+    booking.servicios.splice(ya, 1);        // tocar uno ya elegido lo saca
+  } else {
+    // Un solo servicio por grupo: elegir otro del mismo grupo reemplaza al anterior.
+    // (El servidor vuelve a validar esta regla.)
+    booking.servicios = booking.servicios.filter(x => x.grupo !== sv.grupo);
+    booking.servicios.push(sv);
+  }
+  $('btnP2').disabled = booking.servicios.length === 0;
   renderSvcSelect();
 }
 
@@ -1197,7 +1207,7 @@ function renderConfirm() {
   $('confirmBox').innerHTML = `
     <div class="confirm-row"><span class="cl">Fecha</span><span class="cv">${fmtDateHuman(dt)}</span></div>
     <div class="confirm-row"><span class="cl">Horario</span><span class="cv">${esc(booking.slot)} hs</span></div>
-    <div class="confirm-row"><span class="cl">Servicio</span><span class="cv">${esc(booking.servicio.nombre)}</span></div>
+    <div class="confirm-row"><span class="cl">${booking.servicios.length > 1 ? 'Servicios' : 'Servicio'}</span><span class="cv">${esc(booking.servicios.map(x => x.nombre).join(' + '))}</span></div>
     <div class="confirm-row"><span class="cl">Nombre</span><span class="cv">${esc(booking.nombre)}</span></div>
     <div class="confirm-row"><span class="cl">Mail</span><span class="cv">${esc(booking.mail)}</span></div>
     <div class="confirm-row"><span class="cl">Teléfono</span><span class="cv">${esc(booking.tel)}</span></div>
@@ -1238,7 +1248,7 @@ function restaurarBotonPagar() {
 async function iniciarPago() {
   if (enviando) return;
   // Defensa: sin fecha, horario o servicio elegidos no se puede reservar (la pantalla no deja llegar acá).
-  if (!booking.fecha || !booking.slot || !booking.servicio) { goPanel(1); return; }
+  if (!booking.fecha || !booking.slot || !booking.servicios.length) { goPanel(1); return; }
   enviando = true;
   const btn = $('btnConfirmar');
   btn.innerHTML = '<span class="loader"></span>';
@@ -1248,7 +1258,7 @@ async function iniciarPago() {
     nombre:      booking.nombre,
     mail:        booking.mail,
     telefono:    booking.tel,
-    servicioIds: [booking.servicio.id],
+    servicioIds: booking.servicios.map(x => x.id),
     fecha:       booking.fecha,
     horario:     booking.slot,
     sitioWeb:    $('inputSitioWeb').value,      // campo trampa: una persona lo deja vacío
@@ -1472,7 +1482,7 @@ function volverAReservar() {
 }
 
 function resetBooking() {
-  Object.assign(booking, { fecha: null, slot: null, servicio: null, nombre: '', mail: '', tel: '' });
+  Object.assign(booking, { fecha: null, slot: null, servicios: [], nombre: '', mail: '', tel: '' });
   window._lastTurno = null;
   enviando = false;
   ['inputNombre', 'inputMail', 'inputTel', 'inputSitioWeb'].forEach(id => { if ($(id)) { $(id).value = ''; marcarInvalido(id, false); } });
