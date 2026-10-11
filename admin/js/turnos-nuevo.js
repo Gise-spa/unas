@@ -272,3 +272,216 @@ async function ntEnviar(fecha, ids) {
     btn.disabled = false; btn.textContent = original;
   }
 }
+
+
+// ============================================================
+//  TURNOS CON SEÑA (reservados desde el sitio): cancelar y mover
+//  Backend: TurnosAdminSena.gs (cancelarTurnoConSenaAdmin, moverTurnoConSenaAdmin).
+//  La plata la maneja Gise a mano desde su Mercado Pago: acá solo se decide
+//  qué pasa con la seña y se deja anotado.
+// ============================================================
+
+// ── Cancelar ─────────────────────────────────────────────
+let _cancelandoSena = false;
+function pedirCancelarTurnoSena(id) {
+  const t = getTurnos().find(x => String(x.id) === String(id));
+  if (!t) return;
+  const monto = Number(t.montoSena) || 0;
+  mostrarConfirm({
+    icon: '✗', titulo: 'Cancelar turno con seña',
+    msg: `Turno de ${t.nombre} el ${t.fecha} a las ${t.horario}. Pagó una seña de $${monto.toLocaleString('es-AR')}. El horario queda libre en los dos casos. ¿Qué pasa con la seña?`,
+    btnTxt: 'Devolver la seña', btnColor: 'rgba(239,68,68,.85)',
+    onOk:  () => cancelarTurnoSenaUI(id, true),
+    btnSecTxt: 'Quedarme con la seña',
+    onSec: () => cancelarTurnoSenaUI(id, false),
+    btnCancelTxt: 'Volver'
+  });
+}
+async function cancelarTurnoSenaUI(id, devolver) {
+  if (_cancelandoSena) return;
+  _cancelandoSena = true;
+  try {
+    const r = await apiPost({ action: 'cancelarTurnoSenaAdmin', id, devolver });
+    if (!r || r.ok !== true) { showToast('⚠ ' + ((r && r.error) || 'No se pudo cancelar el turno')); return; }
+    await syncTurnos();
+    renderTurnos(); actualizarBadges();
+    const plata = r.devolver
+      ? `Falta devolver la seña de $${Number(r.monto).toLocaleString('es-AR')} desde tu Mercado Pago (te mandamos el detalle por mail).`
+      : (r.retenida ? 'La seña queda retenida.' : '');
+    const cal = r.calendar ? '' : ' ⚠ No se pudo borrar del calendario: borralo a mano.';
+    showToast(('✗ Turno cancelado y horario liberado. ' + plata + cal).trim(), (r.devolver || !r.calendar) ? 9000 : 4000);
+  } finally {
+    _cancelandoSena = false;
+  }
+}
+
+// ── Mover ────────────────────────────────────────────────
+let _mvId = '', _mvDisp = null, _mvHora = '', _mvReqSeq = 0, _mvGuardando = false;
+
+function _mvAsegurarModal() {
+  if (document.getElementById('modalMoverTurno')) return;
+  let horas = '<option value="">—</option>';
+  for (let i = 0; i < 24; i++) { const hh = String(i).padStart(2, '0') + ':00'; horas += `<option value="${hh}">${hh}</option>`; }
+  document.body.insertAdjacentHTML('beforeend', `
+<div class="modal-overlay" id="modalMoverTurno">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-header">
+      <h3>Mover turno</h3>
+      <button class="modal-close" onclick="cerrarModal('modalMoverTurno')">×</button>
+    </div>
+    <p id="mvInfo" style="font-size:.84rem;color:var(--text-muted);margin-bottom:1rem"></p>
+    <div class="form-group">
+      <label>Nueva fecha</label>
+      <input type="date" id="mvFecha" class="input-sm" style="width:100%" onchange="mvCargarDisponibilidad()">
+    </div>
+    <div class="form-group">
+      <label>Nuevo horario</label>
+      <div id="mvDispInfo" style="font-size:.78rem;color:var(--text-muted);margin-bottom:.4rem"></div>
+      <div class="chip-grid" id="mvSlots"></div>
+      <div id="mvOcupados"></div>
+      <div style="display:flex;align-items:center;gap:.6rem;margin-top:.6rem">
+        <span style="font-size:.8rem;color:var(--text-muted)">Otro horario</span>
+        <select id="mvHoraManual" class="input-sm" onchange="mvHoraManualCambio()">${horas}</select>
+      </div>
+      <div id="mvHoraEstado"></div>
+    </div>
+    <p style="font-size:.76rem;color:var(--text-muted);margin:.25rem 0 1rem">La seña se queda en este turno. El horario viejo se libera y se actualiza el calendario.</p>
+    <div style="display:flex;gap:.6rem">
+      <button class="btn btn-primary" style="flex:1" id="mvGuardarBtn" onclick="mvGuardar()">Mover turno</button>
+      <button class="btn btn-outline" onclick="cerrarModal('modalMoverTurno')">Cancelar</button>
+    </div>
+  </div>
+</div>`);
+}
+
+function abrirMoverTurnoSena(id) {
+  const t = getTurnos().find(x => String(x.id) === String(id));
+  if (!t) return;
+  _mvAsegurarModal();
+  _mvId = String(id); _mvHora = ''; _mvDisp = null;
+  document.getElementById('mvInfo').textContent = `${t.nombre} · ${t.servicio} · ahora: ${t.fecha} a las ${t.horario}`;
+  document.getElementById('mvHoraManual').value = '';
+  const hoy = todayStr();
+  const f = document.getElementById('mvFecha');
+  f.min = hoy;
+  f.value = t.fecha >= hoy ? t.fecha : hoy;
+  abrirModal('modalMoverTurno');
+  mvCargarDisponibilidad();
+}
+
+async function mvCargarDisponibilidad() {
+  const fecha = document.getElementById('mvFecha').value;
+  _mvHora = '';
+  document.getElementById('mvHoraManual').value = '';
+  _mvDisp = null;
+  const slotsEl = document.getElementById('mvSlots');
+  const infoEl  = document.getElementById('mvDispInfo');
+  document.getElementById('mvOcupados').innerHTML = '';
+  document.getElementById('mvHoraEstado').innerHTML = '';
+  if (!fecha) { slotsEl.innerHTML = ''; infoEl.textContent = 'Elegí una fecha.'; return; }
+  infoEl.textContent = 'Consultando disponibilidad…';
+  slotsEl.innerHTML = '';
+  const seq = ++_mvReqSeq;
+  // idExcluir: el propio turno (y su evento) no cuentan como ocupados.
+  const r = await apiGetRaw('getDisponibilidadAdmin', { fecha, idExcluir: _mvId });
+  if (seq !== _mvReqSeq) return;               // llegó una respuesta vieja: se descarta
+  if (!r || r.ok === false || r.error) {
+    infoEl.innerHTML = `<span style="color:#dc2626">⚠ ${_ntEsc((r && r.error) || 'No se pudo consultar la disponibilidad')}</span>`;
+    return;
+  }
+  _mvDisp = r;
+  mvRenderDisp();
+}
+function mvRenderDisp() {
+  const r = _mvDisp; if (!r) return;
+  let info = '';
+  if (r.diaBloqueado) info = 'Este día está bloqueado en tu agenda para el público, pero igual podés mover el turno.';
+  else if (!r.diaHabitual) info = 'Este día no está en tu agenda habitual: podés mover igual, elegí la hora a mano.';
+  document.getElementById('mvDispInfo').textContent = info;
+  document.getElementById('mvSlots').innerHTML = r.slots.length
+    ? r.slots.map(s => {
+        if (!s.libre || s.pasado) {
+          return `<span class="chip" style="opacity:.45;text-decoration:line-through;cursor:not-allowed" title="${s.pasado ? 'Ya pasó' : 'Ocupado'}">${s.hora}</span>`;
+        }
+        return `<span class="chip ${_mvHora === s.hora ? 'on' : ''}" onclick="mvElegirSlot('${s.hora}')">${s.hora}</span>`;
+      }).join('')
+    : '';
+  document.getElementById('mvOcupados').innerHTML = r.ocupados.length
+    ? `<div style="font-size:.78rem;color:var(--text-muted);margin-top:.5rem">Ocupado: ${r.ocupados.map(o => `${o.desde}–${o.hasta}`).join(' · ')}</div>`
+    : `<div style="font-size:.78rem;color:var(--text-muted);margin-top:.5rem">Sin turnos ni eventos ese día.</div>`;
+  mvActualizarEstadoHora();
+}
+function mvElegirSlot(hora) {
+  _mvHora = hora;
+  document.getElementById('mvHoraManual').value = '';
+  mvRenderDisp();
+}
+function mvHoraManualCambio() {
+  _mvHora = document.getElementById('mvHoraManual').value || '';
+  mvRenderDisp();
+}
+// Devuelve '' si el horario elegido está libre, o un texto con el motivo.
+function mvConflicto() {
+  if (!_mvHora || !_mvDisp) return '';
+  const fecha = document.getElementById('mvFecha').value;
+  const t = getTurnos().find(x => String(x.id) === _mvId);
+  if (t && t.fecha === fecha && String(t.horario).slice(0, 5) === _mvHora) return 'Es el horario actual del turno.';
+  const ini = _ntMin(_mvHora), fin = ini + _mvDisp.duracion;
+  if (fecha === todayStr()) {
+    const n = new Date();
+    if (ini <= n.getHours() * 60 + n.getMinutes()) return 'Ese horario ya pasó.';
+  }
+  const o = _mvDisp.ocupados.find(x => ini < _ntMin(x.hasta) && _ntMin(x.desde) < fin);
+  if (o) return `Ocupado de ${o.desde} a ${o.hasta}. Un turno dura ${_mvDisp.duracion} min.`;
+  return '';
+}
+function mvActualizarEstadoHora() {
+  const el = document.getElementById('mvHoraEstado');
+  if (!_mvHora || !_mvDisp) { el.innerHTML = ''; return; }
+  const c = mvConflicto();
+  el.innerHTML = c
+    ? `<div style="font-size:.82rem;color:#dc2626;margin-top:.5rem">✗ ${_ntEsc(_mvHora)} — ${_ntEsc(c)}</div>`
+    : `<div style="font-size:.82rem;color:#16a34a;margin-top:.5rem">✓ ${_ntEsc(_mvHora)} libre (${_mvDisp.duracion} min)</div>`;
+}
+
+function mvGuardar() {
+  if (_mvGuardando) return;
+  const fecha = document.getElementById('mvFecha').value;
+  if (!fecha)    { showToast('⚠ Elegí una fecha'); return; }
+  if (!_mvDisp)  { showToast('⚠ Esperá a que cargue la disponibilidad'); return; }
+  if (!_mvHora)  { showToast('⚠ Elegí un horario'); return; }
+  const conflicto = mvConflicto();
+  if (conflicto) { showToast('⚠ ' + conflicto); return; }
+  const t = getTurnos().find(x => String(x.id) === _mvId);
+  const dt = new Date(fecha + 'T00:00:00');
+  mostrarConfirm({
+    icon: '↺', titulo: 'Mover turno',
+    msg: `${t ? t.nombre : 'La clienta'} pasa a ${fmtDateHuman(dt)} a las ${_mvHora}. La seña se mantiene. ¿Lo movés?`,
+    btnTxt: 'Sí, mover',
+    onOk: () => mvEnviar(fecha)
+  });
+}
+async function mvEnviar(fecha) {
+  if (_mvGuardando) return;
+  _mvGuardando = true;
+  const btn = document.getElementById('mvGuardarBtn');
+  const original = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Moviendo…';
+  try {
+    const r = await apiPost({ action: 'moverTurnoSenaAdmin', id: _mvId, fecha, horario: _mvHora });
+    if (!r || r.ok !== true) {
+      showToast('⚠ ' + ((r && r.error) || 'No se pudo mover el turno'));
+      if (r && (r.code === 'SLOT_TAKEN' || r.code === 'PASADO')) mvCargarDisponibilidad();   // refresca lo libre
+      return;
+    }
+    cerrarModal('modalMoverTurno');
+    await syncTurnos();
+    if (typeof turnoFechaActiva !== 'undefined') turnoFechaActiva = fecha;
+    renderTurnos(); actualizarBadges();
+    showToast(r.calendar ? '↺ Turno movido y calendario actualizado'
+                         : '↺ Turno movido — ⚠ revisá el calendario (te mandamos un mail)', r.calendar ? 3000 : 7000);
+  } finally {
+    _mvGuardando = false;
+    btn.disabled = false; btn.textContent = original;
+  }
+}
