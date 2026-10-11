@@ -147,3 +147,9 @@ async function crearReservaBackend(reserva) {
 async function getEstadoReservaBackend(token) {
   return await apiPostAgenda({ action: 'getEstadoReserva', token: token, clavePrueba: CLAVE_PRUEBA });
 }
+
+// Cancelar (paso 5h): el servidor revalida el plazo y cancela; la seña la devuelve el spa a mano.
+// → { ok:true, estado:'cancelada', devolucion:'pendiente' } | { ok:false, code, error } | { error } (sin conexión)
+async function cancelarReservaBackend(token) {
+  return await apiPostAgenda({ action: 'cancelarReserva', token: token, clavePrueba: CLAVE_PRUEBA });
+}
