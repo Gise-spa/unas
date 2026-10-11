@@ -386,7 +386,8 @@ function renderTurnoChips() {
     { v: 'pendiente', label: 'Pendientes' },
     { v: 'confirmado', label: 'Confirmados' },
     { v: 'finalizado', label: 'Finalizados' },
-    { v: 'cancelado', label: 'Cancelados' }
+    { v: 'cancelado', label: 'Cancelados' },
+    { v: 'en_revision', label: 'En revisión' }
   ];
   document.getElementById('turnosChips').innerHTML = opciones.map(o =>
     `<div class="chip ${turnoFiltroActivo===o.v?'on-gold':''}" onclick="setTurnoFiltro('${o.v}')">${o.label}</div>`
@@ -430,9 +431,11 @@ function renderTurnos() {
   }
   cont.innerHTML = sorted.map(t => {
     const pasado = esTurnoPasado(t, hoy, ahora);
-    const dotC  = pasado ? 'dot-fin' : ({ pendiente:'dot-pend', confirmado:'dot-conf', cancelado:'dot-canc' }[t.estado] || '');
-    const estadoTexto = estadoEfectivoTurno(t, hoy, ahora);
-    const tieneSena = t.sena === 'si';
+    const dotC  = pasado ? 'dot-fin' : ({ pendiente:'dot-pend', reservada:'dot-pend', en_revision:'dot-pend', confirmado:'dot-conf', cancelado:'dot-canc', vencida:'dot-canc' }[t.estado] || '');
+    const estadoTexto = ({ en_revision:'en revisión' }[estadoEfectivoTurno(t, hoy, ahora)]) || estadoEfectivoTurno(t, hoy, ahora);
+    const esWebSena = t.origen === 'web' && !!t.pagoId;              // reservado desde el sitio y pagado con Mercado Pago
+    const tieneSena = t.sena === 'si' || !!t.pagoId;
+    const motivoRev = { PAGO_TARDIO_HORARIO_TOMADO:'pagó tarde y el horario ya lo ocupó otra persona', HORARIO_TOMADO:'el horario se ocupó mientras pagaba', MONTO_DISTINTO:'el monto pagado no coincide con la seña' }[t.motivoRevision] || 'hay que revisarlo';
     return `<div class="turno-card">
       <div class="turno-card-top">
         <span class="turno-estado"><span class="dot ${dotC}"></span>${estadoTexto}${tieneSena ? ' <span class="badge-sena">seña</span>' : ''}</span>
@@ -441,6 +444,7 @@ function renderTurnos() {
       <div class="turno-cliente">${t.nombre}</div>
       <div class="turno-servicio">${t.servicio}</div>
       ${t.mail ? `<div class="turno-mail">${t.mail}</div>` : ''}
+      ${t.estado==='en_revision' ? `<div class="turno-mail" style="color:#b45309">⚠ Pagó la seña, pero ${motivoRev}.</div>` : ''}
       <div class="turno-actions">
         ${t.estado==='pendiente'&&!pasado?`
           <button onclick="cambiarEstadoTurno('${t.id}','confirmado')" class="btn btn-sm" style="background:rgba(34,197,94,.12);color:#16a34a;border:none;padding:.28rem .7rem">✓ Confirmar</button>
@@ -449,6 +453,10 @@ function renderTurnos() {
           <button onclick="abrirCambiarTurno('${t.id}')" class="btn btn-sm" style="background:none;border:1px solid var(--border);color:var(--text-muted);padding:.28rem .7rem">↺ Cambiar</button>`:''}
         ${t.origen==='admin'&&t.estado==='confirmado'&&!tieneSena&&!pasado?`
           <button onclick="pedirCancelarTurnoAdmin('${t.id}')" class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#dc2626;border:none;padding:.28rem .7rem">✗ Cancelar</button>`:''}
+        ${esWebSena&&!pasado&&t.estado==='confirmado'?`
+          <button onclick="abrirMoverTurnoSena('${t.id}')" class="btn btn-sm" style="background:none;border:1px solid var(--border);color:var(--text-muted);padding:.28rem .7rem">↺ Mover</button>`:''}
+        ${esWebSena&&!pasado&&(t.estado==='confirmado'||t.estado==='en_revision')?`
+          <button onclick="pedirCancelarTurnoSena('${t.id}')" class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#dc2626;border:none;padding:.28rem .7rem">✗ Cancelar</button>`:''}
         ${t.fecha===hoy && typeof botonCobrarHTML === 'function' ? botonCobrarHTML(t) : ''}
         ${t.origen==='calendly'?`<button onclick="pedirEliminarTurno('${t.id}')" class="btn btn-sm" style="background:rgba(239,68,68,.08);color:#dc2626;border:none;padding:.28rem .7rem">🗑</button>`:''}
       </div>
@@ -1520,12 +1528,14 @@ function abrirModal(id)  { document.getElementById(id)?.classList.add('open'); }
 function cerrarModal(id) { document.getElementById(id)?.classList.remove('open'); }
 
 let _confirmOk = null, _confirmSec = null;
-function mostrarConfirm({ icon='⚠️', titulo, msg, btnTxt='Confirmar', btnColor='var(--accent)', onOk, btnSecTxt=null, onSec=null }) {
+function mostrarConfirm({ icon='⚠️', titulo, msg, btnTxt='Confirmar', btnColor='var(--accent)', onOk, btnSecTxt=null, onSec=null, btnCancelTxt='Cancelar' }) {
   document.getElementById('cfIcon').textContent   = icon;
   document.getElementById('cfTitulo').textContent = titulo;
   document.getElementById('cfMsg').textContent    = msg;
   document.getElementById('cfBtn').textContent    = btnTxt;
   document.getElementById('cfBtn').style.background = btnColor;
+  const cancelBtn = document.querySelector('#modalConfirmar .confirm-btns .btn');
+  if (cancelBtn) cancelBtn.textContent = btnCancelTxt;
   _confirmOk = onOk; _confirmSec = onSec;
   const secBtn = document.getElementById('cfBtnSec');
   if (secBtn) {
