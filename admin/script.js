@@ -951,7 +951,7 @@ function actualizarResumenSena() {
 
 // Texto previsto para el aviso al público (se muestra en el sitio cuando la reserva online esté lista).
 function _senaTextoAviso(horas) {
-  return `Si necesitás cambiar o cancelar tu turno, avisanos con al menos ${horas} horas de anticipación: el cambio se hace sin cobrar otra seña. Si avisás con menos tiempo, o no te presentás, la seña se pierde.`;
+  return `Podés cambiar el horario de tu turno hasta ${horas} horas antes, sin perder la seña: pasa al nuevo horario y no pagás de nuevo. Si cancelás el turno, o no te presentás, la seña no se devuelve.`;
 }
 function actualizarAvisoSena() {
   const el = document.getElementById('senaAvisoTexto');
