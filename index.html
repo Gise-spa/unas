@@ -806,8 +806,11 @@
 
         <!-- ─ Panel 1: Calendario ─ -->
         <div class="booking-panel active" id="panel-1">
-          <h3 class="booking-panel-title">¿Qué día te viene bien?</h3>
-          <p class="booking-panel-sub">Solo aparecen los días y horarios disponibles.</p>
+          <h3 class="booking-panel-title" id="p1Titulo">¿Qué día te viene bien?</h3>
+          <p class="booking-panel-sub" id="p1Sub">Solo aparecen los días y horarios disponibles.</p>
+          <div id="p1ActualWrap" hidden style="text-align:center">
+            <div class="retorno-detalle" id="p1Actual" style="margin:0 0 1rem"></div>
+          </div>
           <div class="cal-wrap">
             <div>
               <div class="cal-nav-row">
@@ -824,8 +827,8 @@
             </div>
           </div>
           <div class="booking-footer">
-            <div></div>
-            <button class="btn btn-primary" id="btnP1" onclick="goPanel(2)" disabled>
+            <div id="p1Izq"></div>
+            <button class="btn btn-primary" id="btnP1" onclick="p1Siguiente()" disabled>
               Elegir servicio →
             </button>
           </div>
@@ -958,6 +961,8 @@ let calSeq   = 0;        // descarta respuestas viejas al cambiar de mes rápido
 let slotsSeq = 0;
 let enviando = false;    // evita doble envío al reservar
 let retornoSeq = 0;      // identifica la consulta de retorno vigente
+let cambioCtx = null;    // mientras la clienta elige un horario nuevo: { actual: { fecha, horario, servicio } }
+const retornoCtx = { token: '', hint: '', r: null };   // última reserva mostrada en la pantalla de retorno
 
 const $ = id => document.getElementById(id);
 
@@ -1229,11 +1234,9 @@ function renderConfirm() {
     <p>Al tocar el botón te llevamos a Mercado Pago. Tenés ${ret} minutos para completar el pago; si no, el horario vuelve a quedar disponible.</p>
   ` : `<p>Las reservas online no están disponibles por el momento. Reservá por Calendly.</p>`;
 
-  // Política de la seña: mientras no esté aprobada se muestra un aviso provisorio.
-  $('politicaBox').innerHTML = (POLITICA_SENA_APROBADA && TEXTO_POLITICA_SENA)
-    ? `<p>${esc(TEXTO_POLITICA_SENA)}</p>`
-    : `<span class="politica-tag">Pendiente de aprobación</span>
-       <p>Las condiciones de cambio, cancelación y devolución de la seña todavía no están definidas. Este aviso es provisorio y no es una política vigente.</p>`;
+  // Política de la seña (horas del plazo: las informa el servidor). Mientras Gise no la apruebe, se marca como pendiente.
+  $('politicaBox').innerHTML = (POLITICA_SENA_APROBADA ? '' : '<span class="politica-tag">Pendiente de aprobación</span>') +
+    textoPoliticaSena(_reservaInfo.plazoHoras).map(t => `<p>${esc(t)}</p>`).join('');
 
   const btn = $('btnConfirmar');
   btn.disabled = !(sena > 0);
@@ -1390,6 +1393,9 @@ function horaDeVencimiento(iso) {
 function pintarRetorno(estado, ctx) {
   const wrap = $('retornoWrap');
   const r = ctx.r || {};
+  if (ctx.token) retornoCtx.token = ctx.token;
+  if (ctx.hint !== undefined) retornoCtx.hint = ctx.hint;
+  if (estado === 'confirmada' && ctx.r) retornoCtx.r = ctx.r;
   const btnOtra = '<button class="btn btn-outline" onclick="volverAReservar()">Elegir otro horario</button>';
   let icono = '✦', clase = '', titulo = '', texto = '', extra = '', acciones = '', spin = false;
 
@@ -1441,27 +1447,41 @@ function pintarRetorno(estado, ctx) {
       window._lastTurno = { fecha: r.fecha, horario: r.horario, servicio: r.servicio || 'Turno en Spa Sosiego', duracion: r.duracion || 60, nombre: '' };
       acciones = `<button class="btn btn-secondary" onclick="downloadTurnoICS()">📅 Agregar al calendario</button>
                   <button class="btn btn-outline" onclick="volverAReservar()">Hacer otra reserva</button>`;
-      // Cancelar: solo si el servidor dice que todavía está dentro del plazo (y lo vuelve a validar al cancelar).
+      // Cambiar y cancelar: solo si el servidor dice que se puede (cada acción lo vuelve a validar).
+      //  · Cambiar: dentro del plazo del panel, sin perder la seña.
+      //  · Cancelar: mientras el turno no haya empezado, pero la seña NO se devuelve.
+      if (r.puedeCambiar) {
+        extra += `<p class="retorno-nota">Podés cambiar el horario sin perder la seña hasta el ${esc(fmtLimiteFecha(r.limiteCambiar))}. Si cancelás el turno, la seña no se devuelve.</p>`;
+        acciones += `<button class="btn btn-outline" onclick="iniciarCambio()">Cambiar mi turno</button>`;
+      } else if (r.puedeCancelar) {
+        extra += r.plazoHoras > 0
+          ? `<p class="retorno-nota">Ya pasó el plazo para cambiar el horario sin perder la seña (${r.plazoHoras} h antes). Si cancelás el turno, la seña no se devuelve. Para otro horario, escribinos.</p>`
+          : '<p class="retorno-nota">Para cambiar el horario, escribinos. Si cancelás el turno, la seña no se devuelve.</p>';
+      }
       if (r.puedeCancelar) {
-        extra += `<p class="retorno-nota">Podés cancelar hasta el ${esc(fmtLimiteCancelar(r.limiteCancelar))} y se te devuelve la seña.</p>`;
-        acciones += `<button class="btn btn-ghost" onclick="pintarRetorno('confirmarCancelar', { token: '${ctx.token}', hint: '${esc(ctx.hint)}' })">Cancelar mi turno</button>`;
-      } else if (r.plazoHoras > 0) {
-        extra += `<p class="retorno-nota">Ya pasó el plazo para cancelar o cambiar el turno desde la web (${r.plazoHoras} h antes). Si necesitás hacer un cambio, escribinos.</p>`;
+        acciones += `<button class="btn btn-ghost" onclick="irACancelar()">Cancelar mi turno</button>`;
       }
       break;
-    case 'confirmarCancelar':
+    case 'confirmarCancelar': {
+      const puedeCambiar = !!(retornoCtx.r && retornoCtx.r.puedeCambiar);
       icono = '?'; clase = 'aviso'; titulo = '¿Querés cancelar tu turno?';
-      texto = 'Como avisás a tiempo, el spa te devuelve la seña por Mercado Pago, y el horario vuelve a quedar disponible. Esto no se puede deshacer.';
-      acciones = `<button class="btn btn-primary" onclick="cancelarTurnoClienta('${ctx.token}','${esc(ctx.hint)}')">Sí, cancelar mi turno</button>
-                  <button class="btn btn-outline" onclick="consultarOtraVez('${ctx.token}','${esc(ctx.hint)}')">No, volver</button>`;
+      texto = 'Si cancelás, perdés la seña: no se devuelve. El horario vuelve a quedar disponible y esto no se puede deshacer.';
+      if (puedeCambiar) extra = '<p class="retorno-nota">Si solo necesitás otro horario, podés cambiarlo sin perder la seña.</p>';
+      // La opción segura va primero; cancelar (y perder la seña) nunca es el botón destacado.
+      acciones = (puedeCambiar
+          ? `<button class="btn btn-primary" onclick="iniciarCambio()">Mejor cambiar mi turno</button>`
+          : `<button class="btn btn-primary" onclick="verMiReserva()">No, volver</button>`)
+        + `<button class="btn btn-outline" onclick="cancelarTurnoClienta()">Sí, cancelar y perder la seña</button>`
+        + (puedeCambiar ? `<button class="btn btn-ghost" onclick="verMiReserva()">No, volver</button>` : '');
       break;
+    }
     case 'cancelando':
       spin = true; titulo = 'Cancelando tu turno…';
       texto = 'Estamos cancelando el turno. No cierres esta pantalla.';
       break;
     case 'canceladaOk':
       icono = '✓'; titulo = 'Tu turno quedó cancelado';
-      texto = 'Ya avisamos al spa para que te devuelva la seña por Mercado Pago. Si no ves la devolución en unos días, escribinos.';
+      texto = 'El horario volvió a quedar disponible. Como cancelaste, la seña no se devuelve.';
       acciones = '<button class="btn btn-outline" onclick="volverAReservar()">Reservar otro turno</button>';
       break;
     case 'errorCancelar':
@@ -1469,8 +1489,48 @@ function pintarRetorno(estado, ctx) {
       texto = ctx.red
         ? 'Hubo un problema de conexión y no sabemos si se llegó a cancelar. Consultá el estado de tu reserva antes de intentar de nuevo.'
         : esc((r && r.error) || 'Probá de nuevo en unos segundos.');
-      acciones = `<button class="btn btn-primary" onclick="consultarOtraVez('${ctx.token}','${esc(ctx.hint)}')">Ver el estado de mi reserva</button>`;
+      acciones = `<button class="btn btn-primary" onclick="verMiReserva()">Ver el estado de mi reserva</button>`;
       break;
+    case 'confirmarCambio': {
+      const a = (cambioCtx && cambioCtx.actual) || {};
+      icono = '?'; clase = 'aviso'; titulo = '¿Cambiamos tu turno?';
+      texto = 'La seña que ya pagaste pasa al nuevo horario: no pagás de nuevo.';
+      extra = `<div class="retorno-detalle">
+        <div>Antes: <strong>${fmtDateHuman(new Date(a.fecha + 'T00:00:00'))}</strong> · ${esc(a.horario)} hs</div>
+        <div>Ahora: <strong>${fmtDateHuman(new Date(booking.fecha + 'T00:00:00'))}</strong> · ${esc(booking.slot)} hs</div>
+        ${a.servicio ? `<div>${esc(a.servicio)}</div>` : ''}
+      </div>`;
+      acciones = `<button class="btn btn-primary" onclick="cambiarTurnoClienta()">Sí, cambiar mi turno</button>
+                  <button class="btn btn-outline" onclick="goPanel(1)">Elegir otro horario</button>`;
+      break;
+    }
+    case 'cambiando':
+      spin = true; titulo = 'Cambiando tu turno…';
+      texto = 'Estamos moviendo tu turno al nuevo horario. No cierres esta pantalla.';
+      break;
+    case 'cambiadoOk':
+      titulo = '¡Listo, cambiamos tu turno!';
+      texto = 'Tu seña pasa al nuevo horario. Te mandamos un mail con los datos.';
+      extra = detalleRetorno(r);
+      acciones = `<button class="btn btn-secondary" onclick="downloadTurnoICS()">📅 Agregar al calendario</button>
+                  <button class="btn btn-outline" onclick="verMiReserva()">Ver mi reserva</button>`;
+      break;
+    case 'errorCambiar': {
+      icono = '!'; clase = 'aviso'; titulo = 'No pudimos cambiar tu turno';
+      const ocupado = r && (r.code === 'SLOT_TAKEN' || r.code === 'HORARIO_NO_DISPONIBLE');
+      if (ctx.red) {
+        texto = 'Hubo un problema de conexión y no sabemos si se llegó a cambiar. Consultá el estado de tu reserva antes de intentar de nuevo.';
+        acciones = `<button class="btn btn-primary" onclick="verMiReserva()">Ver el estado de mi reserva</button>`;
+      } else if (ocupado) {
+        texto = 'Ese horario ya no está disponible. Tu turno sigue como estaba: elegí otro horario.';
+        acciones = `<button class="btn btn-primary" onclick="elegirOtroHorarioCambio()">Elegir otro horario</button>
+                    <button class="btn btn-ghost" onclick="verMiReserva()">Volver a mi reserva</button>`;
+      } else {
+        texto = esc((r && r.error) || 'Probá de nuevo en unos segundos.');
+        acciones = `<button class="btn btn-primary" onclick="verMiReserva()">Ver el estado de mi reserva</button>`;
+      }
+      break;
+    }
     case 'en_revision':
       icono = '✧'; clase = 'espera'; titulo = 'Recibimos tu pago y estamos revisando tu turno';
       texto = 'Necesitamos verificar tu horario antes de confirmarlo. Nos vamos a comunicar con vos. No hace falta que hagas nada más.';
@@ -1501,21 +1561,98 @@ function pintarRetorno(estado, ctx) {
 }
 
 // "sábado 10 de octubre a las 09:00 hs", a partir de un ISO que informa el servidor.
-function fmtLimiteCancelar(iso) {
+function fmtLimiteFecha(iso) {
   const d = new Date(iso);
   if (isNaN(d)) return '';
   const dia = d.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
   return `${dia} a las ${horaDeVencimiento(iso)} hs`;
 }
 
-// Cancelar con seña (5h): el servidor revalida el plazo y cancela; la devolución la hace el spa a mano.
-async function cancelarTurnoClienta(token, hint) {
+// Cancelar con seña (5h): el servidor valida y cancela; la seña NO se devuelve (la pantalla ya lo avisó).
+async function cancelarTurnoClienta() {
+  const token = retornoCtx.token, hint = retornoCtx.hint;
   retornoSeq++;                                   // corta cualquier consulta de retorno en curso
   pintarRetorno('cancelando', {});
   const r = await cancelarReservaBackend(token);
   if (esErrorDeRed(r)) { pintarRetorno('errorCancelar', { token, hint, red: true }); return; }
   if (!r.ok)           { pintarRetorno('errorCancelar', { token, hint, r }); return; }
   pintarRetorno('canceladaOk', { r, token, hint });
+}
+
+function irACancelar() { pintarRetorno('confirmarCancelar', {}); }
+
+// Vuelve a mostrar el estado actual de la reserva (y sale del modo "cambiar turno" si estaba).
+function verMiReserva() {
+  cambioCtx = null;
+  pintarPanel1();
+  goPanel(5);
+  consultarOtraVez(retornoCtx.token, retornoCtx.hint);
+}
+
+// ════════════════════════════════════════════════════════════
+//  CAMBIAR EL TURNO (paso 5g) — la clienta elige otro día y horario con el mismo
+//  calendario de siempre. La seña pasa al horario nuevo (no se paga de nuevo).
+//  Esta pantalla nunca decide nada: el servidor valida plazo, estado y horario.
+// ════════════════════════════════════════════════════════════
+
+// El panel 1 sirve para reservar y para cambiar: acá se ajustan sus textos según el modo.
+function pintarPanel1() {
+  const c = !!cambioCtx;
+  $('p1Titulo').textContent = c ? '¿Para cuándo querés cambiar tu turno?' : '¿Qué día te viene bien?';
+  $('p1Sub').textContent = c
+    ? 'Elegí el nuevo día y horario. Tu seña pasa al nuevo horario: no pagás de nuevo.'
+    : 'Solo aparecen los días y horarios disponibles.';
+  $('btnP1').textContent = c ? 'Revisar el cambio →' : 'Elegir servicio →';
+  $('p1Izq').innerHTML = c ? '<button class="btn btn-ghost" onclick="verMiReserva()">← Volver a mi reserva</button>' : '';
+  const a = c && cambioCtx.actual;
+  $('p1Actual').innerHTML = (a && a.fecha)
+    ? `Tu turno actual: <strong>${fmtDateHuman(new Date(a.fecha + 'T00:00:00'))}</strong> · ${esc(a.horario)} hs`
+    : '';
+  $('p1ActualWrap').hidden = !(a && a.fecha);
+}
+
+// Botón principal del panel 1: en modo reserva sigue al paso de servicio; en modo cambio, a revisar el cambio.
+function p1Siguiente() {
+  if (!cambioCtx) { goPanel(2); return; }
+  if (!booking.fecha || !booking.slot) return;
+  goPanel(5);
+  pintarRetorno('confirmarCambio', {});
+}
+
+function iniciarCambio() {
+  const r = retornoCtx.r;
+  if (!r || !r.fecha) return;
+  retornoSeq++;                                   // corta cualquier consulta de retorno en curso
+  cambioCtx = { actual: { fecha: r.fecha, horario: r.horario, servicio: r.servicio } };
+  Object.assign(booking, { fecha: null, slot: null });
+  $('btnP1').disabled = true;
+  $('slotsWrap').innerHTML = '<p class="slots-empty" style="padding:3rem 0">← Elegí un día para ver los horarios</p>';
+  pintarPanel1();
+  goPanel(1);
+  renderCal();
+}
+
+function elegirOtroHorarioCambio() {
+  booking.slot = null;
+  $('btnP1').disabled = true;
+  goPanel(1);
+  renderCal();
+  if (booking.fecha) renderSlots(booking.fecha);
+}
+
+async function cambiarTurnoClienta() {
+  if (!cambioCtx || !booking.fecha || !booking.slot) return;
+  const fecha = booking.fecha, horario = booking.slot;
+  const a = cambioCtx.actual || {};
+  retornoSeq++;
+  pintarRetorno('cambiando', {});
+  const r = await reprogramarReservaBackend(retornoCtx.token, fecha, horario);
+  if (esErrorDeRed(r)) { pintarRetorno('errorCambiar', { red: true }); return; }
+  if (!r.ok)           { pintarRetorno('errorCambiar', { r }); return; }
+  window._lastTurno = { fecha, horario, servicio: a.servicio || 'Turno en Spa Sosiego', duracion: _reservaInfo.duracion || 60, nombre: '' };
+  cambioCtx = null;
+  pintarPanel1();
+  pintarRetorno('cambiadoOk', { r: { fecha, horario, servicio: a.servicio } });
 }
 
 function downloadTurnoICS() {
@@ -1537,6 +1674,8 @@ function volverAReservar() {
 
 function resetBooking() {
   Object.assign(booking, { fecha: null, slot: null, servicios: [], nombre: '', mail: '', tel: '' });
+  cambioCtx = null;
+  pintarPanel1();
   window._lastTurno = null;
   enviando = false;
   ['inputNombre', 'inputMail', 'inputTel', 'inputSitioWeb'].forEach(id => { if ($(id)) { $(id).value = ''; marcarInvalido(id, false); } });
