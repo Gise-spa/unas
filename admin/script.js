@@ -1528,6 +1528,18 @@ function abrirModal(id)  { document.getElementById(id)?.classList.add('open'); }
 function cerrarModal(id) { document.getElementById(id)?.classList.remove('open'); }
 
 let _confirmOk = null, _confirmSec = null;
+function _asegurarEstiloConfirm() {
+  if (document.getElementById('estiloConfirmApilado')) return;
+  const st = document.createElement('style');
+  st.id = 'estiloConfirmApilado';
+  st.textContent =
+    '.confirm-btns.apilado{flex-direction:column}' +
+    '.confirm-btns.apilado .btn{width:100%;flex:none!important;justify-content:center;white-space:normal;text-align:center}' +
+    '.confirm-btns.apilado #cfBtn{order:1}' +
+    '.confirm-btns.apilado #cfBtnSec{order:2}' +
+    '.confirm-btns.apilado .btn:first-child{order:3}';
+  document.head.appendChild(st);
+}
 function mostrarConfirm({ icon='⚠️', titulo, msg, btnTxt='Confirmar', btnColor='var(--accent)', onOk, btnSecTxt=null, onSec=null, btnCancelTxt='Cancelar' }) {
   document.getElementById('cfIcon').textContent   = icon;
   document.getElementById('cfTitulo').textContent = titulo;
@@ -1537,6 +1549,10 @@ function mostrarConfirm({ icon='⚠️', titulo, msg, btnTxt='Confirmar', btnCol
   const cancelBtn = document.querySelector('#modalConfirmar .confirm-btns .btn');
   if (cancelBtn) cancelBtn.textContent = btnCancelTxt;
   _confirmOk = onOk; _confirmSec = onSec;
+  // Con tres botones no entran en una fila (sobre todo en el celu): se apilan, uno abajo del otro.
+  _asegurarEstiloConfirm();
+  const btnsBox = document.querySelector('#modalConfirmar .confirm-btns');
+  if (btnsBox) btnsBox.classList.toggle('apilado', !!btnSecTxt);
   const secBtn = document.getElementById('cfBtnSec');
   if (secBtn) {
     secBtn.textContent    = btnSecTxt || '';
