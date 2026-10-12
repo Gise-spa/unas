@@ -322,7 +322,10 @@ function _msAsegurarModal() {
   if (document.getElementById('modalMoverTurno')) return;
   let horas = '<option value="">—</option>';
   for (let i = 0; i < 24; i++) { const hh = String(i).padStart(2, '0') + ':00'; horas += `<option value="${hh}">${hh}</option>`; }
-  document.body.insertAdjacentHTML('beforeend', `
+  // Se inserta ANTES del modal de confirmación: con el mismo z-index, el que está más abajo en el
+  // HTML queda arriba. Si fuera al final del body, la confirmación se abriría detrás de este modal.
+  const refConfirm = document.getElementById('modalConfirmar');
+  (refConfirm || document.body).insertAdjacentHTML(refConfirm ? 'beforebegin' : 'beforeend', `
 <div class="modal-overlay" id="modalMoverTurno">
   <div class="modal-box" style="max-width:440px">
     <div class="modal-header">
