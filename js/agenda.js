@@ -17,14 +17,26 @@ const RESERVAS_HABILITADAS = false;
 const CALENDLY_FALLBACK_URL = 'https://calendly.com/estetica-avanzada-abc/60min';
 
 // ── Política de la seña ─────────────────────────────────────────
-// Todavía NO está definida con Gise (qué pasa con la seña al cancelar o
-// reprogramar). Mientras POLITICA_SENA_APROBADA sea false:
-//   · la pantalla muestra un aviso "pendiente de aprobación", no una política;
+// Definida con Gise (12/10): la clienta puede CAMBIAR el horario hasta X horas
+// antes sin perder la seña (pasa al nuevo horario), y puede CANCELAR, pero si
+// cancela pierde la seña. X es el plazo del panel de administración: lo informa
+// el servidor, nunca está escrito acá. Mientras POLITICA_SENA_APROBADA sea false:
+//   · en la pantalla de pago el texto aparece marcado "Pendiente de aprobación";
 //   · RESERVAS_HABILITADAS = true por sí solo NO abre las reservas al público.
-// Cuando Gise la apruebe: se escribe el texto definitivo en TEXTO_POLITICA_SENA
-// y se pasa POLITICA_SENA_APROBADA a true.
+// Cuando Gise la apruebe se pasa POLITICA_SENA_APROBADA a true.
 const POLITICA_SENA_APROBADA = false;
-const TEXTO_POLITICA_SENA    = '';
+
+// Texto de la política para la pantalla de pago. horas = plazo del panel (0 = sin definir).
+// Mantener igual al texto previsto que muestra el panel (admin/script.js, _senaTextoAviso).
+function textoPoliticaSena(horas) {
+  const h = Number(horas) || 0;
+  return [
+    h > 0
+      ? `Podés cambiar el horario de tu turno hasta ${h} horas antes, sin perder la seña: pasa al nuevo horario y no pagás de nuevo.`
+      : 'Para cambiar el horario de tu turno, escribinos.',
+    'Si cancelás el turno, o no te presentás, la seña no se devuelve.'
+  ];
+}
 
 // ── Modo de prueba (solo para quien tiene la clave) ──────────────
 // La clave NO está escrita en ningún archivo del sitio. Quien prueba abre
@@ -109,7 +121,7 @@ async function fetchConfiguracion() {
 // getHorariosLibres ya descuenta agenda, período, anticipación, turnos,
 // reservas retenidas y eventos del calendario, en vivo.
 let _libres = {};          // { 'YYYY-MM-DD': ['10:00', ...] }
-let _reservaInfo = { senaMonto: 0, retencionMin: 0, duracion: 60, modoPrueba: false };
+let _reservaInfo = { senaMonto: 0, retencionMin: 0, duracion: 60, plazoHoras: 0, modoPrueba: false };
 
 async function fetchHorariosLibres(desde, hasta) {
   const r = await apiPostAgenda({
@@ -125,6 +137,7 @@ async function fetchHorariosLibres(desde, hasta) {
       senaMonto:    Number(r.senaMonto) || 0,
       retencionMin: Number(r.retencionMin) || 0,
       duracion:     Number(r.duracion) || 60,
+      plazoHoras:   Number(r.plazoHoras) || 0,
       modoPrueba:   r.modoPrueba === true,
     };
   }
@@ -143,13 +156,22 @@ async function crearReservaBackend(reserva) {
 }
 
 // Estado: { ok:true, estado:'pendiente'|'procesando'|'confirmada'|'en_revision'|'vencida'|'cancelada',
-//           fecha, horario, servicio, duracion, venceEn? } | { ok:false, code, error } | { error }
+//           fecha, horario, servicio, duracion, venceEn?,
+//           (si está confirmada) puedeCambiar, limiteCambiar?, plazoHoras, puedeCancelar }
+//        | { ok:false, code, error } | { error }
 async function getEstadoReservaBackend(token) {
   return await apiPostAgenda({ action: 'getEstadoReserva', token: token, clavePrueba: CLAVE_PRUEBA });
 }
 
-// Cancelar (paso 5h): el servidor revalida el plazo y cancela; la seña la devuelve el spa a mano.
-// → { ok:true, estado:'cancelada', devolucion:'pendiente' } | { ok:false, code, error } | { error } (sin conexión)
+// Cancelar (paso 5h): se puede mientras el turno no haya empezado; la seña NO se devuelve.
+// → { ok:true, estado:'cancelada', senaRetenida:true } | { ok:false, code, error } | { error } (sin conexión)
 async function cancelarReservaBackend(token) {
   return await apiPostAgenda({ action: 'cancelarReserva', token: token, clavePrueba: CLAVE_PRUEBA });
+}
+
+// Cambiar el horario (paso 5g): solo dentro del plazo del panel; la seña pasa al horario nuevo.
+// El servidor revalida plazo, estado y disponibilidad del horario nuevo.
+// → { ok:true, estado:'confirmada', fecha, horario } | { ok:false, code, error } | { error } (sin conexión)
+async function reprogramarReservaBackend(token, fecha, horario) {
+  return await apiPostAgenda({ action: 'reprogramarReserva', token: token, fecha: fecha, horario: horario, clavePrueba: CLAVE_PRUEBA });
 }
