@@ -390,13 +390,18 @@ function abrirDetalleMovimiento(movimientoId) {
   if (m.mailCliente) filas.push(['Mail', m.mailCliente]);
   filas.push(['Servicio / concepto', m.concepto || '—']);
   filas.push(['Importe', fmtMoneda(m.importe)]);
+  // Cobro de un turno con seña: el importe es el saldo; la factura sale por el total.
+  if (Number(m.senaAplicada) > 0) {
+    filas.push(['Seña ya pagada online', fmtMoneda(m.senaAplicada)]);
+    filas.push(['Total del servicio', fmtMoneda(Number(m.importe) + Number(m.senaAplicada))]);
+  }
   filas.push(['Método de pago', m.metodoPago || '—']);
   if (m.cuentaDestino) filas.push(['Cuenta', m.cuentaDestino]);
   if (m.creadoEn) filas.push(['Fecha', new Date(m.creadoEn).toLocaleString('es-AR')]);
 
   document.getElementById('dmTitulo').textContent = m.nombreCliente || (m.tipo === 'ingreso' ? 'Ingreso' : 'Egreso');
   document.getElementById('dmCuerpo').innerHTML = filas.map(([label, val]) =>
-    `<div class="dm-fila"><span>${label}</span><strong${label === 'Importe' ? ' class="monto-caja"' : ''}>${val}</strong></div>`
+    `<div class="dm-fila"><span>${label}</span><strong${['Importe', 'Seña ya pagada online', 'Total del servicio'].includes(label) ? ' class="monto-caja"' : ''}>${val}</strong></div>`
   ).join('');
   document.getElementById('dmFacturaBloque').innerHTML = _renderFacturaBloque(m);
 
@@ -461,7 +466,7 @@ function _pedirEmisionFactura(movimientoId) {
   mostrarConfirm({
     icon: '🧾',
     titulo: 'Emitir Factura C',
-    msg: `Consumidor Final — ${fmtMoneda(m.importe)}. Se va a emitir y autorizar ante ARCA. Esta acción no se puede deshacer.`,
+    msg: `Consumidor Final — ${fmtMoneda(Number(m.importe) + (Number(m.senaAplicada) || 0))}. Se va a emitir y autorizar ante ARCA. Esta acción no se puede deshacer.`,
     btnTxt: 'Emitir factura',
     btnColor: 'var(--accent)',
     onOk: () => confirmarEmisionFactura(movimientoId)
@@ -1305,6 +1310,16 @@ function abrirEditarMovimiento(movimientoId) {
     });
     return;
   }
+  // La seña pagada online viene de Mercado Pago: no se edita (si hay un error, se corrige el cobro del saldo).
+  if (m.esSena === 'si') {
+    mostrarConfirm({
+      icon: '🔒',
+      titulo: 'Seña pagada online',
+      msg: 'La seña viene de Mercado Pago y no se edita. Si hay un error, corregí el cobro del saldo del turno.',
+      btnTxt: 'Entendido'
+    });
+    return;
+  }
 
   _mvEditandoId = movimientoId;
   _mvEditandoTipo = String(m.tipo || '').toLowerCase();
@@ -1506,7 +1521,65 @@ function abrirCobrar(turnoId) {
   _renderChips('cb', '');
   _setFacturar('cb', false);
 
+  // Turno con seña pagada online: se pregunta al servidor (nunca se confía en el navegador). Mientras
+  // responde, el modal funciona igual; confirmarCobro() espera esa respuesta antes de registrar nada.
+  _cbSena = null;
+  _cbSenaPromise = null;
+  _cbOcultarSena();
+  if (t.pagoId && String(t.origen || '').toLowerCase() === 'web') {
+    const idPedido = String(t.id);
+    _cbSenaPromise = apiGetRaw('getSenaTurno', { turnoId: t.id }).then(r => {
+      if (r && r.ok && r.tieneSena && document.getElementById('cbTurnoId').value === idPedido) {
+        _cbSena = { monto: Number(r.monto) || 0, fecha: r.fecha || '' };
+        _cbMostrarSena();
+      }
+      return r;
+    });
+  }
+
   abrirModal('modalCobrar');
+}
+
+// ── Turno con seña: mostrar la seña y calcular lo que falta cobrar ──
+let _cbSena = null;          // { monto, fecha } si el servidor confirmó una seña acreditada
+let _cbSenaPromise = null;   // consulta en curso (confirmarCobro la espera)
+
+function _cbOcultarSena() {
+  document.getElementById('cbSenaBox').style.display = 'none';
+  document.getElementById('cbSaldoBox').style.display = 'none';
+  document.getElementById('cbImporteLabel').textContent = 'Importe';
+}
+
+function _cbMostrarSena() {
+  if (!_cbSena) return;
+  document.getElementById('cbSenaMonto').textContent = fmtMoneda(_cbSena.monto);
+  document.getElementById('cbSenaInfo').textContent = '· Mercado Pago' + (_cbSena.fecha ? ' · ' + _cbSena.fecha : '');
+  document.getElementById('cbSenaBox').style.display = '';
+  document.getElementById('cbSaldoBox').style.display = '';
+  document.getElementById('cbImporteLabel').textContent = 'Valor total del servicio';
+  _cbActualizarSaldo();
+}
+
+function _cbActualizarSaldo() {
+  if (!_cbSena) return;
+  const total = Math.round((Number(document.getElementById('cbImporte').value) || 0) * 100) / 100;
+  const saldoEl = document.getElementById('cbSaldo');
+  const avisoEl = document.getElementById('cbSaldoAviso');
+  avisoEl.style.color = 'var(--text-muted)';
+  if (!(total > 0)) {
+    saldoEl.textContent = '—';
+    avisoEl.textContent = 'Cargá el valor total del servicio: la seña se descuenta sola.';
+  } else if (total < _cbSena.monto) {
+    saldoEl.textContent = '—';
+    avisoEl.textContent = 'El total no puede ser menor que la seña ya pagada.';
+    avisoEl.style.color = '#dc2626';
+  } else if (total === _cbSena.monto) {
+    saldoEl.textContent = fmtMoneda(0);
+    avisoEl.textContent = 'No queda nada por cobrar: el turno queda cobrado con la seña.';
+  } else {
+    saldoEl.textContent = fmtMoneda(total - _cbSena.monto);
+    avisoEl.textContent = 'La factura, si la emitís, sale por el total: ' + fmtMoneda(total) + '.';
+  }
 }
 
 let _cobroEnProceso = false;
@@ -1517,6 +1590,15 @@ async function confirmarCobro() {
   if (!sesion) { showToast('No hay caja abierta'); return; }
 
   const turnoId = document.getElementById('cbTurnoId').value;
+
+  // Un turno reservado desde el sitio puede tener seña: se espera la respuesta del servidor antes de
+  // validar nada (si no se pudo comprobar, no se cobra a ciegas).
+  const tAct = getTurnos().find(x => String(x.id) === String(turnoId));
+  if (tAct && tAct.pagoId && String(tAct.origen || '').toLowerCase() === 'web' && _cbSenaPromise) {
+    const rs = await _cbSenaPromise;
+    if (!rs || rs.ok !== true) { showToast('No pudimos comprobar la seña de este turno. Probá de nuevo.'); return; }
+  }
+
   const clienteId = document.getElementById('cbClienteId').value;
   const nombreCliente = document.getElementById('cbNombre').value.trim();
   const telefonoCliente = document.getElementById('cbTelefono').value.trim();
@@ -1526,8 +1608,11 @@ async function confirmarCobro() {
   const cuentaDestino = document.getElementById('cbCuenta').value.trim();
   const concepto = document.getElementById('cbConcepto').value.trim();
 
-  if (isNaN(importe) || importe <= 0) { showToast('Ingresá un importe válido'); return; }
-  if (!metodoPago) { showToast('Elegí un método de pago'); return; }
+  if (isNaN(importe) || importe <= 0) { showToast(_cbSena ? 'Ingresá el valor total del servicio' : 'Ingresá un importe válido'); return; }
+  if (_cbSena && importe < _cbSena.monto) { showToast('El total del servicio no puede ser menor que la seña ya pagada'); return; }
+  // Con seña: el método de pago es el del SALDO; si no queda saldo (total = seña) no hace falta.
+  const quedaSaldo = !_cbSena || Math.round((importe - _cbSena.monto) * 100) > 0;
+  if (quedaSaldo && !metodoPago) { showToast(_cbSena ? 'Elegí con qué paga el saldo' : 'Elegí un método de pago'); return; }
   if (!nombreCliente) { showToast('Falta el nombre del cliente'); return; }
 
   const btn = document.getElementById('cbConfirmarBtn');
@@ -1537,17 +1622,27 @@ async function confirmarCobro() {
     const emitirFactura = document.getElementById('cbFacturar').value === '1';
     const movimientoId = _cajaUuid();
 
-    const res = await apiPost({
-      action: 'registrarMovimientoCaja',
-      movimiento: {
-        movimientoId,
-        sesionId: sesion.sesionId,
-        tipo: 'ingreso',
-        turnoId, clienteId, importe, metodoPago, cuentaDestino, concepto,
-        nombreCliente, telefonoCliente, mailCliente,
-        emitirFactura
-      }
-    });
+    // Con seña pagada online: cobro especial (el servidor calcula el saldo y registra seña + saldo).
+    const res = _cbSena
+      ? await apiPost({
+          action: 'cobrarTurnoConSena',
+          cobro: {
+            movimientoId, sesionId: sesion.sesionId, turnoId, clienteId,
+            totalServicio: importe, metodoPago, cuentaDestino, concepto,
+            nombreCliente, telefonoCliente, mailCliente, emitirFactura
+          }
+        })
+      : await apiPost({
+          action: 'registrarMovimientoCaja',
+          movimiento: {
+            movimientoId,
+            sesionId: sesion.sesionId,
+            tipo: 'ingreso',
+            turnoId, clienteId, importe, metodoPago, cuentaDestino, concepto,
+            nombreCliente, telefonoCliente, mailCliente,
+            emitirFactura
+          }
+        });
 
     if (res.ok) {
       showToast('✓ Cobro registrado');
