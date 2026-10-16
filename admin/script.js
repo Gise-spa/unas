@@ -984,6 +984,7 @@ function renderSena() {
   document.getElementById('senaRetencion').value = d.retencionMin;
   document.getElementById('senaProrroga').value  = d.prorrogaEnProcesoMin;
   document.getElementById('senaHoras').value     = d.horasPerderSena > 0 ? d.horasPerderSena : '';
+  document.getElementById('senaAnticipacion').value = d.anticipacionMinHoras != null ? d.anticipacionMinHoras : '';
   actualizarAvisoSena();
   document.getElementById('senaError').textContent = '';
   document.getElementById('senaEstadoReservas').textContent = d.habilitadas
@@ -1006,6 +1007,9 @@ async function guardarSena() {
   // Si el campo está vacío (todavía sin definir) no se manda: el servidor deja lo que había.
   const horas = document.getElementById('senaHoras').value.trim();
   if (horas !== '') config.horasPerderSena = horas;
+  // La anticipación mínima puede ser 0; si el campo está vacío no se manda (el servidor deja lo que había).
+  const anticipacion = document.getElementById('senaAnticipacion').value.trim();
+  if (anticipacion !== '') config.anticipacionMinHoras = anticipacion;
 
   const textoOriginal = btn.textContent;
   btn.disabled = true;
