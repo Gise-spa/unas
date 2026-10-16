@@ -13,7 +13,7 @@
 //   2) POLITICA_SENA_APROBADA = true (este archivo; ver más abajo)
 //   3) "habilitadas" encendida en el panel de administración (servidor)
 // Mientras tanto el sitio muestra el link de Calendly.
-const RESERVAS_HABILITADAS = false;
+const RESERVAS_HABILITADAS = true;
 const CALENDLY_FALLBACK_URL = 'https://calendly.com/estetica-avanzada-abc/60min';
 
 // ── Política de la seña ─────────────────────────────────────────
