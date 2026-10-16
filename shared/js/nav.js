@@ -101,11 +101,14 @@ function renderNav() {
 function _creditoDesarrolloHtml() {
   var c = (typeof IDENTITY !== 'undefined' && IDENTITY.creditos) || null;
   if (!c || !c.nombre || !c.url) return '';
+  // Ojo: style.css pone display:block a TODAS las imágenes; por eso el logo y el nombre van dentro de un
+  // contenedor inline-flex (si no, el logo queda solo en una línea y el nombre debajo).
   var logo = c.logo
-    ? '<img src="' + c.logo + '" alt="" height="14" style="height:14px;width:auto;vertical-align:-2px;margin-right:.3rem" onerror="this.remove()">'
+    ? '<img src="' + c.logo + '" alt="" style="height:18px;width:auto;max-width:none;display:block;border-radius:4px" onerror="this.remove()">'
     : '';
-  return '<span>Desarrollado por <a href="' + c.url + '" target="_blank" rel="noopener" ' +
-         'style="color:inherit;text-decoration:none;white-space:nowrap">' + logo + c.nombre + '</a></span>';
+  return '<span style="display:inline-flex;align-items:center;gap:.4rem;white-space:nowrap">Desarrollado por ' +
+         '<a href="' + c.url + '" target="_blank" rel="noopener" ' +
+         'style="display:inline-flex;align-items:center;gap:.35rem;color:inherit;text-decoration:none">' + logo + c.nombre + '</a></span>';
 }
 
 function renderFooter() {
