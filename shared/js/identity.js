@@ -20,7 +20,13 @@ var IDENTITY = {
   // silenciosamente (ícono roto del navegador) — subir a esa ruta
   // exacta resuelve todo sin tocar código de nuevo.
   logoUrl: 'assets/logo.png',
-  favicon: 'assets/logo.png', // mismo archivo sirve como favicon
+  favicon: 'assets/favicon-32.png', // versión chica del logo (se genera a partir de assets/logo.png)
+  // Quién desarrolló el sitio (se muestra en el pie). logo es opcional: si el archivo no existe, simplemente no se ve.
+  creditos: {
+    nombre: 'ElevaLab',
+    url:    'https://elevalab.com.ar',
+    logo:   'assets/elevalab.png'
+  },
   contacto: {
     // Completar cuando estén disponibles. Mientras un campo quede vacío
     // ('' o ausente), el ícono/botón correspondiente no se muestra en
