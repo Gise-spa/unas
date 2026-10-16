@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Página no encontrada | Spa Sosiego</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
+  <meta name="theme-color" content="#E89090" />
+  <!-- Rutas absolutas: esta página se muestra en cualquier dirección que no exista, a cualquier profundidad. -->
+  <link rel="stylesheet" href="/shared/css/tokens.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      padding: 2rem 1.25rem; text-align: center;
+      background: var(--bg, #FEFCE8); color: var(--text, #3D2020);
+      font-family: 'DM Sans', Arial, sans-serif;
+    }
+    .box { max-width: 460px; }
+    .logo { width: 132px; height: auto; margin: 0 auto 1.6rem; display: block; }
+    .codigo { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 4.2rem; line-height: 1; color: var(--accent, #E89090); }
+    h1 { font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 400; font-size: 1.9rem; margin: .5rem 0 .7rem; }
+    p { font-size: .98rem; line-height: 1.65; color: var(--text-mid, #7A5A5A); margin-bottom: 1.7rem; }
+    .btn {
+      display: inline-block; padding: .8rem 1.7rem; border-radius: 999px; text-decoration: none;
+      background: var(--accent, #E89090); color: #fff; font-weight: 500; font-size: .95rem;
+    }
+    .btn:hover { background: var(--accent-dark, #C97070); }
+  </style>
+</head>
+<body>
+  <main class="box">
+    <img class="logo" src="/assets/logo.png" alt="Spa Sosiego" />
+    <div class="codigo">404</div>
+    <h1>Esta página no existe</h1>
+    <p>Puede que el enlace esté mal escrito o que la página ya no esté disponible. Volvé al inicio para reservar tu turno o ver nuestros servicios.</p>
+    <a class="btn" href="/">Volver al inicio</a>
+  </main>
+</body>
+</html>
