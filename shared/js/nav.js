@@ -97,6 +97,17 @@ function renderNav() {
   });
 }
 
+// Crédito de quién desarrolló el sitio. El logo es opcional: si el archivo no existe, se oculta solo.
+function _creditoDesarrolloHtml() {
+  var c = (typeof IDENTITY !== 'undefined' && IDENTITY.creditos) || null;
+  if (!c || !c.nombre || !c.url) return '';
+  var logo = c.logo
+    ? '<img src="' + c.logo + '" alt="" height="14" style="height:14px;width:auto;vertical-align:-2px;margin-right:.3rem" onerror="this.remove()">'
+    : '';
+  return '<span>Desarrollado por <a href="' + c.url + '" target="_blank" rel="noopener" ' +
+         'style="color:inherit;text-decoration:none;white-space:nowrap">' + logo + c.nombre + '</a></span>';
+}
+
 function renderFooter() {
   var cont = document.getElementById('site-footer');
   if (!cont) return;
@@ -126,9 +137,14 @@ function renderFooter() {
         '</ul>' +
         socialHtml +
       '</div>' +
+      '<div class="footer-copy" style="justify-content:center;gap:.4rem 1.1rem;margin-bottom:.9rem">' +
+        '<a href="aviso-legal.html" style="color:inherit;text-decoration:none">Aviso legal</a>' +
+        '<span aria-hidden="true">·</span>' +
+        '<a href="privacidad.html" style="color:inherit;text-decoration:none">Privacidad</a>' +
+      '</div>' +
       '<div class="footer-copy">' +
         '<span>© ' + new Date().getFullYear() + ' · Todos los derechos reservados</span>' +
-        '<span>Hecho con 💛</span>' +
+        _creditoDesarrolloHtml() +
       '</div>' +
     '</footer>';
 
