@@ -20,11 +20,13 @@ const CALENDLY_FALLBACK_URL = 'https://calendly.com/estetica-avanzada-abc/60min'
 // Definida con Gise (12/10): la clienta puede CAMBIAR el horario hasta X horas
 // antes sin perder la seña (pasa al nuevo horario), y puede CANCELAR, pero si
 // cancela pierde la seña. X es el plazo del panel de administración: lo informa
-// el servidor, nunca está escrito acá. Mientras POLITICA_SENA_APROBADA sea false:
-//   · en la pantalla de pago el texto aparece marcado "Pendiente de aprobación";
-//   · RESERVAS_HABILITADAS = true por sí solo NO abre las reservas al público.
-// Cuando Gise la apruebe se pasa POLITICA_SENA_APROBADA a true.
-const POLITICA_SENA_APROBADA = false;
+// el servidor, nunca está escrito acá. Con POLITICA_SENA_APROBADA en false el texto
+// aparece marcado "Pendiente de aprobación" y RESERVAS_HABILITADAS = true por sí solo
+// NO abre las reservas al público: hacen falta las dos cosas.
+// Estado: aprobada por Gise (13/10), así que el texto se muestra sin etiqueta.
+// Para abrir las reservas al público falta, además, RESERVAS_HABILITADAS = true (más abajo)
+// y que el interruptor "habilitadas" del backend esté en true (hoja "configuracion").
+const POLITICA_SENA_APROBADA = true;    // aprobada por Gise el 13/10
 
 // Texto de la política para la pantalla de pago. horas = plazo del panel (0 = sin definir).
 // Mantener igual al texto previsto que muestra el panel (admin/script.js, _senaTextoAviso).
