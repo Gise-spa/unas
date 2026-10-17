@@ -75,7 +75,9 @@ async function apiPost(data) {
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ ...data, token: getAuthToken() }),
     });
-    return await res.json();
+    const json = await res.json();
+    if (json && json.error === 'No autorizado' && data.action !== 'logout') sesionVencida();
+    return json;
   } catch(e) {
     console.warn('apiPost error:', e);
     return { error: e.message };
@@ -87,12 +89,62 @@ async function apiGet(action, params = {}) {
     const qs = new URLSearchParams({ action, token: getAuthToken(), ...params }).toString();
     const res  = await fetch(API_URL + '?' + qs);
     const json = await res.json();
+    if (json && json.error === 'No autorizado') sesionVencida();
     return json.data || [];
   } catch(e) {
     console.warn('apiGet error:', e);
     return [];
   }
 }
+
+// ── Sesión: vencimiento ───────────────────────────────────
+// El servidor mantiene la sesión 6 horas desde el ingreso. Si venció, antes se seguía viendo el panel
+// y los datos cargados se perdían sin aviso. Ahora: se avisa 10 minutos antes y, al vencer (o apenas el
+// servidor responde "No autorizado"), se vuelve a la pantalla de ingreso con un mensaje claro.
+const SESION_AVISO_MS = 10 * 60 * 1000;
+let _sesionTimer = null, _sesionAvisoMostrado = false, _sesionVencidaMostrada = false;
+
+function _cerrarTodosLosModales() {
+  document.querySelectorAll('.modal-overlay.open, .sheet-overlay.open').forEach(el => el.classList.remove('open'));
+  if (typeof cerrarDrawer === 'function') { try { cerrarDrawer(); } catch (e) {} }
+}
+
+function sesionVencida() {
+  if (_sesionVencidaMostrada) return;
+  _sesionVencidaMostrada = true;
+  limpiarSesionLocal();
+  if (_sesionTimer) { clearInterval(_sesionTimer); _sesionTimer = null; }
+  _cerrarTodosLosModales();
+  const admin = document.getElementById('adminPage'), login = document.getElementById('loginPage');
+  if (admin) admin.style.display = 'none';
+  if (login) login.style.display = '';
+  const err = document.getElementById('loginError');
+  if (err) {
+    err.textContent = 'Tu sesión venció. Ingresá de nuevo para seguir trabajando.';
+    err.style.display = 'block';
+  }
+}
+
+function _revisarSesion() {
+  const exp = sesionVencimientoMs();
+  if (!exp || Date.now() >= exp) { sesionVencida(); return; }
+  const falta = exp - Date.now();
+  if (falta <= SESION_AVISO_MS && !_sesionAvisoMostrado) {
+    _sesionAvisoMostrado = true;
+    const min = Math.max(1, Math.round(falta / 60000));
+    showToast(`⏳ Tu sesión vence en ${min} minuto${min === 1 ? '' : 's'}. Terminá lo que estés cargando.`, 9000);
+  }
+}
+
+function iniciarVigilanciaSesion() {
+  _sesionAvisoMostrado = false;
+  _sesionVencidaMostrada = false;
+  if (_sesionTimer) clearInterval(_sesionTimer);
+  _sesionTimer = setInterval(_revisarSesion, 20000);
+  _revisarSesion();
+}
+// Si el celular estuvo bloqueado o la pestaña dormida, el reloj no corrió: se revisa apenas se vuelve.
+document.addEventListener('visibilitychange', () => { if (!document.hidden && _sesionTimer) _revisarSesion(); });
 
 // ── Sync ─────────────────────────────────────────────────
 async function syncTurnos() {
@@ -169,7 +221,10 @@ async function forzarSync() {
 // ── Drawer / navegación ──────────────────────────────────
 let seccionActiva = 'inicio';
 
+let _drawerIniciado = false;
 function initDrawer() {
+  if (_drawerIniciado) return;       // al volver a ingresar sin recargar, no se vuelven a duplicar los eventos
+  _drawerIniciado = true;
   const btn     = document.getElementById('menuBtn');
   const drawer  = document.getElementById('adminDrawer');
   const overlay = document.getElementById('drawerOverlay');
@@ -1626,6 +1681,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function iniciarAdmin() {
+  iniciarVigilanciaSesion();   // primero: si algo falla al dibujar la pantalla, la sesión igual queda vigilada
   initDrawer(); irA('inicio'); actualizarBadges(); forzarSync();
 }
 
@@ -1633,7 +1689,6 @@ function doLogout() {
   // apiPost toma el token de localStorage — hay que avisar al servidor
   // ANTES de limpiarlo, o el logout le llegaría con el token ya vacío.
   if (getAuthToken()) apiPost({ action: 'logout' });
-  localStorage.removeItem(AUTH_KEY);
-  localStorage.removeItem(AUTH_TOKEN);
+  limpiarSesionLocal();
   location.href = '../index.html';
 }
