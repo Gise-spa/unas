@@ -357,12 +357,15 @@ h3 { font-size: 1.3rem; }
   border-bottom: 1px solid var(--border);
   margin-bottom: 1.5rem;
 }
-.footer-logo .identity-logo-img { width: 32px; height: 32px; }
+.footer-logo .identity-logo-img { width: 36px; height: 36px; flex-shrink: 0; }
 .footer-logo {
   font-family: 'Cormorant Garamond', serif;
   font-style: italic;
   font-size: 1.4rem;
   color: var(--text);
+  display: flex;               /* logo y nombre en la misma línea (antes quedaban uno arriba del otro) */
+  align-items: center;
+  gap: .6rem;
 }
 .footer-logo span { color: var(--accent); }
 .footer-links {
@@ -416,6 +419,23 @@ h3 { font-size: 1.3rem; }
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+/* Pie de página en celular: todo centrado y compacto (logo + nombre, links, legales, copyright y crédito). */
+@media (max-width: 768px) {
+  .footer { padding: 2rem 1.25rem 5rem; }          /* abajo deja lugar a la barra fija "Reservar" */
+  .footer-inner {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1.1rem;
+    padding-bottom: 1.4rem;
+    margin-bottom: 1.2rem;
+  }
+  .footer-logo { justify-content: center; }
+  .footer-links { justify-content: center; gap: .55rem 1.3rem; }
+  .footer-copy { flex-direction: column; align-items: center; text-align: center; gap: .55rem; }
+  .footer-copy.footer-legal { flex-direction: row; justify-content: center; }   /* "Aviso legal · Privacidad" en una sola línea */
 }
 
 /* ── Responsive nav ── */
