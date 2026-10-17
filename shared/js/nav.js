@@ -140,7 +140,7 @@ function renderFooter() {
         '</ul>' +
         socialHtml +
       '</div>' +
-      '<div class="footer-copy" style="justify-content:center;gap:.4rem 1.1rem;margin-bottom:.9rem">' +
+      '<div class="footer-copy footer-legal" style="justify-content:center;gap:.4rem 1.1rem;margin-bottom:.9rem">' +
         '<a href="aviso-legal.html" style="color:inherit;text-decoration:none">Aviso legal</a>' +
         '<span aria-hidden="true">·</span>' +
         '<a href="privacidad.html" style="color:inherit;text-decoration:none">Privacidad</a>' +
