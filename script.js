@@ -51,8 +51,24 @@ function showToast(msg, duration = 3000) {
 // ── Auth — validada en el GAS, sin credenciales en el front ─
 const AUTH_KEY   = 'nails_auth';
 const AUTH_TOKEN = 'nails_token';
+const AUTH_EXP   = 'nails_auth_exp';          // cuándo vence la sesión (milisegundos); la fija el login
+const SESION_DURACION_MS_DEFAULT = 6 * 60 * 60 * 1000;   // el servidor la mantiene 6 horas (máximo que permite su caché)
 
-function isLoggedIn()   { return localStorage.getItem(AUTH_KEY) === '1'; }
+function limpiarSesionLocal() {
+  localStorage.removeItem(AUTH_KEY);
+  localStorage.removeItem(AUTH_TOKEN);
+  localStorage.removeItem(AUTH_EXP);
+}
+function sesionVencimientoMs() { return Number(localStorage.getItem(AUTH_EXP)) || 0; }
+
+// Con sesión vencida (o iniciada antes de que existiera el vencimiento) no se considera ingresada:
+// se limpia y se pide ingresar de nuevo, en vez de dejar cargar datos que el servidor va a rechazar.
+function isLoggedIn() {
+  if (localStorage.getItem(AUTH_KEY) !== '1') return false;
+  const exp = sesionVencimientoMs();
+  if (!exp || Date.now() >= exp) { limpiarSesionLocal(); return false; }
+  return true;
+}
 function getAuthToken() { return localStorage.getItem(AUTH_TOKEN) || ''; }
 
 async function doLogin(u, p) {
@@ -63,6 +79,9 @@ async function doLogin(u, p) {
     if (json.ok) {
       localStorage.setItem(AUTH_KEY, '1');
       localStorage.setItem(AUTH_TOKEN, json.token || '');
+      // Vence un poco antes que en el servidor (30 s), para no llegar a mandar pedidos que ya no valen.
+      const durMs = (Number(json.expiraEnSeg) > 0 ? Number(json.expiraEnSeg) * 1000 : SESION_DURACION_MS_DEFAULT) - 30000;
+      localStorage.setItem(AUTH_EXP, String(Date.now() + durMs));
       return { ok: true };
     }
     return { ok: false, error: json.error || 'Usuario o contraseña incorrectos' };
@@ -72,8 +91,7 @@ async function doLogin(u, p) {
 }
 
 function doLogout() {
-  localStorage.removeItem(AUTH_KEY);
-  localStorage.removeItem(AUTH_TOKEN);
+  limpiarSesionLocal();
   location.href = 'index.html';
 }
 
