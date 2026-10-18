@@ -1584,7 +1584,41 @@ async function eliminarMovimientoCaja(movimientoId) {
 
 let _mvGuardando = false;
 
-async function confirmarMovimientoCaja() {
+// ════════════════════════════════════════════════════════
+//  AVISO DE IMPORTE INUSUAL — doble confirmación al cargar un INGRESO
+//  (cobro de turno, ingreso manual o edición de un ingreso) cuyo importe es
+//  muy bajo o muy alto para lo que cobra el negocio. Ya pasó dos veces que
+//  se facturó un monto mal escrito (ej. $12 en vez de $12.000).
+//  Cambiá estos dos números si cambian los precios. Solo avisa: con "Sí,
+//  está bien" se guarda igual; con "Corregir" vuelve al formulario sin
+//  perder nada. No aplica a egresos.
+// ════════════════════════════════════════════════════════
+const CAJA_IMPORTE_MIN_NORMAL = 10000;
+const CAJA_IMPORTE_MAX_NORMAL = 50000;
+
+function _importeInusual(importe) {
+  return importe < CAJA_IMPORTE_MIN_NORMAL || importe > CAJA_IMPORTE_MAX_NORMAL;
+}
+
+// Muestra el aviso y, solo si confirman que está bien, ejecuta onOk.
+// facturaEnCamino: si se va a emitir factura con ese importe, el aviso lo recuerda.
+function _avisarImporteInusual(importe, facturaEnCamino, onOk) {
+  const bajo = importe < CAJA_IMPORTE_MIN_NORMAL;
+  mostrarConfirm({
+    icon: '⚠️',
+    titulo: bajo ? '¿El importe es tan bajo?' : '¿El importe es tan alto?',
+    msg: 'Escribiste ' + fmtMoneda(importe) + '. ' +
+         'Lo normal es entre ' + fmtMoneda(CAJA_IMPORTE_MIN_NORMAL) + ' y ' + fmtMoneda(CAJA_IMPORTE_MAX_NORMAL) + '. ' +
+         (facturaEnCamino ? 'Además se va a emitir la factura por ese importe. ' : '') +
+         '¿Está bien escrito?',
+    btnTxt: 'Sí, está bien',
+    btnColor: 'var(--gold)',
+    btnCancelTxt: 'Corregir',
+    onOk
+  });
+}
+
+async function confirmarMovimientoCaja(importeConfirmado) {
   if (_mvGuardando) return;
   const btn = document.getElementById('mvConfirmarBtn');
 
@@ -1602,6 +1636,10 @@ async function confirmarMovimientoCaja() {
     if (!metodoPago) { showToast('Elegí un método de pago'); return; }
     if (!concepto) { showToast('Ingresá un concepto'); return; }
     if (_mvEditandoTipo === 'ingreso' && !nombreCliente) { showToast('Ingresá el nombre del cliente'); return; }
+    if (_mvEditandoTipo === 'ingreso' && importeConfirmado !== true && _importeInusual(importe)) {
+      _avisarImporteInusual(importe, false, () => confirmarMovimientoCaja(true));
+      return;
+    }
 
     const cambios = { importe, metodoPago, cuentaDestino, concepto };
     if (_mvEditandoTipo === 'ingreso') {
@@ -1662,6 +1700,10 @@ async function confirmarMovimientoCaja() {
     showToast(nombreCliente
       ? 'Elegí ese cliente de la lista de resultados (no alcanza con escribir el nombre)'
       : 'Para un ingreso tenés que elegir un cliente de la lista — si es clienta nueva, cargala primero en Clientes');
+    return;
+  }
+  if (tipo === 'ingreso' && importeConfirmado !== true && _importeInusual(importe)) {
+    _avisarImporteInusual(importe, emitirFactura, () => confirmarMovimientoCaja(true));
     return;
   }
 
@@ -1781,7 +1823,7 @@ function _cbActualizarSaldo() {
 
 let _cobroEnProceso = false;
 
-async function confirmarCobro() {
+async function confirmarCobro(importeConfirmado) {
   if (_cobroEnProceso) return; // evita que un doble toque registre el mismo cobro dos veces
   const sesion = getCajaSesion();
   if (!sesion) { showToast('No hay caja abierta'); return; }
@@ -1811,6 +1853,11 @@ async function confirmarCobro() {
   const quedaSaldo = !_cbSena || Math.round((importe - _cbSena.monto) * 100) > 0;
   if (quedaSaldo && !metodoPago) { showToast(_cbSena ? 'Elegí con qué paga el saldo' : 'Elegí un método de pago'); return; }
   if (!nombreCliente) { showToast('Falta el nombre del cliente'); return; }
+  // Se controla el TOTAL del servicio (no el saldo: con seña el saldo suele ser menor a $10.000 y es normal).
+  if (importeConfirmado !== true && _importeInusual(importe)) {
+    _avisarImporteInusual(importe, document.getElementById('cbFacturar').value === '1', () => confirmarCobro(true));
+    return;
+  }
 
   const btn = document.getElementById('cbConfirmarBtn');
   _cobroEnProceso = true;
