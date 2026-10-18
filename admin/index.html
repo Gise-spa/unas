@@ -302,9 +302,6 @@
       <h2 class="section-title">Caja</h2>
       <p class="section-subtitle">Cobros, gastos y cierre del día</p>
 
-      <!-- Avisos de cajas que se cerraron solas a medianoche y todavía no tienen el efectivo contado (los arma caja.js) -->
-      <div id="cajaContadoPendiente"></div>
-
       <!-- Resumen diario, filtrado por fecha (independiente de si la caja
            de HOY está abierta o cerrada — muestra cualquier día, incluidos
            los ya cerrados/liquidados) -->
@@ -342,6 +339,10 @@
               <div class="form-group">
                 <label>Saldo inicial (efectivo)</label>
                 <input type="number" id="cajaSaldoInicial" min="0" step="0.01" placeholder="0.00">
+              </div>
+              <div class="form-group">
+                <label>Saldo en Mercado Pago <span style="color:var(--text-muted);font-weight:400">(opcional)</span></label>
+                <input type="number" id="cajaMpInicial" min="0" step="0.01" placeholder="0.00">
               </div>
               <button class="btn btn-primary" style="width:100%;margin-top:.5rem" onclick="confirmarAbrirCaja()">Confirmar apertura</button>
             </div>
@@ -417,6 +418,10 @@
     <div class="form-group">
       <label>Saldo inicial (efectivo)</label>
       <input type="number" id="inicioCajaSaldoInicial" min="0" step="0.01" placeholder="0.00">
+    </div>
+    <div class="form-group">
+      <label>Saldo en Mercado Pago <span style="color:var(--text-muted);font-weight:400">(opcional)</span></label>
+      <input type="number" id="inicioCajaMpInicial" min="0" step="0.01" placeholder="0.00">
     </div>
     <div style="display:flex;gap:.6rem;margin-top:.75rem">
       <button class="btn btn-primary" style="flex:1" onclick="confirmarAbrirCajaInicio()">Confirmar apertura</button>
@@ -579,34 +584,6 @@
   </div>
 </div>
 
-<!-- MODAL: CARGAR EL EFECTIVO CONTADO de una caja que se cerró sola -->
-<div class="modal-overlay" id="modalContadoPendiente">
-  <div class="modal-box" style="max-width:380px">
-    <div class="modal-header">
-      <h3 id="cpTitulo">Efectivo contado</h3>
-      <button class="modal-close" onclick="cerrarModal('modalContadoPendiente')">×</button>
-    </div>
-    <input type="hidden" id="cpSesionId">
-    <p style="font-size:.84rem;color:var(--text-muted);margin-bottom:1rem">Esa caja se cerró sola a medianoche, con el efectivo esperado. Contá el efectivo que había y cargalo acá: se registra la diferencia real. Se carga una sola vez.</p>
-    <div class="form-group">
-      <label>Efectivo esperado</label>
-      <div id="cpEsperado" class="monto-caja" style="font-size:1.3rem;font-family:'Cormorant Garamond',serif">—</div>
-    </div>
-    <div class="form-group">
-      <label>Efectivo contado</label>
-      <input type="number" id="cpContado" min="0" step="0.01" placeholder="0.00" oninput="_cpActualizarDiferencia()">
-    </div>
-    <div class="form-group">
-      <label>Diferencia</label>
-      <div id="cpDiferencia" class="monto-caja" style="font-size:1.1rem">—</div>
-    </div>
-    <div style="display:flex;gap:.6rem;margin-top:.75rem">
-      <button class="btn btn-primary" style="flex:1" id="cpConfirmarBtn" onclick="pedirConfirmarContadoPendiente()">Guardar</button>
-      <button class="btn btn-outline" onclick="cerrarModal('modalContadoPendiente')">Cancelar</button>
-    </div>
-  </div>
-</div>
-
 <!-- MODAL CIERRE DE CAJA -->
 <div class="modal-overlay" id="modalCierreCaja">
   <div class="modal-box" style="max-width:420px">
@@ -626,6 +603,22 @@
     <div class="form-group">
       <label>Diferencia</label>
       <div id="czDiferencia" class="monto-caja" style="font-size:1.1rem">—</div>
+    </div>
+    <!-- Mercado Pago: solo aparece si al abrir la caja se cargó cuánto había en la cuenta -->
+    <div id="czMpBloque" style="display:none;border-top:1px solid var(--border);margin-top:.25rem;padding-top:.9rem">
+      <div class="form-group">
+        <label>Mercado Pago: debería figurar</label>
+        <div id="czMpEsperado" class="monto-caja" style="font-size:1.3rem;font-family:'Cormorant Garamond',serif">—</div>
+        <p id="czMpNota" style="font-size:.74rem;color:var(--text-muted);margin-top:.3rem"></p>
+      </div>
+      <div class="form-group">
+        <label>Lo que figura hoy en tu cuenta <span style="color:var(--text-muted);font-weight:400">(opcional)</span></label>
+        <input type="number" id="czMpContado" min="0" step="0.01" placeholder="0.00" oninput="actualizarDiferenciaMpCierre()">
+      </div>
+      <div class="form-group">
+        <label>Diferencia Mercado Pago</label>
+        <div id="czMpDiferencia" class="monto-caja" style="font-size:1.1rem">—</div>
+      </div>
     </div>
     <div class="panel-card" style="margin:1rem 0">
       <div class="panel-card-header"><h3 style="font-size:.95rem">Por método / cuenta</h3></div>
