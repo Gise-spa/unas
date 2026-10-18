@@ -1096,6 +1096,36 @@ async function selectDate(key) {
   $('btnP1').disabled = true;
   pintarCal();
   await renderSlots(key); // refresca disponibilidad puntual de ese día antes de pintar
+  asegurarHorariosVisibles();
+}
+
+// En el celular los horarios quedan debajo del calendario, fuera de pantalla.
+// Baja la página lo justo para ver los horarios y el botón de continuar; si ya se ven, no mueve nada.
+// Nunca baja tanto como para tapar el comienzo de los horarios con el menú de arriba.
+function asegurarHorariosVisibles() {
+  if (!window.matchMedia('(max-width: 860px)').matches) return;   // en pantalla grande se ven al lado del calendario
+  requestAnimationFrame(() => {
+    const panel = document.querySelector('#panel-1 .slots-panel');
+    const boton = $('btnP1');
+    if (!panel || !boton) return;
+
+    const nav  = document.querySelector('.nav');
+    const barra = document.querySelector('.bottom-bar');
+    const alturaNav   = nav ? nav.offsetHeight : 0;
+    const alturaBarra = (barra && getComputedStyle(barra).display !== 'none') ? barra.offsetHeight : 0;
+    const margen = 12;
+
+    const techo = alturaNav + margen;                              // línea de arriba: bajo el menú
+    const piso  = window.innerHeight - alturaBarra - margen;       // línea de abajo: sobre la barra inferior
+
+    const baja = boton.getBoundingClientRect().bottom - piso;      // cuánto falta para ver el botón
+    const tope = panel.getBoundingClientRect().top - techo;        // cuánto se puede bajar sin perder el inicio de los horarios
+    const mover = Math.min(baja, tope);
+    if (mover < 8) return;                                         // ya se ve (o no hace falta mover)
+
+    const reducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollBy({ top: mover, behavior: reducido ? 'auto' : 'smooth' });
+  });
 }
 
 async function renderSlots(key) {
