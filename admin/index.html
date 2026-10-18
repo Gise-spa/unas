@@ -302,6 +302,9 @@
       <h2 class="section-title">Caja</h2>
       <p class="section-subtitle">Cobros, gastos y cierre del día</p>
 
+      <!-- Avisos de cajas que se cerraron solas a medianoche y todavía no tienen el efectivo contado (los arma caja.js) -->
+      <div id="cajaContadoPendiente"></div>
+
       <!-- Resumen diario, filtrado por fecha (independiente de si la caja
            de HOY está abierta o cerrada — muestra cualquier día, incluidos
            los ya cerrados/liquidados) -->
@@ -572,6 +575,34 @@
     <div style="display:flex;gap:.6rem;margin-top:.75rem">
       <button class="btn btn-primary" style="flex:1" id="cbConfirmarBtn" onclick="confirmarCobro()">Confirmar cobro</button>
       <button class="btn btn-outline" onclick="cerrarModal('modalCobrar')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CARGAR EL EFECTIVO CONTADO de una caja que se cerró sola -->
+<div class="modal-overlay" id="modalContadoPendiente">
+  <div class="modal-box" style="max-width:380px">
+    <div class="modal-header">
+      <h3 id="cpTitulo">Efectivo contado</h3>
+      <button class="modal-close" onclick="cerrarModal('modalContadoPendiente')">×</button>
+    </div>
+    <input type="hidden" id="cpSesionId">
+    <p style="font-size:.84rem;color:var(--text-muted);margin-bottom:1rem">Esa caja se cerró sola a medianoche, con el efectivo esperado. Contá el efectivo que había y cargalo acá: se registra la diferencia real. Se carga una sola vez.</p>
+    <div class="form-group">
+      <label>Efectivo esperado</label>
+      <div id="cpEsperado" class="monto-caja" style="font-size:1.3rem;font-family:'Cormorant Garamond',serif">—</div>
+    </div>
+    <div class="form-group">
+      <label>Efectivo contado</label>
+      <input type="number" id="cpContado" min="0" step="0.01" placeholder="0.00" oninput="_cpActualizarDiferencia()">
+    </div>
+    <div class="form-group">
+      <label>Diferencia</label>
+      <div id="cpDiferencia" class="monto-caja" style="font-size:1.1rem">—</div>
+    </div>
+    <div style="display:flex;gap:.6rem;margin-top:.75rem">
+      <button class="btn btn-primary" style="flex:1" id="cpConfirmarBtn" onclick="pedirConfirmarContadoPendiente()">Guardar</button>
+      <button class="btn btn-outline" onclick="cerrarModal('modalContadoPendiente')">Cancelar</button>
     </div>
   </div>
 </div>
