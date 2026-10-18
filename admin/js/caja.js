@@ -266,7 +266,101 @@ async function renderCaja() {
   await syncCaja();
   _renderCajaUI();
   renderResumenDiaCaja();
+  _renderAvisosContadoPendiente();
   _aplicarEstadoMontosCaja();
+}
+
+// ════════════════════════════════════════════════════════
+//  CAJAS QUE SE CERRARON SOLAS (a medianoche) — falta cargar el efectivo contado.
+//  Backend: CajaAutoCierre.gs. Cada sesión cerrada con cierreAutomatico = 'si' muestra un aviso acá;
+//  al cargar el efectivo queda 'contado' y el aviso desaparece.
+// ════════════════════════════════════════════════════════
+function _sesionesContadoPendiente() {
+  const sesiones = typeof getTodasSesiones === 'function' ? getTodasSesiones() : [];
+  return sesiones
+    .filter(s => String(s.cierreAutomatico) === 'si' && String(s.estado).toLowerCase() === 'cerrada')
+    .sort((a, b) => String(a.fechaApertura).localeCompare(String(b.fechaApertura)));
+}
+
+function _fechaCortaSesion(s) {
+  const d = new Date(s.fechaApertura);
+  if (isNaN(d.getTime())) return '';
+  return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
+}
+
+function _renderAvisosContadoPendiente() {
+  const cont = document.getElementById('cajaContadoPendiente');
+  if (!cont) return;
+  const pend = _sesionesContadoPendiente();
+  cont.innerHTML = pend.map(s => `
+    <div class="panel-card" style="margin-bottom:1rem;border-color:var(--gold)">
+      <div class="panel-card-body" style="display:flex;align-items:center;gap:.8rem;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px;font-size:.86rem">
+          <strong>La caja del ${_fechaCortaSesion(s)} se cerró sola.</strong>
+          <div style="color:var(--text-muted);margin-top:.15rem">El efectivo no se contó: quedó el esperado (<span class="monto-caja">${fmtMoneda(s.saldoCalculado)}</span>). Cargá lo que había para registrar la diferencia real.</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="abrirModalContadoPendiente('${s.sesionId}')">Cargar efectivo</button>
+      </div>
+    </div>`).join('');
+}
+
+function abrirModalContadoPendiente(sesionId) {
+  const s = _sesionesContadoPendiente().find(x => String(x.sesionId) === String(sesionId));
+  if (!s) { showToast('Esa caja ya no está pendiente'); return; }
+  document.getElementById('cpSesionId').value = s.sesionId;
+  document.getElementById('cpTitulo').textContent = 'Efectivo de la caja del ' + _fechaCortaSesion(s);
+  document.getElementById('cpEsperado').textContent = fmtMoneda(s.saldoCalculado);
+  document.getElementById('cpContado').value = '';
+  document.getElementById('cpDiferencia').textContent = '—';
+  abrirModal('modalContadoPendiente');
+}
+
+function _cpEsperadoActual() {
+  const id = document.getElementById('cpSesionId').value;
+  const s = _sesionesContadoPendiente().find(x => String(x.sesionId) === String(id));
+  return s ? (Number(s.saldoCalculado) || 0) : 0;
+}
+
+function _cpActualizarDiferencia() {
+  const v = document.getElementById('cpContado').value;
+  const el = document.getElementById('cpDiferencia');
+  if (v === '' || isNaN(Number(v))) { el.textContent = '—'; return; }
+  const dif = Math.round((Number(v) - _cpEsperadoActual()) * 100) / 100;
+  el.textContent = (dif > 0 ? '+' : '') + fmtMoneda(dif);
+}
+
+let _cpEnProceso = false;
+function pedirConfirmarContadoPendiente() {
+  const v = document.getElementById('cpContado').value;
+  const contado = Number(v);
+  if (v === '' || isNaN(contado) || contado < 0) { showToast('Ingresá el efectivo contado'); return; }
+  const dif = Math.round((contado - _cpEsperadoActual()) * 100) / 100;
+  mostrarConfirm({
+    icon: '💰',
+    titulo: 'Guardar efectivo contado',
+    msg: (dif === 0 ? 'No hay diferencia con lo esperado.' : 'La diferencia es de ' + (dif > 0 ? '+' : '') + fmtMoneda(dif) + '.') + ' Esto se carga una sola vez y no se puede cambiar después. ¿Confirmás?',
+    btnTxt: 'Guardar',
+    btnColor: 'var(--accent)',
+    onOk: () => confirmarContadoPendiente(contado)
+  });
+}
+
+async function confirmarContadoPendiente(contado) {
+  if (_cpEnProceso) return;
+  _cpEnProceso = true;
+  try {
+    const sesionId = document.getElementById('cpSesionId').value;
+    const res = await apiPost({ action: 'cargarContadoCierre', sesionId, efectivoContado: contado });
+    if (res && res.ok) {
+      cerrarModal('modalContadoPendiente');
+      await renderCaja();
+      showToast('✓ Efectivo cargado' + (res.diferencia ? ' · diferencia ' + (res.diferencia > 0 ? '+' : '') + fmtMoneda(res.diferencia) : ' · sin diferencia'));
+    } else {
+      showToast((res && res.error) || 'No se pudo guardar el efectivo');
+    }
+  } finally {
+    _cpEnProceso = false;
+  }
 }
 
 // ════════════════════════════════════════════════════════
