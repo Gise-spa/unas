@@ -266,101 +266,7 @@ async function renderCaja() {
   await syncCaja();
   _renderCajaUI();
   renderResumenDiaCaja();
-  _renderAvisosContadoPendiente();
   _aplicarEstadoMontosCaja();
-}
-
-// ════════════════════════════════════════════════════════
-//  CAJAS QUE SE CERRARON SOLAS (a medianoche) — falta cargar el efectivo contado.
-//  Backend: CajaAutoCierre.gs. Cada sesión cerrada con cierreAutomatico = 'si' muestra un aviso acá;
-//  al cargar el efectivo queda 'contado' y el aviso desaparece.
-// ════════════════════════════════════════════════════════
-function _sesionesContadoPendiente() {
-  const sesiones = typeof getTodasSesiones === 'function' ? getTodasSesiones() : [];
-  return sesiones
-    .filter(s => String(s.cierreAutomatico) === 'si' && String(s.estado).toLowerCase() === 'cerrada')
-    .sort((a, b) => String(a.fechaApertura).localeCompare(String(b.fechaApertura)));
-}
-
-function _fechaCortaSesion(s) {
-  const d = new Date(s.fechaApertura);
-  if (isNaN(d.getTime())) return '';
-  return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
-}
-
-function _renderAvisosContadoPendiente() {
-  const cont = document.getElementById('cajaContadoPendiente');
-  if (!cont) return;
-  const pend = _sesionesContadoPendiente();
-  cont.innerHTML = pend.map(s => `
-    <div class="panel-card" style="margin-bottom:1rem;border-color:var(--gold)">
-      <div class="panel-card-body" style="display:flex;align-items:center;gap:.8rem;flex-wrap:wrap">
-        <div style="flex:1;min-width:200px;font-size:.86rem">
-          <strong>La caja del ${_fechaCortaSesion(s)} se cerró sola.</strong>
-          <div style="color:var(--text-muted);margin-top:.15rem">El efectivo no se contó: quedó el esperado (<span class="monto-caja">${fmtMoneda(s.saldoCalculado)}</span>). Cargá lo que había para registrar la diferencia real.</div>
-        </div>
-        <button class="btn btn-primary btn-sm" onclick="abrirModalContadoPendiente('${s.sesionId}')">Cargar efectivo</button>
-      </div>
-    </div>`).join('');
-}
-
-function abrirModalContadoPendiente(sesionId) {
-  const s = _sesionesContadoPendiente().find(x => String(x.sesionId) === String(sesionId));
-  if (!s) { showToast('Esa caja ya no está pendiente'); return; }
-  document.getElementById('cpSesionId').value = s.sesionId;
-  document.getElementById('cpTitulo').textContent = 'Efectivo de la caja del ' + _fechaCortaSesion(s);
-  document.getElementById('cpEsperado').textContent = fmtMoneda(s.saldoCalculado);
-  document.getElementById('cpContado').value = '';
-  document.getElementById('cpDiferencia').textContent = '—';
-  abrirModal('modalContadoPendiente');
-}
-
-function _cpEsperadoActual() {
-  const id = document.getElementById('cpSesionId').value;
-  const s = _sesionesContadoPendiente().find(x => String(x.sesionId) === String(id));
-  return s ? (Number(s.saldoCalculado) || 0) : 0;
-}
-
-function _cpActualizarDiferencia() {
-  const v = document.getElementById('cpContado').value;
-  const el = document.getElementById('cpDiferencia');
-  if (v === '' || isNaN(Number(v))) { el.textContent = '—'; return; }
-  const dif = Math.round((Number(v) - _cpEsperadoActual()) * 100) / 100;
-  el.textContent = (dif > 0 ? '+' : '') + fmtMoneda(dif);
-}
-
-let _cpEnProceso = false;
-function pedirConfirmarContadoPendiente() {
-  const v = document.getElementById('cpContado').value;
-  const contado = Number(v);
-  if (v === '' || isNaN(contado) || contado < 0) { showToast('Ingresá el efectivo contado'); return; }
-  const dif = Math.round((contado - _cpEsperadoActual()) * 100) / 100;
-  mostrarConfirm({
-    icon: '💰',
-    titulo: 'Guardar efectivo contado',
-    msg: (dif === 0 ? 'No hay diferencia con lo esperado.' : 'La diferencia es de ' + (dif > 0 ? '+' : '') + fmtMoneda(dif) + '.') + ' Esto se carga una sola vez y no se puede cambiar después. ¿Confirmás?',
-    btnTxt: 'Guardar',
-    btnColor: 'var(--accent)',
-    onOk: () => confirmarContadoPendiente(contado)
-  });
-}
-
-async function confirmarContadoPendiente(contado) {
-  if (_cpEnProceso) return;
-  _cpEnProceso = true;
-  try {
-    const sesionId = document.getElementById('cpSesionId').value;
-    const res = await apiPost({ action: 'cargarContadoCierre', sesionId, efectivoContado: contado });
-    if (res && res.ok) {
-      cerrarModal('modalContadoPendiente');
-      await renderCaja();
-      showToast('✓ Efectivo cargado' + (res.diferencia ? ' · diferencia ' + (res.diferencia > 0 ? '+' : '') + fmtMoneda(res.diferencia) : ' · sin diferencia'));
-    } else {
-      showToast((res && res.error) || 'No se pudo guardar el efectivo');
-    }
-  } finally {
-    _cpEnProceso = false;
-  }
 }
 
 // ════════════════════════════════════════════════════════
@@ -794,6 +700,8 @@ function renderCajaInicio() {
       <div class="caja-hero-datos">
         <div><span>Ingresos hoy</span><strong>${fmtMoneda(totales ? totales.totalIngresos : 0)}</strong></div>
         <div><span>Efectivo esperado</span><strong>${fmtMoneda(totales ? totales.efectivoEsperado : 0)}</strong></div>
+        ${totales && totales.mpEsperado !== null && totales.mpEsperado !== undefined
+          ? `<div><span>Mercado Pago debería figurar</span><strong>${fmtMoneda(totales.mpEsperado)}</strong></div>` : ''}
       </div>
       <button class="btn btn-primary caja-hero-btn" onclick="irA('caja')">Ir a Caja</button>
     </div>`;
@@ -827,7 +735,43 @@ function _renderCajaUI() {
   document.getElementById('cajaEstadoInfo').innerHTML =
     `<strong style="color:#16a34a">● Caja abierta</strong>${horaApertura ? ' desde las ' + horaApertura : ''}` +
     `<br>Saldo inicial: ${fmtMoneda(sesion.saldoInicial)} ` +
-    `<button onclick="abrirEditarSaldoInicial('${String(sesion.sesionId).replace(/'/g, "\\'")}', ${Number(sesion.saldoInicial) || 0})" class="btn btn-sm caja-mov-btn-editar" title="Editar saldo inicial">✎</button>`;
+    `<button onclick="abrirEditarSaldoInicial('${String(sesion.sesionId).replace(/'/g, "\\'")}', ${Number(sesion.saldoInicial) || 0})" class="btn btn-sm caja-mov-btn-editar" title="Editar saldo inicial">✎</button>` +
+    _mpInicialInfoHTML(sesion);
+}
+
+// Línea de Mercado Pago en "Caja abierta": el saldo con el que se abrió (con lápiz para corregirlo)
+// o, si no se cargó, un botón para cargarlo ahora.
+function _mpInicialInfoHTML(sesion) {
+  const id = String(sesion.sesionId).replace(/'/g, "\\'");
+  const cargado = !(sesion.mpInicial === '' || sesion.mpInicial === null || sesion.mpInicial === undefined || isNaN(Number(sesion.mpInicial)));
+  if (cargado) {
+    return `<br>Mercado Pago inicial: ${fmtMoneda(sesion.mpInicial)} ` +
+      `<button onclick="abrirEditarMpInicial('${id}', ${Number(sesion.mpInicial) || 0})" class="btn btn-sm caja-mov-btn-editar" title="Editar saldo de Mercado Pago">✎</button>`;
+  }
+  return `<br><button onclick="abrirEditarMpInicial('${id}', '')" class="btn btn-sm btn-outline" style="margin-top:.4rem">+ Cargar saldo de Mercado Pago</button>`;
+}
+
+function abrirEditarMpInicial(sesionId, valorActual) {
+  mostrarInput({
+    titulo: 'Saldo de Mercado Pago',
+    label: 'Lo que había en tu cuenta de Mercado Pago al abrir',
+    valorActual: valorActual === '' ? '' : String(Math.round(Number(valorActual) || 0)),
+    onOk: (v) => confirmarEditarMpInicial(sesionId, v)
+  });
+}
+
+async function confirmarEditarMpInicial(sesionId, valor) {
+  if (String(valor).trim() === '') { showToast('Ingresá un monto'); return; }
+  const nuevo = Number(valor);
+  if (isNaN(nuevo) || nuevo < 0) { showToast('Ingresá un monto válido'); return; }
+  const res = await apiPost({ action: 'editarMpInicialCaja', sesionId, mpInicial: nuevo });
+  if (res.ok) {
+    showToast('✓ Saldo de Mercado Pago guardado');
+    await renderCaja();
+    if (typeof renderInicio === 'function' && seccionActiva === 'inicio') renderInicio();
+  } else {
+    showToast(res.error || 'No se pudo guardar el saldo de Mercado Pago');
+  }
 }
 
 // ════════════════════════════════════════════════════════
@@ -1157,6 +1101,17 @@ function _mostrarPopupFactura(prefix, metodo) {
 // ════════════════════════════════════════════════════════
 //  ABRIR CAJA
 // ════════════════════════════════════════════════════════
+
+// Lee un campo de Mercado Pago opcional. Devuelve { ok:true, valor:'' } si está vacío (no se carga
+// nada), { ok:true, valor:número } si es válido, o { ok:false } si tiene algo inválido.
+function _leerMpOpcional(idInput) {
+  const raw = (document.getElementById(idInput)?.value ?? '').toString().trim();
+  if (raw === '') return { ok: true, valor: '' };
+  const n = Number(raw);
+  if (isNaN(n) || n < 0) return { ok: false };
+  return { ok: true, valor: n };
+}
+
 function mostrarFormAbrirCaja() {
   document.getElementById('formAbrirCaja').style.display = '';
   document.getElementById('cajaSaldoInicial')?.focus();
@@ -1165,10 +1120,13 @@ function mostrarFormAbrirCaja() {
 async function confirmarAbrirCaja() {
   const saldo = Number(document.getElementById('cajaSaldoInicial').value);
   if (isNaN(saldo) || saldo < 0) { showToast('Ingresá un saldo inicial válido'); return; }
-  const res = await apiPost({ action: 'abrirCaja', saldoInicial: saldo });
+  const mp = _leerMpOpcional('cajaMpInicial');
+  if (!mp.ok) { showToast('El saldo de Mercado Pago no es válido'); return; }
+  const res = await apiPost({ action: 'abrirCaja', saldoInicial: saldo, mpInicial: mp.valor });
   if (res.ok) {
     showToast('✓ Caja abierta');
     document.getElementById('cajaSaldoInicial').value = '';
+    const mpInput = document.getElementById('cajaMpInicial'); if (mpInput) mpInput.value = '';
     await renderCaja();
   } else {
     showToast(res.error || 'No se pudo abrir la caja');
@@ -1182,6 +1140,8 @@ async function confirmarAbrirCaja() {
 function abrirModalAbrirCajaInicio() {
   const input = document.getElementById('inicioCajaSaldoInicial');
   if (input) input.value = '';
+  const mpInput = document.getElementById('inicioCajaMpInicial');
+  if (mpInput) mpInput.value = '';
   abrirModal('modalAbrirCajaInicio');
   setTimeout(() => input?.focus(), 100);
 }
@@ -1189,7 +1149,9 @@ function abrirModalAbrirCajaInicio() {
 async function confirmarAbrirCajaInicio() {
   const saldo = Number(document.getElementById('inicioCajaSaldoInicial').value);
   if (isNaN(saldo) || saldo < 0) { showToast('Ingresá un saldo inicial válido'); return; }
-  const res = await apiPost({ action: 'abrirCaja', saldoInicial: saldo });
+  const mp = _leerMpOpcional('inicioCajaMpInicial');
+  if (!mp.ok) { showToast('El saldo de Mercado Pago no es válido'); return; }
+  const res = await apiPost({ action: 'abrirCaja', saldoInicial: saldo, mpInicial: mp.valor });
   if (res.ok) {
     showToast('✓ Caja abierta');
     cerrarModal('modalAbrirCajaInicio');
@@ -1771,6 +1733,21 @@ function abrirModalCierreCaja() {
   document.getElementById('czContado').value = '';
   document.getElementById('czDiferencia').textContent = '—';
 
+  // Mercado Pago: solo si al abrir se cargó cuánto había en la cuenta
+  const mpBloque = document.getElementById('czMpBloque');
+  const hayMp = totales.mpEsperado !== null && totales.mpEsperado !== undefined;
+  mpBloque.style.display = hayMp ? '' : 'none';
+  document.getElementById('czMpContado').value = '';
+  document.getElementById('czMpDiferencia').textContent = '—';
+  document.getElementById('czMpDiferencia').style.color = '';
+  if (hayMp) {
+    document.getElementById('czMpEsperado').textContent = fmtMoneda(totales.mpEsperado);
+    const sp = Number(totales.mpSenaPrevia) || 0;
+    document.getElementById('czMpNota').textContent = sp > 0
+      ? `Sin sumar ${fmtMoneda(sp)} de señas que ya habían entrado a tu cuenta.`
+      : 'Saldo con el que abriste + lo cobrado hoy por Mercado Pago.';
+  }
+
   document.getElementById('czDesglose').innerHTML = _detalleTotalHTML(_filasPorMetodo(totales.porMetodo));
 
   document.getElementById('czTotales').innerHTML =
@@ -1796,10 +1773,24 @@ function actualizarDiferenciaCierre() {
   dif.style.color = diferencia === 0 ? '#16a34a' : (diferencia < 0 ? '#dc2626' : '#f59e0b');
 }
 
+function actualizarDiferenciaMpCierre() {
+  const totales = getCajaTotales();
+  if (!totales || totales.mpEsperado === null || totales.mpEsperado === undefined) return;
+  const raw = document.getElementById('czMpContado').value;
+  const dif = document.getElementById('czMpDiferencia');
+  const contado = Number(raw);
+  if (raw === '' || isNaN(contado)) { dif.textContent = '—'; dif.style.color = ''; return; }
+  const diferencia = Math.round((contado - totales.mpEsperado) * 100) / 100;
+  dif.textContent = (diferencia > 0 ? '+' : '') + fmtMoneda(diferencia);
+  dif.style.color = diferencia === 0 ? '#16a34a' : (diferencia < 0 ? '#dc2626' : '#f59e0b');
+}
+
 function pedirConfirmarCierre() {
   const contadoVal = document.getElementById('czContado').value;
   const contado = Number(contadoVal);
   if (contadoVal === '' || isNaN(contado) || contado < 0) { showToast('Ingresá el efectivo contado'); return; }
+  const mp = _leerMpOpcional('czMpContado');
+  if (!mp.ok) { showToast('Lo que figura en Mercado Pago no es válido'); return; }
 
   mostrarConfirm({
     icon: '💰',
@@ -1807,18 +1798,18 @@ function pedirConfirmarCierre() {
     msg: 'Esta acción no se puede deshacer. ¿Confirmás el cierre del día?',
     btnTxt: 'Cerrar caja',
     btnColor: 'var(--accent)',
-    onOk: () => confirmarCierreCaja(contado)
+    onOk: () => confirmarCierreCaja(contado, mp.valor)
   });
 }
 
 let _cierreEnProceso = false;
 
-async function confirmarCierreCaja(contado) {
+async function confirmarCierreCaja(contado, mpContado) {
   if (_cierreEnProceso) return; // mostrarConfirm ya cierra su modal al primer toque, esto es un resguardo extra
   _cierreEnProceso = true;
   try {
     const sesionId = document.getElementById('czSesionId').value;
-    const res = await apiPost({ action: 'cerrarCaja', sesionId, efectivoContado: contado });
+    const res = await apiPost({ action: 'cerrarCaja', sesionId, efectivoContado: contado, mpContado: mpContado === undefined ? '' : mpContado });
     if (res.ok) {
       cerrarModal('modalCierreCaja');
       await renderCaja();
@@ -1843,12 +1834,19 @@ async function confirmarCierreCaja(contado) {
 function mostrarResultadoCierre(res) {
   document.getElementById('crTotalDia').textContent = fmtMoneda(res.resultadoNeto);
 
-  const filas = _filasPorMetodo(res.porMetodo).map(f => {
+  let filas = _filasPorMetodo(res.porMetodo).map(f => {
     if (f.label.toLowerCase() === 'efectivo' && res.efectivo) {
       return { label: f.label, monto: Number(res.efectivo.esperado) || 0 };
     }
     return f;
   });
+  // Mercado Pago: si se cargó el saldo al abrir, el número es lo que debería figurar en la cuenta
+  // (saldo de apertura + lo cobrado hoy, sin las señas de otros días), no solo los ingresos del día.
+  if (res.mp) {
+    const mpFila = { label: 'Mercado Pago', monto: Number(res.mp.esperado) || 0 };
+    const idx = filas.findIndex(f => f.label.toLowerCase() === 'mercado pago');
+    if (idx >= 0) filas[idx] = mpFila; else filas.push(mpFila);
+  }
   document.getElementById('crDetalle').innerHTML = _detalleTotalHTML(filas);
 
   abrirModal('modalCierreResultado');
