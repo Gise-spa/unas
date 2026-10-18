@@ -265,6 +265,7 @@ function botonCobrarHTML(t) {
 async function renderCaja() {
   await syncCaja();
   _renderCajaUI();
+  _renderAvisoCierreAuto();
   renderResumenDiaCaja();
   _aplicarEstadoMontosCaja();
 }
@@ -685,6 +686,7 @@ function renderCajaInicio() {
           <span class="caja-hero-dot"></span>
           <span class="caja-hero-estado">Caja cerrada</span>
         </div>
+        ${_avisoCierreAutoInicioHTML()}
         <button class="btn btn-primary caja-hero-btn" onclick="irA('caja'); setTimeout(mostrarFormAbrirCaja, 150);">Abrir caja</button>
       </div>`;
     return;
@@ -703,6 +705,7 @@ function renderCajaInicio() {
         ${totales && totales.mpEsperado !== null && totales.mpEsperado !== undefined
           ? `<div><span>Mercado Pago debería figurar</span><strong>${fmtMoneda(totales.mpEsperado)}</strong></div>` : ''}
       </div>
+      ${_avisoCierreAutoInicioHTML()}
       <button class="btn btn-primary caja-hero-btn" onclick="irA('caja')">Ir a Caja</button>
     </div>`;
 }
@@ -772,6 +775,144 @@ async function confirmarEditarMpInicial(sesionId, valor) {
   } else {
     showToast(res.error || 'No se pudo guardar el saldo de Mercado Pago');
   }
+}
+
+// ════════════════════════════════════════════════════════
+//  CARTEL "LA CAJA SE CERRÓ SOLA" — cuando una caja quedó abierta y el
+//  sistema la cerró a medianoche (CajaAutoCierre.gs), se cerró con el
+//  efectivo ESPERADO (diferencia 0) porque nadie contó nada. Este cartel
+//  aparece arriba de Caja mientras falte cargar lo que realmente había,
+//  y desaparece solo cuando se carga (una sola vez por caja).
+//  Si esa caja cargó el saldo de Mercado Pago al abrir, también pide
+//  lo que figura en la cuenta (opcional, igual que al cerrar a mano).
+// ════════════════════════════════════════════════════════
+function _cierresAutoPendientes() {
+  const sesiones = typeof getTodasSesiones === 'function' ? getTodasSesiones() : [];
+  return sesiones
+    .filter(s => String(s.cierreAutomatico || '').trim().toLowerCase() === 'si')
+    .sort((a, b) => new Date(a.fechaApertura) - new Date(b.fechaApertura));
+}
+
+function _fechaCortaSesion(s) {
+  const d = new Date(s.fechaApertura);
+  return isNaN(d.getTime()) ? '' : d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
+}
+
+function _tieneMpSesion(s) {
+  return !(s.mpInicial === '' || s.mpInicial === null || s.mpInicial === undefined || isNaN(Number(s.mpInicial)));
+}
+
+// Línea corta para la tarjeta de Caja en Inicio
+function _avisoCierreAutoInicioHTML() {
+  const n = _cierresAutoPendientes().length;
+  if (!n) return '';
+  return `<p style="margin:.6rem 0 0;font-size:.8rem;color:#b45309">⚠ ${n === 1 ? 'Una caja se cerró sola y falta cargar lo que contaste' : n + ' cajas se cerraron solas y falta cargar lo que contaste'}</p>`;
+}
+
+function _renderAvisoCierreAuto() {
+  const cont = document.getElementById('cajaAvisoCierreAuto');
+  if (!cont) return;
+  const pendientes = _cierresAutoPendientes();
+  if (!pendientes.length) { cont.innerHTML = ''; return; }
+
+  cont.innerHTML = pendientes.map((s, i) => {
+    const sid = String(s.sesionId);
+    const conMp = _tieneMpSesion(s);
+    return `
+    <div class="panel-card" style="margin-bottom:1.25rem;border:1px solid #f5c26b;background:#fffbeb">
+      <div class="panel-card-body" style="font-size:.86rem">
+        <p style="margin:0 0 .35rem;font-weight:600;color:#92400e">La caja del ${_fechaCortaSesion(s)} se cerró sola</p>
+        <p style="margin:0 0 .9rem;color:var(--text-muted)">Nadie contó el efectivo, así que quedó cerrada con lo esperado (diferencia $0). Cargá lo que realmente había para que quede la diferencia real.</p>
+        <div class="form-group">
+          <label>Efectivo esperado</label>
+          <div class="monto-caja" style="font-size:1.15rem">${fmtMoneda(s.saldoCalculado)}</div>
+        </div>
+        <div class="form-group">
+          <label>Efectivo que contaste</label>
+          <input type="number" id="cauEf${i}" min="0" step="0.01" placeholder="0.00" oninput="_actualizarDifCierreAuto(${i})">
+          <div id="cauEfDif${i}" class="monto-caja" style="margin-top:.3rem;font-size:.9rem"></div>
+        </div>
+        ${conMp ? `
+        <div class="form-group">
+          <label>Mercado Pago: debería figurar</label>
+          <div class="monto-caja" style="font-size:1.15rem">${fmtMoneda(s.mpEsperado)}</div>
+        </div>
+        <div class="form-group">
+          <label>Lo que figuraba en tu cuenta <span style="color:var(--text-muted);font-weight:400">(opcional)</span></label>
+          <input type="number" id="cauMp${i}" min="0" step="0.01" placeholder="0.00" oninput="_actualizarDifCierreAuto(${i})">
+          <div id="cauMpDif${i}" class="monto-caja" style="margin-top:.3rem;font-size:.9rem"></div>
+        </div>` : ''}
+        <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.5rem">
+          <button class="btn btn-primary" id="cauGuardar${i}" data-sid="${sid}" onclick="guardarContadoCierreAuto(${i})">Guardar</button>
+          <button class="btn btn-outline" data-sid="${sid}" onclick="confirmarCierreAutoJusto(${i})">Estaba justo</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function _actualizarDifCierreAuto(i) {
+  const s = _cierresAutoPendientes()[i];
+  if (!s) return;
+  const pintar = (idInput, idDif, esperado) => {
+    const inp = document.getElementById(idInput), out = document.getElementById(idDif);
+    if (!inp || !out) return;
+    if (inp.value === '' || isNaN(Number(inp.value))) { out.textContent = ''; return; }
+    const dif = Math.round((Number(inp.value) - Number(esperado || 0)) * 100) / 100;
+    out.textContent = 'Diferencia: ' + (dif > 0 ? '+' : '') + fmtMoneda(dif);
+    out.style.color = dif === 0 ? '#16a34a' : (dif < 0 ? '#dc2626' : '#f59e0b');
+  };
+  pintar('cauEf' + i, 'cauEfDif' + i, s.saldoCalculado);
+  if (_tieneMpSesion(s)) pintar('cauMp' + i, 'cauMpDif' + i, s.mpEsperado);
+}
+
+let _cierreAutoEnProceso = false;
+
+async function _enviarContadoCierreAuto(sesionId, efectivo, mp) {
+  if (_cierreAutoEnProceso) return;
+  _cierreAutoEnProceso = true;
+  try {
+    const res = await apiPost({ action: 'cargarContadoCierreAutomatico', sesionId, efectivoContado: efectivo, mpContado: mp });
+    if (res.ok) {
+      const dif = Number(res.diferencia) || 0;
+      showToast(dif === 0 ? '✓ Guardado, sin diferencia' : '✓ Guardado, diferencia de efectivo: ' + (dif > 0 ? '+' : '') + fmtMoneda(dif));
+      await renderCaja();
+      if (typeof renderInicio === 'function' && seccionActiva === 'inicio') renderInicio();
+    } else {
+      showToast(res.error || 'No se pudo guardar');
+    }
+  } finally {
+    _cierreAutoEnProceso = false;
+  }
+}
+
+function guardarContadoCierreAuto(i) {
+  const s = _cierresAutoPendientes()[i];
+  if (!s) return;
+  const efRaw = document.getElementById('cauEf' + i).value;
+  const ef = Number(efRaw);
+  if (efRaw === '' || isNaN(ef) || ef < 0) { showToast('Ingresá el efectivo que contaste'); return; }
+  let mp = '';
+  if (_tieneMpSesion(s)) {
+    const r = _leerMpOpcional('cauMp' + i);
+    if (!r.ok) { showToast('Lo que figura en Mercado Pago no es válido'); return; }
+    mp = r.valor;
+  }
+  _enviarContadoCierreAuto(s.sesionId, ef, mp);
+}
+
+// "Estaba justo": confirma que el efectivo (y Mercado Pago) coincidían con lo esperado
+function confirmarCierreAutoJusto(i) {
+  const s = _cierresAutoPendientes()[i];
+  if (!s) return;
+  mostrarConfirm({
+    icon: '✓',
+    titulo: 'Estaba justo',
+    msg: 'Se guarda que el efectivo' + (_tieneMpSesion(s) ? ' y Mercado Pago coincidían' : ' coincidía') + ' con lo esperado. No se puede volver a cambiar.',
+    btnTxt: 'Confirmar',
+    btnColor: 'var(--accent)',
+    onOk: () => _enviarContadoCierreAuto(s.sesionId, Number(s.saldoCalculado) || 0, _tieneMpSesion(s) ? (Number(s.mpEsperado) || 0) : '')
+  });
 }
 
 // ════════════════════════════════════════════════════════
