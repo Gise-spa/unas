@@ -114,7 +114,7 @@ function _badgeMetodo(label) {
 // _colorMetodo — usa un tono ámbar fijo, distinto de la paleta de
 // métodos, para que se lea como algo estructuralmente distinto.
 function _colorDetalle(label) {
-  return label === 'Apertura caja' ? '#C99A4A' : _colorMetodo(label);
+  return (label === 'Apertura caja' || label === 'Apertura Mercado Pago') ? '#C99A4A' : _colorMetodo(label);
 }
 
 // ════════════════════════════════════════════════════════
@@ -181,6 +181,28 @@ function _aperturaBoxHTML(fecha) {
   return `<div class="cdt-box" style="border-left-color:${_colorDetalle(label)}"${onclick}>
     <span>${label}${clickable ? ' ✎' : ''}</span>
     <strong class="monto-caja">${fmtMoneda(monto)}</strong>
+  </div>`;
+}
+
+// Caja "Apertura Mercado Pago" del Resumen diario: lo que había en la cuenta de Mercado Pago al abrir
+// la caja, al lado de "Apertura caja" (que es el efectivo). Con una única sesión ese día queda
+// clickeable para cargarlo o corregirlo, igual que la apertura de efectivo. Si no se cargó, muestra
+// "Sin cargar" (nunca $0, para no confundirlo con una apertura de verdad en cero).
+function _aperturaMpBoxHTML(fecha) {
+  const sesiones = (typeof getTodasSesiones === 'function' ? getTodasSesiones() : [])
+    .filter(s => s.fechaApertura && fmtDate(new Date(s.fechaApertura)) === fecha);
+  const cargadas = sesiones.filter(_tieneMpSesion);
+  const monto = cargadas.reduce((sum, s) => sum + (Number(s.mpInicial) || 0), 0);
+  const label = 'Apertura Mercado Pago';
+  const clickable = sesiones.length === 1;
+  const idEscapado = clickable ? String(sesiones[0].sesionId).replace(/'/g, "\\'") : '';
+  const valorActual = clickable && cargadas.length ? (Number(sesiones[0].mpInicial) || 0) : "''";
+  const onclick = clickable
+    ? ` onclick="abrirEditarMpInicial('${idEscapado}', ${valorActual})" style="cursor:pointer"`
+    : '';
+  return `<div class="cdt-box" style="border-left-color:${_colorDetalle(label)}"${onclick}>
+    <span>${label}${clickable ? ' ✎' : ''}</span>
+    <strong class="monto-caja">${cargadas.length ? fmtMoneda(monto) : 'Sin cargar'}</strong>
   </div>`;
 }
 
@@ -659,7 +681,7 @@ function renderResumenDiaCaja() {
   // de los métodos de pago, puede quedar clickeable para corregir el
   // saldoInicial.
   const filas = _filasPorMetodo(porMetodo);
-  const cajasHTML = filas.map(f => _cdtBoxHTML(f.label, f.monto)).join('') + _aperturaBoxHTML(fechaCajaActiva);
+  const cajasHTML = filas.map(f => _cdtBoxHTML(f.label, f.monto)).join('') + _aperturaBoxHTML(fechaCajaActiva) + _aperturaMpBoxHTML(fechaCajaActiva);
   document.getElementById('cajaResumenDiaDesglose').innerHTML = `<div class="caja-detalle-total-grid">${cajasHTML}</div>`;
 
   const movsEl = document.getElementById('cajaResumenDiaMovs');
