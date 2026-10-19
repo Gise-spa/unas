@@ -201,7 +201,7 @@ function _aperturaMpBoxHTML(fecha) {
     ? ` onclick="abrirEditarMpInicial('${idEscapado}', ${valorActual})" style="cursor:pointer"`
     : '';
   return `<div class="cdt-box" style="border-left-color:${_colorDetalle(label)}"${onclick}>
-    <span>${label}${clickable ? ' ✎' : ''}</span>
+    <span>Apertura MP${clickable ? ' ✎' : ''}</span>
     <strong class="monto-caja">${cargadas.length ? fmtMoneda(monto) : 'Sin cargar'}</strong>
   </div>`;
 }
