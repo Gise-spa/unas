@@ -15,6 +15,7 @@ let _ntHora       = '';     // 'HH:MM' elegido (atajo o a mano)
 let _ntServ       = {};     // { servicioId: true }
 let _ntGuardando  = false;
 let _ntReqSeq     = 0;
+let _ntMedia      = false;  // true = turno de media hora (30 min); false = duración normal
 
 function _ntEsc(s) {
   return String(s === undefined || s === null ? '' : s)
@@ -27,9 +28,10 @@ function _ntMin(hhmm) {
 
 // ── Abrir ────────────────────────────────────────────────
 function abrirModalNuevoTurno() {
-  _ntClienteId = ''; _ntHora = ''; _ntDisp = null; _ntServ = {};
+  _ntClienteId = ''; _ntHora = ''; _ntDisp = null; _ntServ = {}; _ntMedia = false;
   document.getElementById('ntClienteBuscar').value = '';
-  document.getElementById('ntHoraManual').value = '';
+  ntArmarHorasManuales();
+  ntRenderDuracion();
   const hoy = todayStr();
   const f = document.getElementById('ntFecha');
   f.min = hoy;
@@ -147,6 +149,44 @@ function ntToggleServicio(id) {
   ntRenderServicios();
 }
 
+// ── Duración (60 min normal / 30 min) ────────────────────
+function ntRenderDuracion() {
+  const el = document.getElementById('ntDuracion');
+  if (!el) return;
+  const base = (_ntDisp && _ntDisp.duracionBase) || 60;
+  el.innerHTML =
+    `<span class="chip ${!_ntMedia ? 'on' : ''}" onclick="ntElegirDuracion(false)">${base} min</span>` +
+    `<span class="chip ${_ntMedia ? 'on' : ''}" onclick="ntElegirDuracion(true)">30 min</span>`;
+}
+// "Otro horario": solo horas en punto; con 30 min también las y media.
+function ntArmarHorasManuales() {
+  const sel = document.getElementById('ntHoraManual');
+  if (!sel) return;
+  let html = '<option value="">—</option>';
+  for (let h = 0; h < 24; h++) {
+    const hh = String(h).padStart(2, '0');
+    html += `<option value="${hh}:00">${hh}:00</option>`;
+    if (_ntMedia) html += `<option value="${hh}:30">${hh}:30</option>`;
+  }
+  sel.innerHTML = html;
+  sel.value = '';
+}
+function ntElegirDuracion(media) {
+  if (_ntMedia === media) return;
+  _ntMedia = media;
+  ntArmarHorasManuales();
+  ntRenderDuracion();
+  ntCargarDisponibilidad();        // los horarios libres cambian con la duración
+}
+// Desde el aviso "media hora libre": pasa a 30 min y deja elegida esa hora.
+async function ntTomarMediaHora(hora) {
+  _ntMedia = true;
+  ntArmarHorasManuales();
+  ntRenderDuracion();
+  await ntCargarDisponibilidad();
+  if (_ntDisp) { _ntHora = hora; ntRenderDisp(); }
+}
+
 // ── Disponibilidad ───────────────────────────────────────
 async function ntCargarDisponibilidad() {
   const fecha = document.getElementById('ntFecha').value;
@@ -161,13 +201,14 @@ async function ntCargarDisponibilidad() {
   infoEl.textContent = 'Consultando disponibilidad…';
   slotsEl.innerHTML = '';
   const seq = ++_ntReqSeq;
-  const r = await apiGetRaw('getDisponibilidadAdmin', { fecha });
+  const r = await apiGetRaw('getDisponibilidadAdmin', _ntMedia ? { fecha, duracion: 30 } : { fecha });
   if (seq !== _ntReqSeq) return;               // llegó una respuesta vieja: se descarta
   if (!r || r.ok === false || r.error) {
     infoEl.innerHTML = `<span style="color:#dc2626">⚠ ${_ntEsc((r && r.error) || 'No se pudo consultar la disponibilidad')}</span>`;
     return;
   }
   _ntDisp = r;
+  ntRenderDuracion();
   ntRenderDisp();
 }
 function ntRenderDisp() {
@@ -189,6 +230,16 @@ function ntRenderDisp() {
   document.getElementById('ntOcupados').innerHTML = r.ocupados.length
     ? `<div style="font-size:.78rem;color:var(--text-muted);margin-top:.5rem">Ocupado: ${r.ocupados.map(o => `${o.desde}–${o.hasta}`).join(' · ')}</div>`
     : `<div style="font-size:.78rem;color:var(--text-muted);margin-top:.5rem">Sin turnos ni eventos ese día.</div>`;
+  // Medias horas sueltas (ej. queda libre 10:30–11:00): se avisa y se puede tocar para cargar ahí.
+  if (!_ntMedia && Array.isArray(r.huecos30) && r.huecos30.length) {
+    document.getElementById('ntOcupados').innerHTML += `<div style="font-size:.8rem;color:#92400e;margin-top:.5rem">💡 Media hora libre: ${
+      r.huecos30.map(h => {
+        const fin = _ntMin(h) + 30;
+        const finTxt = String(Math.floor(fin / 60)).padStart(2, '0') + ':' + String(fin % 60).padStart(2, '0');
+        return `<span class="chip" style="margin-left:.3rem" onclick="ntTomarMediaHora('${h}')">${h}–${finTxt}</span>`;
+      }).join('')
+    }</div>`;
+  }
   ntActualizarEstadoHora();
 }
 function ntElegirSlot(hora) {
@@ -239,7 +290,7 @@ function ntGuardar() {
   const dt = new Date(fecha + 'T00:00:00');
   mostrarConfirm({
     icon: '📅', titulo: 'Cargar turno',
-    msg: `${c ? _nombreCompletoCliente(c) : 'Clienta'} · ${fmtDateHuman(dt)} a las ${_ntHora} · sin seña. ¿Lo cargás?`,
+    msg: `${c ? _nombreCompletoCliente(c) : 'Clienta'} · ${fmtDateHuman(dt)} a las ${_ntHora}${_ntMedia ? ' (30 min)' : ''} · sin seña. ¿Lo cargás?`,
     btnTxt: 'Sí, cargar',
     onOk: () => ntEnviar(fecha, ids)
   });
@@ -253,7 +304,7 @@ async function ntEnviar(fecha, ids) {
   try {
     const r = await apiPost({
       action: 'crearTurnoAdmin',
-      turno: { clienteId: _ntClienteId, fecha, horario: _ntHora, servicioIds: ids }
+      turno: { clienteId: _ntClienteId, fecha, horario: _ntHora, servicioIds: ids, duracion: _ntMedia ? 30 : undefined }
     });
     if (!r || r.ok !== true) {
       showToast('⚠ ' + ((r && r.error) || 'No se pudo cargar el turno'));
