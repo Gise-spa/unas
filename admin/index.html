@@ -245,6 +245,14 @@
           </div>
           <div class="config-row-arrow">›</div>
         </div>
+        <div class="config-row" onclick="abrirModalAgendaPrecios()">
+          <div class="config-row-icon">💲</div>
+          <div class="config-row-body">
+            <div class="config-row-title">Precios de servicios</div>
+            <div class="config-row-sub" id="resumenPrecios">—</div>
+          </div>
+          <div class="config-row-arrow">›</div>
+        </div>
         <div class="config-row" onclick="abrirModalAgendaBloqueos()">
           <div class="config-row-icon">🚫</div>
           <div class="config-row-body">
@@ -1065,6 +1073,20 @@
     <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem">Los cambios se reflejan en el sitio automáticamente.</p>
     <div id="duracionesWrap" style="max-height:50vh;overflow-y:auto"></div>
     <button class="btn btn-primary btn-sm" style="margin-top:1rem" onclick="guardarDuraciones()">Guardar duraciones</button>
+  </div>
+</div>
+
+<!-- MODAL AGENDA: PRECIOS DE SERVICIOS -->
+<div class="modal-overlay" id="modalAgendaPrecios">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header">
+      <h3>Precios de servicios</h3>
+      <button class="modal-close" onclick="cerrarModal('modalAgendaPrecios')">×</button>
+    </div>
+    <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem">Son los precios de la lista pública del sitio y se actualizan ahí apenas guardás. Un servicio sin precio se ve como «Consultar». No cambian los turnos ya reservados ni sus señas.</p>
+    <div id="preciosWrap" style="max-height:50vh;overflow-y:auto"></div>
+    <div id="preciosError" style="color:var(--danger,#C0392B);font-size:.82rem;min-height:1.1rem;margin-top:.6rem"></div>
+    <button class="btn btn-primary btn-sm" id="btnGuardarPrecios" style="margin-top:.5rem" onclick="guardarPrecios()">Guardar precios</button>
   </div>
 </div>
 
