@@ -661,11 +661,17 @@ function actualizarResumenesAgenda() {
   document.getElementById('resumenPeriodo').textContent  = _periodoResumen(ag.periodo);
   const svcs = ag.servicios || getDefaultServicios();
   document.getElementById('resumenDuraciones').textContent = `${svcs.length} servicios`;
+  const elPrecios = document.getElementById('resumenPrecios');
+  if (elPrecios) {
+    const conPrecio = svcs.filter(s => Number(s.precio) > 0).length;
+    elPrecios.textContent = conPrecio ? `${conPrecio} de ${svcs.length} con precio` : 'Sin precios cargados';
+  }
   document.getElementById('resumenBloqueos').textContent = ag.diasBloqueados.length ? `${ag.diasBloqueados.length} fecha${ag.diasBloqueados.length>1?'s':''} bloqueada${ag.diasBloqueados.length>1?'s':''}` : 'Sin fechas bloqueadas';
 }
 function abrirModalAgendaDias()       { agTemp = JSON.parse(JSON.stringify(getAgenda())); renderDias(); abrirModal('modalAgendaDias'); }
 function abrirModalAgendaSlots()      { agTemp = JSON.parse(JSON.stringify(getAgenda())); renderSlots(); abrirModal('modalAgendaSlots'); }
 function abrirModalAgendaDuraciones() { agTemp = JSON.parse(JSON.stringify(getAgenda())); renderDuraciones(); abrirModal('modalAgendaDuraciones'); }
+function abrirModalAgendaPrecios()    { renderPrecios(); abrirModal('modalAgendaPrecios'); }
 function abrirModalAgendaBloqueos()   { renderBloqueadas(); abrirModal('modalAgendaBloqueos'); }
 function renderDias() {
   document.getElementById('diasChips').innerHTML = DIAS_N.map((d,i) =>
@@ -727,6 +733,68 @@ function guardarDuraciones() {
   apiPost({ action: 'saveConfiguracion', config: ag });
   actualizarResumenesAgenda();
   showToast('✓ Duraciones guardadas');
+}
+// ── Precios de servicios ─────────────────────────────────
+// El precio es un campo más de cada servicio (agenda.servicios[].precio), los mismos que usa la reserva.
+// Se guarda con una acción propia (savePreciosServicios) que solo toca precios; el servidor devuelve lo
+// que quedó guardado y recién ahí se actualiza la copia local. Es solo informativo: no cambia turnos ni señas.
+function _prcEsc(t) {
+  return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+function renderPrecios() {
+  const svcs = getAgenda().servicios || getDefaultServicios();
+  const grupos = {};
+  svcs.forEach(s => { const g = s.grupo || 'Servicios'; (grupos[g] = grupos[g] || []).push(s); });
+  document.getElementById('preciosError').textContent = '';
+  document.getElementById('preciosWrap').innerHTML = Object.entries(grupos).map(([g, items]) => `
+    <div style="margin-bottom:1.25rem">
+      <div style="font-size:.68rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem">${_prcEsc(g)}</div>
+      ${items.map(s => `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.55rem .75rem;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:.4rem">
+          <span style="font-size:.85rem">${_prcEsc(s.nombre)}</span>
+          <div style="display:flex;align-items:center;gap:.3rem;flex-shrink:0">
+            <span style="font-size:.85rem;color:var(--text-muted)">$</span>
+            <input type="text" inputmode="numeric" class="input-sm" data-precio-id="${_prcEsc(s.id)}" data-precio-nombre="${_prcEsc(s.nombre)}"
+                   value="${Number(s.precio) > 0 ? Number(s.precio) : ''}" placeholder="Consultar" style="width:96px;text-align:right">
+          </div>
+        </div>`).join('')}
+    </div>`).join('');
+}
+async function guardarPrecios() {
+  const err = document.getElementById('preciosError');
+  const btn = document.getElementById('btnGuardarPrecios');
+  err.textContent = '';
+
+  // Se aceptan "12000", "12.000" o "$ 12.000". Vacío = sin precio ("Consultar").
+  const precios = {};
+  let problema = '';
+  document.querySelectorAll('#preciosWrap [data-precio-id]').forEach(el => {
+    const limpio = el.value.replace(/[\s$.]/g, '');
+    if (!/^\d*$/.test(limpio)) { if (!problema) problema = `${el.dataset.precioNombre}: usá solo números, sin comas ni decimales`; return; }
+    precios[el.dataset.precioId] = limpio === '' ? null : Number(limpio);
+  });
+  if (problema) { err.textContent = problema; return; }
+
+  const textoOriginal = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  const r = await apiPost({ action: 'savePreciosServicios', precios });
+  btn.disabled = false; btn.textContent = textoOriginal;
+
+  if (!r || r.ok !== true || !r.data || !r.data.precios) {
+    err.textContent = (r && r.error) || 'No se pudo guardar. Revisá la conexión e intentá de nuevo.';
+    return;
+  }
+  // Lo que quedó guardado de verdad: se refleja en la copia local de la agenda.
+  const ag = getAgenda();
+  (ag.servicios || []).forEach(s => {
+    const p = r.data.precios[String(s.id)];
+    if (p === null || p === undefined) delete s.precio; else s.precio = p;
+  });
+  ag.preciosActualizadoEn = r.data.actualizadoEn;
+  DB.set('agenda_config', ag);
+  actualizarResumenesAgenda();
+  cerrarModal('modalAgendaPrecios');
+  showToast('✓ Precios guardados');
 }
 // ── Horarios por día y período de reservas ───────────────
 // Se guardan dentro del mismo bloque "agenda" (saveConfiguracion):
