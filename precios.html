@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Precios — Spa Sosiego</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+  <meta name="description" content="Lista de precios de los servicios de manicura y pedicura de Spa Sosiego." />
+  <meta name="theme-color" content="#E89090" />
+  <link rel="canonical" href="https://spasosiego.com.ar/precios.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Spa Sosiego" />
+  <meta property="og:locale" content="es_AR" />
+  <meta property="og:title" content="Precios — Spa Sosiego" />
+  <meta property="og:description" content="Lista de precios de los servicios de manicura y pedicura de Spa Sosiego." />
+  <meta property="og:url" content="https://spasosiego.com.ar/precios.html" />
+  <meta property="og:image" content="https://spasosiego.com.ar/assets/og-image.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Logo de Spa Sosiego" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://spasosiego.com.ar/assets/og-image.jpg" />
+  <link rel="stylesheet" href="shared/css/tokens.css" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .page-hero {
+      padding: calc(var(--nav-h) + 3.5rem) clamp(1.25rem,5vw,3rem) 3rem;
+      text-align: center;
+      background:
+        radial-gradient(ellipse 60% 50% at 50% 0%, rgba(251,207,232,0.45) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 40% at 20% 80%, rgba(253,230,138,0.35) 0%, transparent 55%),
+        var(--bg);
+    }
+    .page-hero .eyebrow { margin-bottom: .6rem; }
+    .page-hero h1 { margin-bottom: .75rem; }
+    .page-hero p { color: var(--text-muted); max-width: 460px; margin: 0 auto; font-size: .95rem; }
+
+    /* Lista de precios */
+    .precios-wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem clamp(1.1rem,5vw,2rem) 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .precio-grupo {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      padding: 1.4rem clamp(1.1rem,4vw,1.9rem) 1.2rem;
+      animation: precioIn .45s ease both;
+    }
+    .precio-grupo h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-weight: 400;
+      font-size: clamp(1.5rem, 4.5vw, 1.9rem);
+      margin: 0 0 .5rem;
+      padding-bottom: .7rem;
+      border-bottom: 1px solid var(--border-pink);
+    }
+    .precio-grupo ul { list-style: none; margin: 0; padding: 0; }
+    .precio-item {
+      display: flex;
+      align-items: baseline;
+      gap: .6rem;
+      padding: .8rem 0;
+    }
+    .precio-item + .precio-item { border-top: 1px solid var(--border); }
+    .precio-nombre { font-size: .95rem; color: var(--text); min-width: 0; }
+    .precio-puntos {
+      flex: 1 1 12px;
+      min-width: 12px;
+      border-bottom: 2px dotted var(--border-pink);
+      transform: translateY(-4px);
+    }
+    .precio-valor {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 500;
+      font-size: 1.4rem;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .precio-valor.consultar {
+      font-family: 'DM Sans', sans-serif;
+      font-size: .82rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      letter-spacing: .03em;
+    }
+    .precios-nota {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: .5rem clamp(1.1rem,5vw,2rem) 0;
+      text-align: center;
+      font-size: .8rem;
+      color: var(--text-muted);
+    }
+    .precios-aviso {
+      background: var(--bg-yellow);
+      border: 1px solid var(--gold);
+      border-radius: var(--radius-md);
+      padding: .9rem 1.1rem;
+      font-size: .88rem;
+      color: var(--text);
+      text-align: center;
+    }
+    .precios-cta { text-align: center; padding: 1.75rem 1.25rem 3.5rem; }
+    .precios-error { text-align: center; padding: 2rem 1rem; color: var(--text-mid); font-size: .92rem; }
+    .precios-error .btn { margin-top: 1rem; }
+
+    /* Cargando */
+    .precio-sk {
+      height: 190px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(90deg, var(--bg-card) 25%, var(--border) 50%, var(--bg-card) 75%);
+      background-size: 200% 100%;
+      animation: precioSk 1.4s infinite;
+      border: 1px solid var(--border);
+    }
+    @keyframes precioSk { to { background-position: -200% 0; } }
+    @keyframes precioIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) {
+      .precio-grupo, .precio-sk { animation: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- La arma shared/js/nav.js -->
+<div id="site-nav"></div>
+
+<div class="page-hero">
+  <div class="eyebrow reveal">Nuestros servicios</div>
+  <h1 class="reveal" style="transition-delay:.08s">Lista de precios</h1>
+  <p class="reveal" style="transition-delay:.15s">Valores de cada servicio, siempre actualizados.</p>
+</div>
+
+<main class="precios-wrap" id="preciosContenido" aria-live="polite">
+  <div class="precio-sk"></div>
+  <div class="precio-sk"></div>
+</main>
+<p class="precios-nota" id="preciosNota"></p>
+
+<div class="precios-cta">
+  <a href="index.html#turnos" class="btn btn-primary">Reservar turno</a>
+</div>
+
+<!-- La arma shared/js/nav.js -->
+<div id="site-footer"></div>
+
+<script src="script.js"></script>
+<script src="shared/js/identity.js"></script>
+<script src="shared/js/nav.js"></script>
+<script>
+// Lista pública de precios. Lee los MISMOS servicios que usa la reserva
+// (agenda.servicios, vía getConfiguracion — ruta pública que ya existía); el precio es un campo
+// más de cada servicio y se edita desde el panel (Agenda → Precios de servicios).
+// No se guarda nada en el navegador: cada visita trae lo vigente.
+(function () {
+  var cont = document.getElementById('preciosContenido');
+  var nota = document.getElementById('preciosNota');
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function tienePrecio(s) { return Number(s && s.precio) > 0; }
+  function fmt(n) { return '$' + Number(n).toLocaleString('es-AR'); }
+
+  // "Manos — Común" dentro del grupo "Manos" se muestra como "Común" (solo presentación).
+  function nombreVisible(s) {
+    var nombre = String(s.nombre || ''), grupo = String(s.grupo || '');
+    var seps = [' — ', ' – ', ' - '];
+    for (var i = 0; i < seps.length; i++) {
+      var pre = grupo + seps[i];
+      if (grupo && nombre.indexOf(pre) === 0 && nombre.length > pre.length) return nombre.slice(pre.length);
+    }
+    return nombre;
+  }
+
+  function fechaActualizado(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Argentina/Buenos_Aires' });
+  }
+
+  function mostrar(servicios, actualizadoEn) {
+    var grupos = [], porGrupo = {};
+    servicios.forEach(function (s) {
+      var g = String(s.grupo || 'Servicios');
+      if (!porGrupo[g]) { porGrupo[g] = []; grupos.push(g); }
+      porGrupo[g].push(s);
+    });
+
+    var hayAlguno = servicios.some(tienePrecio);
+    var html = '';
+    if (!hayAlguno) {
+      html += '<div class="precios-aviso">Estamos actualizando nuestra lista de precios. Muy pronto vas a encontrarla acá.</div>';
+    }
+    grupos.forEach(function (g, idx) {
+      html += '<section class="precio-grupo" style="animation-delay:' + (idx * 0.07) + 's"><h2>' + esc(g) + '</h2><ul>';
+      porGrupo[g].forEach(function (s) {
+        var valor = tienePrecio(s)
+          ? '<span class="precio-valor">' + fmt(s.precio) + '</span>'
+          : '<span class="precio-valor consultar">Consultar</span>';
+        html += '<li class="precio-item"><span class="precio-nombre">' + esc(nombreVisible(s)) + '</span>' +
+                '<span class="precio-puntos" aria-hidden="true"></span>' + valor + '</li>';
+      });
+      html += '</ul></section>';
+    });
+    cont.innerHTML = html;
+
+    var f = hayAlguno ? fechaActualizado(actualizadoEn) : '';
+    nota.textContent = hayAlguno
+      ? 'Valores en pesos argentinos.' + (f ? ' Actualizados el ' + f + '.' : '')
+      : '';
+  }
+
+  function mostrarError() {
+    nota.textContent = '';
+    cont.innerHTML = '<div class="precios-error">No pudimos cargar la lista de precios en este momento.<br>' +
+      '<button type="button" class="btn btn-outline" id="btnReintentar">Reintentar</button></div>';
+    document.getElementById('btnReintentar').addEventListener('click', cargar);
+  }
+
+  async function cargar() {
+    cont.innerHTML = '<div class="precio-sk"></div><div class="precio-sk"></div>';
+    try {
+      var res = await fetch(API_URL + '?action=getConfiguracion', { cache: 'no-store' });
+      var json = await res.json();
+      var d = json && json.data;
+      if (!d || !Array.isArray(d.servicios) || !d.servicios.length) throw new Error('sin servicios');
+      mostrar(d.servicios, d.preciosActualizadoEn);
+    } catch (e) {
+      console.warn('precios:', e);
+      mostrarError();
+    }
+  }
+
+  cargar();
+})();
+</script>
+</body>
+</html>
