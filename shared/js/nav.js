@@ -17,6 +17,8 @@
 var NAV_LINKS = [
   { label: 'Inicio',    href: 'index.html#inicio' },
   { label: 'Servicios', href: 'index.html#servicios' },
+  // Lista de precios: solo en el menú del encabezado (footer:false la saca del pie).
+  { label: 'Ver precios', href: 'precios.html', footer: false },
   { label: 'Inspirate', href: 'index.html#inspirate' },
   { label: 'Catálogo',  href: 'catalogo.html' },
   { label: 'Reservar',  href: 'index.html#turnos' },
@@ -115,7 +117,7 @@ function renderFooter() {
   var cont = document.getElementById('site-footer');
   if (!cont) return;
 
-  var links = NAV_LINKS.map(function (l) {
+  var links = NAV_LINKS.filter(function (l) { return l.footer !== false; }).map(function (l) {
     return '<li><a href="' + l.href + '">' + l.label + '</a></li>';
   }).join('');
 
