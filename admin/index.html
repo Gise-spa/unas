@@ -1084,9 +1084,39 @@
       <button class="modal-close" onclick="cerrarModal('modalAgendaPrecios')">×</button>
     </div>
     <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:1rem">Son los precios de la lista pública del sitio y se actualizan ahí apenas guardás. Un servicio sin precio se ve como «Consultar». No cambian los turnos ya reservados ni sus señas.</p>
-    <div id="preciosWrap" style="max-height:50vh;overflow-y:auto"></div>
+    <div style="max-height:58vh;overflow-y:auto">
+      <div id="preciosWrap"></div>
+      <div style="font-size:.68rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin:.4rem 0 .3rem">Servicios adicionales</div>
+      <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:.7rem">Solo figuran en la lista de precios; no se pueden reservar. Se guardan al instante.</p>
+      <div id="extrasWrap"></div>
+      <button class="btn btn-outline btn-sm" id="btnNuevoExtra" style="margin:.3rem 0 .5rem" onclick="abrirExtra()">+ Agregar servicio</button>
+    </div>
     <div id="preciosError" style="color:var(--danger,#C0392B);font-size:.82rem;min-height:1.1rem;margin-top:.6rem"></div>
-    <button class="btn btn-primary btn-sm" id="btnGuardarPrecios" style="margin-top:.5rem" onclick="guardarPrecios()">Guardar precios</button>
+    <button class="btn btn-primary btn-sm" id="btnGuardarPrecios" style="margin-top:.5rem" onclick="guardarPrecios()">Guardar precios de reservas</button>
+  </div>
+</div>
+
+<!-- MODAL AGENDA: SERVICIO ADICIONAL (alta / edición) -->
+<div class="modal-overlay" id="modalExtra">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header">
+      <h3 id="extraTitulo">Nuevo servicio adicional</h3>
+      <button class="modal-close" onclick="cerrarModal('modalExtra')">×</button>
+    </div>
+    <label style="display:block;font-size:.68rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:.4rem" for="extraNombre">Nombre</label>
+    <input type="text" class="input-sm" id="extraNombre" maxlength="80" placeholder="Ej: Corte de uñas" style="margin-bottom:.9rem;width:100%">
+    <label style="display:block;font-size:.68rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:.4rem" for="extraDesc">Descripción (opcional)</label>
+    <input type="text" class="input-sm" id="extraDesc" maxlength="200" placeholder="Ej: Corte y limado" style="margin-bottom:.9rem;width:100%">
+    <label style="display:block;font-size:.68rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:.4rem" for="extraPrecio">Precio ($)</label>
+    <input type="text" inputmode="numeric" class="input-sm" id="extraPrecio" placeholder="Vacío = Consultar" style="margin-bottom:.9rem;width:100%">
+    <label style="display:flex;align-items:center;gap:.5rem;font-size:.85rem;margin-bottom:.9rem;cursor:pointer">
+      <input type="checkbox" id="extraActivo" checked> Mostrar en la lista de precios
+    </label>
+    <p id="extraError" style="font-size:.82rem;color:var(--danger,#C0392B);min-height:1.1em;margin-bottom:.4rem"></p>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <button class="btn btn-primary btn-sm" id="btnGuardarExtra" onclick="guardarExtra()">Guardar</button>
+      <button class="btn btn-outline btn-sm" id="btnEliminarExtra" style="display:none" onclick="pedirEliminarExtra()">Eliminar</button>
+    </div>
   </div>
 </div>
 
