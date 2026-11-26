@@ -664,14 +664,16 @@ function actualizarResumenesAgenda() {
   const elPrecios = document.getElementById('resumenPrecios');
   if (elPrecios) {
     const conPrecio = svcs.filter(s => Number(s.precio) > 0).length;
-    elPrecios.textContent = conPrecio ? `${conPrecio} de ${svcs.length} con precio` : 'Sin precios cargados';
+    let txt = conPrecio ? `${conPrecio} de ${svcs.length} con precio` : 'Sin precios cargados';
+    if (_extras) txt += ` · ${_extras.length} adicional${_extras.length === 1 ? '' : 'es'}`;
+    elPrecios.textContent = txt;
   }
   document.getElementById('resumenBloqueos').textContent = ag.diasBloqueados.length ? `${ag.diasBloqueados.length} fecha${ag.diasBloqueados.length>1?'s':''} bloqueada${ag.diasBloqueados.length>1?'s':''}` : 'Sin fechas bloqueadas';
 }
 function abrirModalAgendaDias()       { agTemp = JSON.parse(JSON.stringify(getAgenda())); renderDias(); abrirModal('modalAgendaDias'); }
 function abrirModalAgendaSlots()      { agTemp = JSON.parse(JSON.stringify(getAgenda())); renderSlots(); abrirModal('modalAgendaSlots'); }
 function abrirModalAgendaDuraciones() { agTemp = JSON.parse(JSON.stringify(getAgenda())); renderDuraciones(); abrirModal('modalAgendaDuraciones'); }
-function abrirModalAgendaPrecios()    { renderPrecios(); abrirModal('modalAgendaPrecios'); }
+function abrirModalAgendaPrecios()    { renderPrecios(); abrirModal('modalAgendaPrecios'); cargarExtras(); }
 function abrirModalAgendaBloqueos()   { renderBloqueadas(); abrirModal('modalAgendaBloqueos'); }
 function renderDias() {
   document.getElementById('diasChips').innerHTML = DIAS_N.map((d,i) =>
@@ -795,6 +797,128 @@ async function guardarPrecios() {
   actualizarResumenesAgenda();
   cerrarModal('modalAgendaPrecios');
   showToast('✓ Precios guardados');
+}
+// ── Servicios adicionales de la lista de precios ─────────
+// Ítems que solo figuran en la lista pública (ej. "Corte de uñas"); no se reservan y no son agenda.servicios.
+// Viven en el servidor (acción propia). Cada alta, edición, baja o activar/desactivar manda la lista completa
+// y el servidor devuelve lo que quedó guardado. Mientras no se haya podido cargar la lista, no se permite
+// guardar nada (así nunca se pisa lo existente con una lista vacía).
+let _extras = null;        // null = todavía no cargada
+let _extraEditId = null;   // null = alta nueva
+let _extrasGuardando = false;
+
+function _fmtPesos(n) { return '$' + Number(n).toLocaleString('es-AR'); }
+
+async function cargarExtras() {
+  const wrap = document.getElementById('extrasWrap');
+  const btnNuevo = document.getElementById('btnNuevoExtra');
+  wrap.innerHTML = '<p style="font-size:.8rem;color:var(--text-muted)">Cargando…</p>';
+  btnNuevo.disabled = true;
+  const r = await apiGet('getPreciosAdicionalesAdmin');
+  if (r && !Array.isArray(r) && Array.isArray(r.items)) {
+    _extras = r.items;
+    btnNuevo.disabled = false;
+    renderExtras();
+    actualizarResumenesAgenda();
+  } else {
+    _extras = null;
+    wrap.innerHTML = '<p style="font-size:.8rem;color:var(--danger,#C0392B)">No se pudieron cargar los servicios adicionales. ' +
+      '<a href="#" onclick="cargarExtras();return false">Reintentar</a></p>';
+  }
+}
+
+function renderExtras() {
+  const wrap = document.getElementById('extrasWrap');
+  if (!_extras || !_extras.length) {
+    wrap.innerHTML = '<p style="font-size:.8rem;color:var(--text-muted);margin-bottom:.5rem">Todavía no cargaste servicios adicionales.</p>';
+    return;
+  }
+  wrap.innerHTML = _extras.map(it => `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.55rem .75rem;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:.4rem;${it.activo === false ? 'opacity:.55' : ''}">
+      <div style="min-width:0;flex:1">
+        <div style="font-size:.85rem">${_prcEsc(it.nombre)}${it.activo === false ? ' <span style="font-size:.7rem;color:var(--text-muted)">(oculto)</span>' : ''}</div>
+        ${it.descripcion ? `<div style="font-size:.74rem;color:var(--text-muted)">${_prcEsc(it.descripcion)}</div>` : ''}
+      </div>
+      <span style="font-size:.85rem;white-space:nowrap">${Number(it.precio) > 0 ? _fmtPesos(it.precio) : 'Consultar'}</span>
+      <button class="btn btn-outline btn-sm" onclick="abrirExtra('${_prcEsc(it.id)}')">Editar</button>
+    </div>`).join('');
+}
+
+function abrirExtra(id) {
+  if (!_extras) return;
+  const it = id ? _extras.find(x => String(x.id) === String(id)) : null;
+  _extraEditId = it ? it.id : null;
+  document.getElementById('extraTitulo').textContent = it ? 'Editar servicio adicional' : 'Nuevo servicio adicional';
+  document.getElementById('extraNombre').value = it ? it.nombre : '';
+  document.getElementById('extraDesc').value   = it ? (it.descripcion || '') : '';
+  document.getElementById('extraPrecio').value = it && Number(it.precio) > 0 ? Number(it.precio) : '';
+  document.getElementById('extraActivo').checked = it ? it.activo !== false : true;
+  document.getElementById('extraError').textContent = '';
+  document.getElementById('btnEliminarExtra').style.display = it ? '' : 'none';
+  abrirModal('modalExtra');
+}
+
+// Manda la lista completa; devuelve true si el servidor confirmó y la copia local ya es la guardada.
+async function _guardarListaExtras(lista) {
+  if (_extrasGuardando) return false;
+  _extrasGuardando = true;
+  try {
+    const r = await apiPost({ action: 'savePreciosAdicionales', items: lista });
+    if (!r || r.ok !== true || !r.data || !Array.isArray(r.data.items)) {
+      document.getElementById('extraError').textContent = (r && r.error) || 'No se pudo guardar. Revisá la conexión e intentá de nuevo.';
+      return false;
+    }
+    _extras = r.data.items;
+    renderExtras();
+    actualizarResumenesAgenda();
+    return true;
+  } finally { _extrasGuardando = false; }
+}
+
+async function guardarExtra() {
+  const err = document.getElementById('extraError');
+  const btn = document.getElementById('btnGuardarExtra');
+  err.textContent = '';
+  if (!_extras) { err.textContent = 'Los servicios adicionales no están cargados. Cerrá y volvé a abrir.'; return; }
+
+  const nombre = document.getElementById('extraNombre').value.replace(/\s+/g, ' ').trim();
+  if (!nombre) { err.textContent = 'Escribí el nombre del servicio'; return; }
+  const limpio = document.getElementById('extraPrecio').value.replace(/[\s$.]/g, '');
+  if (!/^\d*$/.test(limpio)) { err.textContent = 'El precio: usá solo números, sin comas ni decimales'; return; }
+
+  const item = {
+    id: _extraEditId || undefined,
+    nombre,
+    descripcion: document.getElementById('extraDesc').value.replace(/\s+/g, ' ').trim(),
+    precio: limpio === '' ? null : Number(limpio),
+    activo: document.getElementById('extraActivo').checked,
+  };
+  const lista = _extraEditId
+    ? _extras.map(x => String(x.id) === String(_extraEditId) ? item : x)
+    : [..._extras, item];
+
+  const txt = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  const ok = await _guardarListaExtras(lista);
+  btn.disabled = false; btn.textContent = txt;
+  if (ok) { cerrarModal('modalExtra'); showToast('✓ Servicio guardado'); }
+}
+
+function pedirEliminarExtra() {
+  const it = _extras && _extras.find(x => String(x.id) === String(_extraEditId));
+  if (!it) return;
+  // El diálogo de confirmación está antes en el HTML que este modal: se lo sube para que no quede tapado.
+  document.getElementById('modalConfirmar').style.zIndex = 400;
+  mostrarConfirm({
+    icon: '🗑️', titulo: 'Eliminar servicio',
+    msg: `¿Eliminás «${it.nombre}» de la lista de precios? Si solo querés que no se vea, editalo y desmarcá «Mostrar en la lista de precios».`,
+    btnTxt: 'Sí, eliminar', btnColor: 'rgba(239,68,68,.85)',
+    onOk: async () => {
+      const ok = await _guardarListaExtras(_extras.filter(x => String(x.id) !== String(_extraEditId)));
+      if (ok) { cerrarModal('modalExtra'); showToast('✓ Servicio eliminado'); }
+      else showToast('⚠ ' + (document.getElementById('extraError').textContent || 'No se pudo eliminar'), 5000);
+    }
+  });
 }
 // ── Horarios por día y período de reservas ───────────────
 // Se guardan dentro del mismo bloque "agenda" (saveConfiguracion):
