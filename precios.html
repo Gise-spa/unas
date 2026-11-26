@@ -77,6 +77,8 @@
       border-bottom: 2px dotted var(--border-pink);
       transform: translateY(-4px);
     }
+    .precio-texto { min-width: 0; display: flex; flex-direction: column; gap: .15rem; }
+    .precio-desc { font-size: .8rem; color: var(--text-muted); line-height: 1.4; }
     .precio-valor {
       font-family: 'Cormorant Garamond', serif;
       font-weight: 500;
@@ -190,7 +192,7 @@
     return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Argentina/Buenos_Aires' });
   }
 
-  function mostrar(servicios, actualizadoEn) {
+  function mostrar(servicios, adicionales, actualizadoEn) {
     var grupos = [], porGrupo = {};
     servicios.forEach(function (s) {
       var g = String(s.grupo || 'Servicios');
@@ -198,22 +200,41 @@
       porGrupo[g].push(s);
     });
 
-    var hayAlguno = servicios.some(tienePrecio);
+    function valorHtml(s) {
+      return tienePrecio(s)
+        ? '<span class="precio-valor">' + fmt(s.precio) + '</span>'
+        : '<span class="precio-valor consultar">Consultar</span>';
+    }
+
+    var hayAlguno = servicios.some(tienePrecio) || adicionales.some(tienePrecio);
     var html = '';
-    if (!hayAlguno) {
+    if (!servicios.length && !adicionales.length) {
+      html += '<div class="precios-aviso">Estamos actualizando nuestra lista de precios. Muy pronto vas a encontrarla acá.</div>';
+    } else if (!hayAlguno) {
       html += '<div class="precios-aviso">Estamos actualizando nuestra lista de precios. Muy pronto vas a encontrarla acá.</div>';
     }
-    grupos.forEach(function (g, idx) {
-      html += '<section class="precio-grupo" style="animation-delay:' + (idx * 0.07) + 's"><h2>' + esc(g) + '</h2><ul>';
+
+    var idx = 0;
+    grupos.forEach(function (g) {
+      html += '<section class="precio-grupo" style="animation-delay:' + (idx++ * 0.07) + 's"><h2>' + esc(g) + '</h2><ul>';
       porGrupo[g].forEach(function (s) {
-        var valor = tienePrecio(s)
-          ? '<span class="precio-valor">' + fmt(s.precio) + '</span>'
-          : '<span class="precio-valor consultar">Consultar</span>';
-        html += '<li class="precio-item"><span class="precio-nombre">' + esc(nombreVisible(s)) + '</span>' +
-                '<span class="precio-puntos" aria-hidden="true"></span>' + valor + '</li>';
+        html += '<li class="precio-item"><span class="precio-texto"><span class="precio-nombre">' + esc(nombreVisible(s)) + '</span></span>' +
+                '<span class="precio-puntos" aria-hidden="true"></span>' + valorHtml(s) + '</li>';
       });
       html += '</ul></section>';
     });
+
+    // Servicios adicionales cargados a mano desde el administrador (no se reservan online).
+    if (adicionales.length) {
+      html += '<section class="precio-grupo" style="animation-delay:' + (idx * 0.07) + 's"><h2>' +
+              (servicios.length ? 'Otros servicios' : 'Servicios') + '</h2><ul>';
+      adicionales.forEach(function (s) {
+        html += '<li class="precio-item"><span class="precio-texto"><span class="precio-nombre">' + esc(s.nombre) + '</span>' +
+                (s.descripcion ? '<span class="precio-desc">' + esc(s.descripcion) + '</span>' : '') + '</span>' +
+                '<span class="precio-puntos" aria-hidden="true"></span>' + valorHtml(s) + '</li>';
+      });
+      html += '</ul></section>';
+    }
     cont.innerHTML = html;
 
     var f = hayAlguno ? fechaActualizado(actualizadoEn) : '';
@@ -229,14 +250,29 @@
     document.getElementById('btnReintentar').addEventListener('click', cargar);
   }
 
+  async function pedir(action) {
+    var res = await fetch(API_URL + '?action=' + action, { cache: 'no-store' });
+    return (await res.json()) || {};
+  }
+
   async function cargar() {
     cont.innerHTML = '<div class="precio-sk"></div><div class="precio-sk"></div>';
     try {
-      var res = await fetch(API_URL + '?action=getConfiguracion', { cache: 'no-store' });
-      var json = await res.json();
-      var d = json && json.data;
-      if (!d || !Array.isArray(d.servicios) || !d.servicios.length) throw new Error('sin servicios');
-      mostrar(d.servicios, d.preciosActualizadoEn);
+      var d = null;
+      try {
+        var json = await pedir('getListaPrecios');
+        d = json && json.data;
+        if (d && (!Array.isArray(d.servicios) || !Array.isArray(d.adicionales))) d = null;
+      } catch (e1) { d = null; }
+
+      if (d) {
+        mostrar(d.servicios, d.adicionales, d.actualizadoEn);
+      } else {
+        // Respaldo: solo los servicios de la agenda (ruta pública que ya existía).
+        var cfg = (await pedir('getConfiguracion')).data;
+        if (!cfg || !Array.isArray(cfg.servicios) || !cfg.servicios.length) throw new Error('sin servicios');
+        mostrar(cfg.servicios, [], cfg.preciosActualizadoEn);
+      }
     } catch (e) {
       console.warn('precios:', e);
       mostrarError();
